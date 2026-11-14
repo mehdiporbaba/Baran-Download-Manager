@@ -13,6 +13,7 @@ import {
   KeyRound,
   Loader2,
   Monitor,
+  Network,
   Moon,
   RefreshCw,
   Settings2,
@@ -26,8 +27,9 @@ import { useApp } from '../state'
 import { Modal } from './Modal'
 import { Logo, Toggle } from './primitives'
 import { cn } from '../lib/format'
+import { proxyConfiguration } from '@shared/network-policy'
 
-type Tab = 'general' | 'speed' | 'appearance' | 'tools' | 'about'
+type Tab = 'general' | 'speed' | 'network' | 'appearance' | 'tools' | 'about'
 
 export function SettingsModal(): React.JSX.Element {
   const { settingsOpen, setSettingsOpen, t, settings, stats, system, patchSettings, pushToast, refreshTools } =
@@ -52,10 +54,13 @@ export function SettingsModal(): React.JSX.Element {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
-  const save = (): void => {
-    patchSettings(draft)
-    pushToast('success', t.toast.settingsSaved)
-    setSettingsOpen(false)
+  const save = async (): Promise<void> => {
+    try {
+      proxyConfiguration(merged)
+      await window.pulse.updateSettings(draft)
+      pushToast('success', t.toast.settingsSaved)
+      setSettingsOpen(false)
+    } catch (error) { pushToast('error', (error as Error).message) }
   }
 
   const chooseDir = async (): Promise<void> => {
@@ -82,6 +87,7 @@ export function SettingsModal(): React.JSX.Element {
   const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
     { id: 'general', label: t.settings.tabs.general, icon: <Settings2 size={15} /> },
     { id: 'speed', label: t.settings.tabs.speed, icon: <Gauge size={15} /> },
+    { id: 'network', label: settings.language === 'fa' ? 'شبکه و پراکسی' : 'Network & proxy', icon: <Network size={15} /> },
     { id: 'appearance', label: t.settings.tabs.appearance, icon: <Monitor size={15} /> },
     { id: 'tools', label: t.settings.tabs.tools, icon: <Wrench size={15} /> },
     { id: 'about', label: t.settings.tabs.about, icon: <Info size={15} /> }
@@ -120,7 +126,7 @@ export function SettingsModal(): React.JSX.Element {
             </button>
           ))}
           <div className="mt-auto rounded-lg bg-elev/50 p-2.5 text-[9px] leading-relaxed text-faint">
-            Pulse v{system?.appVersion ?? '1.0.0'} · {system?.platform === 'linux' ? 'Linux' : 'Windows'}
+            Baran v{system?.appVersion ?? '1.0.0'} · {system?.platform === 'linux' ? 'Linux' : 'Windows'}
           </div>
         </div>
 
@@ -190,6 +196,12 @@ export function SettingsModal(): React.JSX.Element {
                   onChange={(v) => set('notifyOnComplete', v)}
                 />
                 <ToggleRow
+                  title={settings.language === 'fa' ? 'بستن پنجره و ادامه در Tray' : 'Close to system tray'}
+                  hint={settings.language === 'fa' ? 'با بستن پنجره، دانلودها و زمان‌بندی در پس‌زمینه ادامه می‌یابند.' : 'Closing the window keeps downloads and scheduled jobs running in the background.'}
+                  checked={merged.minimizeToTray}
+                  onChange={value => set('minimizeToTray', value)}
+                />
+                <ToggleRow
                   title={t.settings.general.clipboard}
                   hint={t.settings.general.clipboardHint}
                   checked={merged.clipboardWatch}
@@ -206,6 +218,13 @@ export function SettingsModal(): React.JSX.Element {
 
           {tab === 'speed' ? (
             <div className="space-y-5">
+              <p className="text-[11px] text-muted">{settings.language === 'fa' ? 'سقف HTTP و ویدیو از سقف‌های تورنت مستقل است. مقدار صفر یعنی نامحدود.' : 'HTTP/video limits are separate from torrent limits. Zero means unlimited.'}</p>
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-line p-4">
+                {(['torrentDownloadLimit', 'torrentUploadLimit'] as const).map(key => <label key={key} className="space-y-2 text-[11px]">
+                  <span>{key === 'torrentDownloadLimit' ? (settings.language === 'fa' ? 'سقف دانلود تورنت' : 'Torrent download limit') : (settings.language === 'fa' ? 'سقف آپلود و سید' : 'Torrent upload / seeding limit')}</span>
+                  <div className="flex items-center gap-2"><input aria-label={key} type="number" min={0} step={64} className="field h-9 w-full px-3" value={Math.round(merged[key] / 1024)} onChange={event => set(key, Math.max(0, Number(event.target.value) || 0) * 1024)} dir="ltr" /><span>KiB/s</span></div>
+                </label>)}
+              </div>
               <div className="rounded-xl border border-line bg-elev/30 p-4">
                 <div className="flex items-center gap-2 text-[12px] font-semibold">
                   <Gauge size={16} className="text-brand" />
@@ -275,6 +294,20 @@ export function SettingsModal(): React.JSX.Element {
             </div>
           ) : null}
 
+          {tab === 'network' ? <div className="space-y-5">
+            <Group title={settings.language === 'fa' ? 'مسیر اتصال وب' : 'Web connection routing'}>
+              <select aria-label="Proxy mode" className="field h-10 w-full px-3 text-[12px]" value={merged.proxyMode} onChange={event => set('proxyMode', event.target.value as Settings['proxyMode'])}>
+                <option value="direct">{settings.language === 'fa' ? 'اتصال مستقیم' : 'Direct connection'}</option>
+                <option value="system">{settings.language === 'fa' ? 'خودکار؛ استفاده از پراکسی سیستم و PAC' : 'Automatic — system proxy / PAC'}</option>
+                <option value="manual">{settings.language === 'fa' ? 'پراکسی دستی' : 'Manual proxy'}</option>
+              </select>
+            </Group>
+            {merged.proxyMode === 'manual' && <Group title={settings.language === 'fa' ? 'نشانی پراکسی' : 'Proxy address'}>
+              <input aria-label="Proxy URL" className="field h-10 w-full px-3 text-[12px]" dir="ltr" value={merged.proxy} onChange={event => set('proxy', event.target.value)} placeholder="socks5://127.0.0.1:1080" />
+              <p className="mt-2 text-[11px] text-muted">HTTP / HTTPS / SOCKS4 / SOCKS5 · {settings.language === 'fa' ? 'بدون نام کاربری و رمز عبور' : 'No embedded username or password'}</p>
+            </Group>}
+            <p className="rounded-xl border border-line p-4 text-[11px] leading-7 text-muted">{settings.language === 'fa' ? 'این تنظیم برای دانلود HTTP، اسکنر، گیت‌هاب، یوتیوب و اینستاگرام است. ارتباط همتایان و DHT تورنت از پراکسی وب عبور نمی‌کند؛ برای هدایت تمام ترافیک تورنت باید از VPN سیستم استفاده شود. تغییر پراکسی روی درخواست‌های جدید اعمال می‌شود.' : 'Applies to HTTP downloads, scanning, GitHub, YouTube and Instagram. Torrent peer/DHT traffic does not use a web proxy; use a system VPN to route all torrent traffic. Changes apply to new requests.'}</p>
+          </div> : null}
           {tab === 'appearance' ? (
             <div className="space-y-5">
               <Group title={t.settings.appearance.theme}>
@@ -497,7 +530,7 @@ export function SettingsModal(): React.JSX.Element {
                     type="button"
                     onClick={() =>
                       void window.pulse.openExternal(
-                        'https://github.com/settings/tokens/new?scopes=public_repo&description=Pulse'
+                        'https://github.com/settings/tokens/new?scopes=public_repo&description=Baran'
                       )
                     }
                     className="ms-auto flex items-center gap-1 text-[9px] text-brand transition hover:underline"
@@ -541,7 +574,7 @@ export function SettingsModal(): React.JSX.Element {
             <div className="flex flex-col items-center py-6 text-center">
               <Logo size={64} />
               <h3 className="mt-4 text-[19px] font-extrabold tracking-tight">
-                Pulse <span className="text-gradient">Download Manager</span>
+                Baran <span className="text-gradient">Download Manager</span>
               </h3>
               <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted">{t.settings.about.built}</p>
               <div className="mt-3 flex flex-wrap justify-center gap-1.5">
@@ -557,6 +590,11 @@ export function SettingsModal(): React.JSX.Element {
                 <Row label={t.settings.about.electron} value={`Electron ${system?.runtime?.electron ?? ''}`} />
                 <LinkRow
                   label={t.settings.about.repository}
+                  value="mehdiporbaba/Baran-Download-Manager (Baran)"
+                  onClick={() => window.pulse.openExternal('https://github.com/mehdiporbaba/Baran-Download-Manager')}
+                />
+                <LinkRow
+                  label={settings.language === 'fa' ? 'پروژه اصلی' : 'Original project'}
                   value="TheGreatAzizi/Pulse-Download-Manager"
                   onClick={() =>
                     window.pulse.openExternal('https://github.com/TheGreatAzizi/Pulse-Download-Manager')

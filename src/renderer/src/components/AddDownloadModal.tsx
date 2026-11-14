@@ -20,6 +20,7 @@ import {
 import type { ProbeResult, YoutubeFormatOption, YoutubeProbe } from '@shared/types'
 import { useApp } from '../state'
 import { Modal } from './Modal'
+import { ScheduleField, scheduledTime } from './ScheduleField'
 import { cn, formatBytes, formatDuration, hostOf } from '../lib/format'
 
 type Tab = 'link' | 'video' | 'torrent'
@@ -76,6 +77,7 @@ export function AddDownloadModal(): React.JSX.Element {
   const [torrentName, setTorrentName] = useState('')
   const [sequential, setSequential] = useState(true)
   const [dragOver, setDragOver] = useState(false)
+  const [scheduleAt, setScheduleAt] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skipAuto = useRef(false)
 
@@ -102,6 +104,7 @@ export function AddDownloadModal(): React.JSX.Element {
     setTorrentData(null)
     setTorrentName('')
     setSequential(true)
+    setScheduleAt('')
     setDir(settings.downloadDir)
     setConnections(settings.connections)
     const initialUrl = addInitial?.url || ''
@@ -249,6 +252,7 @@ export function AddDownloadModal(): React.JSX.Element {
       for (const entry of entries.slice(0, 150)) {
         try {
           const task = await window.pulse.addDownload({
+            startAt: scheduledTime(scheduleAt),
             url: entry.url,
             kind: 'youtube',
             dir,
@@ -301,6 +305,7 @@ export function AddDownloadModal(): React.JSX.Element {
         if (ua.trim()) headers['User-Agent'] = ua.trim()
         if (cookie.trim()) headers.Cookie = cookie.trim()
         const task = await window.pulse.addDownload({
+          startAt: scheduledTime(scheduleAt),
           url: target,
           kind: 'http',
           fileName: fileName.trim() || undefined,
@@ -324,6 +329,7 @@ export function AddDownloadModal(): React.JSX.Element {
         }
         const audioOnly = !!option.audioOnly
         const task = await window.pulse.addDownload({
+          startAt: scheduledTime(scheduleAt),
           url: yt.url,
           kind: 'youtube',
           dir,
@@ -350,6 +356,7 @@ export function AddDownloadModal(): React.JSX.Element {
           return
         }
         const task = await window.pulse.addTorrent({
+          startAt: scheduledTime(scheduleAt),
           uri: torrentPath || magnet.trim() || undefined,
           data: !torrentPath && !magnet.trim() ? torrentData || undefined : undefined,
           name: torrentName || undefined,
@@ -876,6 +883,7 @@ export function AddDownloadModal(): React.JSX.Element {
         ) : null}
       </div>
 
+      <div className="shrink-0 border-t border-line/70 px-6 py-2"><ScheduleField value={scheduleAt} onChange={setScheduleAt} fa={lang === 'fa'} /></div>
       <div className="flex shrink-0 items-center gap-2 border-t border-line/70 bg-panel/60 px-6 py-3">
         <div className="hidden items-center gap-1.5 text-[9.5px] text-faint sm:flex">
           {tab === 'torrent' ? <Magnet size={11} /> : tab === 'video' ? <Youtube size={11} /> : <Globe size={11} />}

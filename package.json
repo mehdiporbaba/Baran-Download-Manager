@@ -1,21 +1,24 @@
 {
-  "name": "pulse-download-manager",
-  "version": "1.0.14",
-  "description": "Pulse — a professional cross-platform download manager for direct links, YouTube videos and torrents.",
+  "name": "baran-download-manager",
+  "version": "1.0.0",
+  "description": "Baran Download Manager — collect links, schedule downloads, and manage your connection.",
   "main": "./out/main/index.js",
-  "author": "TheGreatAzizi",
+  "author": "Mehdi Porbaba",
   "license": "GPL-3.0-or-later",
   "private": true,
   "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "dist": "electron-vite build && electron-builder",
     "dist:win": "electron-vite build && electron-builder --win",
-    "dist:linux": "electron-vite build && electron-builder --linux"
+    "dist:linux": "electron-vite build && electron-builder --linux",
+    "test:network": "node tests/run-network.mjs"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "webtorrent": "^3.0.21"
   },
   "devDependencies": {
@@ -31,12 +34,13 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^8.3.8"
   },
   "build": {
-    "appId": "com.pulse.downloadmanager",
-    "productName": "Pulse",
+    "appId": "io.github.mehdiporbaba.baran",
+    "productName": "Baran Download Manager",
     "npmRebuild": false,
     "directories": {
       "output": "dist",
@@ -93,12 +97,11 @@
       "createStartMenuShortcut": true,
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
-      "shortcutName": "Pulse",
-      "artifactName": "Pulse-Setup-${version}-${arch}.${ext}",
-      "include": "installer.nsh"
+      "shortcutName": "Baran Download Manager",
+      "artifactName": "Baran-Download-Manager-Setup-${version}-${arch}.${ext}"
     },
     "portable": {
-      "artifactName": "Pulse-Portable-${version}-${arch}.${ext}"
+      "artifactName": "Baran-Download-Manager-Portable-${version}-${arch}.${ext}"
     },
     "linux": {
       "icon": "icon.png",
@@ -107,8 +110,13 @@
         "deb"
       ],
       "category": "Network",
-      "artifactName": "Pulse-${version}-${arch}.${ext}",
+      "artifactName": "Baran-Download-Manager-${version}-${arch}.${ext}",
       "maintainer": "Pulse"
     }
+  },
+  "homepage": "https://github.com/mehdiporbaba/Baran-Download-Manager",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mehdiporbaba/Baran-Download-Manager.git"
   }
 }

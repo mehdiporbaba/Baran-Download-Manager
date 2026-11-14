@@ -14,6 +14,16 @@ import type {
 import { IP } from '../shared/ipc'
 
 const api: PulseAPI = {
+  instagramCollect: (url) => ipcRenderer.invoke(IP.instagramCollect, url),
+  installGallery: () => ipcRenderer.invoke(IP.installGallery),
+  linksList: () => ipcRenderer.invoke(IP.linksList),
+  linksImport: (text) => ipcRenderer.invoke(IP.linksImport, text),
+  linksRemove: (ids) => ipcRenderer.invoke(IP.linksRemove, ids),
+  linksProbe: (ids) => ipcRenderer.invoke(IP.linksProbe, ids),
+  linksDownload: (ids, dir, startAt) => ipcRenderer.invoke(IP.linksDownload, ids, dir, startAt),
+  scheduleTask: (id, startAt) => ipcRenderer.invoke(IP.scheduleTask, id, startAt),
+  scanStart: (input) => ipcRenderer.invoke(IP.scanStart, input),
+  scanCancel: () => ipcRenderer.invoke(IP.scanCancel),
   snapshot: () => ipcRenderer.invoke(IP.snapshot) as Promise<AppSnapshot>,
   probe: (url: string, headers?: Record<string, string>) =>
     ipcRenderer.invoke(IP.probe, url, headers) as Promise<ProbeResult>,

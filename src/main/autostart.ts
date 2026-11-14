@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 
-const AUTOSTART_NAME = 'Pulse'
+const AUTOSTART_NAME = 'Baran Download Manager'
 
 /**
  * Auto-start is supported on Windows and Linux for installed builds. Portable
@@ -15,7 +15,7 @@ export function isAutoStartSupported(): boolean {
 }
 
 /**
- * Create or remove the OS login item that launches Pulse after sign-in.
+ * Create or remove the OS login item that launches Baran after sign-in.
  * On Windows this uses the per-user Run registry key; on Linux it writes a
  * freedesktop autostart entry.
  */
@@ -34,7 +34,7 @@ export async function applyLaunchAtStartup(enabled: boolean): Promise<void> {
 
     const configHome = process.env.XDG_CONFIG_HOME || join(app.getPath('home'), '.config')
     const dir = join(configHome, 'autostart')
-    const file = join(dir, 'pulse.desktop')
+    const file = join(dir, 'baran-download-manager.desktop')
 
     if (!enabled) {
       await fs.rm(file, { force: true })
@@ -47,8 +47,8 @@ export async function applyLaunchAtStartup(enabled: boolean): Promise<void> {
       '[Desktop Entry]',
       'Type=Application',
       'Version=1.0',
-      'Name=Pulse',
-      'Comment=Pulse Download Manager',
+      'Name=Baran Download Manager',
+      'Comment=Baran Download Manager',
       `Exec=${exec}`,
       'Terminal=false',
       'X-GNOME-Autostart-enabled=true',

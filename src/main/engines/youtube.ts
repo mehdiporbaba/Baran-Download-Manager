@@ -5,6 +5,7 @@ import { app } from 'electron'
 import type { Settings, YoutubeFormatOption, YoutubeProbe, YoutubeMeta } from '@shared/types'
 import type { EngineHost, TaskHandle } from './http'
 import { ensureDir, sanitizeFileName } from '../util'
+import { mediaProxy, networkFetch as fetch } from '../network'
 
 export interface BinInfo {
   cmd: string
@@ -43,7 +44,7 @@ function friendlyYoutubeError(raw: string): string {
   return text
 }
 
-function runCapture(
+export function runCapture(
   cmd: string,
   args: string[],
   timeout = 15_000
@@ -67,10 +68,11 @@ function runCapture(
     }, timeout)
     child.stdout?.on('data', (d) => {
       stdout += d.toString()
-      if (stdout.length > 8_000_000) stdout = stdout.slice(-1_000_000)
+      if (stdout.length > 8_000_000) { stderr = 'Extractor response exceeded the 8 MB limit'; child.kill() }
     })
     child.stderr?.on('data', (d) => {
       stderr += d.toString()
+      if (stderr.length > 20_000) stderr = stderr.slice(-20_000)
     })
     child.on('error', (err) => {
       clearTimeout(timer)
@@ -270,6 +272,7 @@ export class YoutubeEngine {
       '--retries',
       '3',
       ...this.cookieArgs(),
+      '--proxy', await mediaProxy(url),
       ...(await this.jsRuntimeArgs()),
       url
     ]
@@ -492,6 +495,7 @@ export class YoutubeEngine {
       ...this.cookieArgs()
     ]
     args.push(...(await this.jsRuntimeArgs()))
+    args.push('--proxy', await mediaProxy(task.url))
     if (process.platform === 'win32') args.push('--windows-filenames')
     if (ffmpeg) args.push('--ffmpeg-location', ffmpeg)
     if (settings.globalSpeedLimit > 0) {

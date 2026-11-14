@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, clipboard, nativeTheme, shell, Tray, nativeImage } from 'electron'
+import { app, BrowserWindow, Menu, clipboard, nativeTheme, shell, Tray, nativeImage, screen } from 'electron'
 import { join } from 'node:path'
 import { app as electronApp } from 'electron'
 import { Store } from './store'
@@ -6,6 +6,11 @@ import { DownloadManager } from './manager'
 import { registerIpc } from './ipc'
 import { applyLaunchAtStartup } from './autostart'
 import { IP } from '@shared/ipc'
+import { LinkGrabber } from './link-grabber'
+import { registerLinkIpc } from './link-ipc'
+import { startBrowserBridge } from './browser-bridge'
+import { setNetworkSettingsProvider } from './network'
+import { initialWindow } from '../shared/window-size'
 import type { MainEvent } from '@shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -14,6 +19,8 @@ let store: Store
 let clipboardTimer: NodeJS.Timeout | null = null
 let lastClipboard = ''
 let tray: Tray | null = null
+let stopLinkServices: (() => void) | undefined
+let browserBridge: Awaited<ReturnType<typeof startBrowserBridge>>
 
 const gotLock = electronApp.requestSingleInstanceLock()
 if (!gotLock) {
@@ -27,14 +34,11 @@ function send(event: MainEvent): void {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1420,
-    height: 900,
-    minWidth: 1040,
-    minHeight: 640,
+    ...initialWindow(screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea),
     show: false,
     frame: false,
     backgroundColor: store.settings.theme === 'dark' ? '#0a0c12' : '#f4f6fb',
-    title: 'Pulse',
+    title: 'Baran Download Manager',
     icon: electronApp.isPackaged
       ? join(process.resourcesPath, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
       : join(__dirname, '../../resources', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
@@ -53,9 +57,11 @@ function createWindow(): void {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
   })
+  mainWindow.webContents.once('did-finish-load', () => mainWindow?.show())
 
   mainWindow.on('maximize', () => send({ type: 'window:state', maximized: true }))
   mainWindow.on('unmaximize', () => send({ type: 'window:state', maximized: false }))
+  mainWindow.on('minimize', () => { if (store.settings.minimizeToTray) mainWindow?.hide() })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) void shell.openExternal(url)
@@ -92,10 +98,11 @@ function createWindow(): void {
   }
 
   mainWindow.on('close', (event) => {
-    if (!quitting) {
+    if (!quitting && store.settings.minimizeToTray) {
       event.preventDefault()
       mainWindow?.hide()
     }
+    if (!store.settings.minimizeToTray && !quitting) electronApp.quit()
   })
 
   mainWindow.on('closed', () => {
@@ -125,7 +132,7 @@ function createTray(): void {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show Pulse',
+      label: 'Show Baran Download Manager',
       click: () => {
         if (mainWindow) {
           if (mainWindow.isMinimized()) mainWindow.restore()
@@ -144,12 +151,13 @@ function createTray(): void {
     }
   ])
 
-  tray.setToolTip('Pulse Download Manager')
+  tray.setToolTip('Baran Download Manager')
   tray.setContextMenu(contextMenu)
   tray.on('click', () => {
     if (mainWindow?.isVisible()) {
       mainWindow.hide()
     } else {
+      if (mainWindow?.isMinimized()) mainWindow.restore()
       mainWindow?.show()
       mainWindow?.focus()
     }
@@ -158,12 +166,14 @@ function createTray(): void {
 
 async function bootstrap(): Promise<void> {
   await electronApp.whenReady()
-  electronApp.setAppUserModelId('com.pulse.downloadmanager')
-  electronApp.setName('Pulse')
+  electronApp.setAppUserModelId('io.github.mehdiporbaba.baran')
+  electronApp.setName('Baran Download Manager')
+  electronApp.setPath('userData', join(electronApp.getPath('appData'), 'Baran'))
   Menu.setApplicationMenu(null)
 
   store = new Store()
   await store.load()
+  setNetworkSettingsProvider(() => store.settings)
   nativeTheme.themeSource = store.settings.theme
   void applyLaunchAtStartup(store.settings.launchAtStartup)
 
@@ -171,7 +181,20 @@ async function bootstrap(): Promise<void> {
   await manager.init()
 
   registerIpc(manager, () => mainWindow)
+  let inboxTimer: NodeJS.Timeout | undefined
+  const inbox = new LinkGrabber(() => {
+    if (inboxTimer) return
+    inboxTimer = setTimeout(() => { inboxTimer = undefined; send({ type: 'links:changed' }) }, 80)
+  })
+  stopLinkServices = registerLinkIpc(manager, inbox)
   createWindow()
+  try {
+    browserBridge = await startBrowserBridge(inbox, () => {
+      mainWindow?.show()
+      mainWindow?.focus()
+      send({ type: 'navigate', view: 'links' })
+    })
+  } catch (error) { manager.toast('error', `Browser integration unavailable: ${(error as Error).message}`) }
   createTray()
   startClipboardWatcher()
 
@@ -202,6 +225,8 @@ electronApp.on('before-quit', (event) => {
   event.preventDefault()
   quitting = true
   if (clipboardTimer) clearInterval(clipboardTimer)
+  stopLinkServices?.()
+  browserBridge?.close()
   void (async () => {
     try {
       await manager?.shutdown()

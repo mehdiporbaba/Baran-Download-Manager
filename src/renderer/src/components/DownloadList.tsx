@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   ArrowDownUp,
   CircleCheck,
+  CalendarClock,
   Copy,
   ExternalLink,
   FolderOpen,
@@ -18,11 +19,14 @@ import { useApp, type SortId, type ViewId } from '../state'
 import { cn, formatBytes, formatEta, formatSpeed, hostOf, percentOf, isActive } from '../lib/format'
 import { EmptyArt, KindIcon, ProgressBar, StatusPill } from './primitives'
 import { Modal } from './Modal'
+import { ScheduleField, scheduledTime, localDateTime } from './ScheduleField'
 
 function matchesView(task: DownloadTask, view: ViewId): boolean {
   switch (view) {
     case 'all':
       return true
+    case 'scheduled':
+      return task.status === 'queued' && Boolean(task.startAt && task.startAt > Date.now())
     case 'active':
       return isActive(task) || task.status === 'queued'
     case 'completed':
@@ -47,6 +51,7 @@ export function DownloadList(): React.JSX.Element {
     useApp()
   const [removeTarget, setRemoveTarget] = useState<DownloadTask | null>(null)
   const [deleteFile, setDeleteFile] = useState(false)
+  const [scheduleTarget, setScheduleTarget] = useState<DownloadTask | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -161,6 +166,7 @@ export function DownloadList(): React.JSX.Element {
                 task={task}
                 selected={selectedId === task.id}
                 onSelect={() => setSelectedId(task.id)}
+                onSchedule={() => setScheduleTarget(task)}
                 onRemove={() => {
                   setRemoveTarget(task)
                   setDeleteFile(false)
@@ -177,6 +183,7 @@ export function DownloadList(): React.JSX.Element {
         ) : null}
       </div>
 
+      {scheduleTarget && <ScheduleDialog key={scheduleTarget.id} task={scheduleTarget} onClose={() => setScheduleTarget(null)} />}
       <Modal
         open={!!removeTarget}
         onClose={() => setRemoveTarget(null)}
@@ -228,17 +235,32 @@ export function DownloadList(): React.JSX.Element {
   )
 }
 
+function ScheduleDialog({ task, onClose }: { task: DownloadTask; onClose: () => void }): React.JSX.Element {
+  const { lang, pushToast } = useApp()
+  const [value, setValue] = useState(localDateTime(task.startAt))
+  const [busy, setBusy] = useState(false)
+  const save = async (now: boolean): Promise<void> => {
+    setBusy(true)
+    try { await window.pulse.scheduleTask(task.id, now ? undefined : scheduledTime(value)); onClose() }
+    catch (error) { pushToast('error', (error as Error).message) }
+    finally { setBusy(false) }
+  }
+  return <Modal open onClose={onClose} width={480}><div className="space-y-4 p-5"><h2 className="font-semibold">{lang === 'fa' ? 'زمان‌بندی دانلود' : 'Schedule download'}</h2><p className="truncate text-[12px] text-muted">{task.name}</p><ScheduleField value={value} onChange={setValue} fa={lang === 'fa'} /><div className="flex gap-2"><button className="btn btn-primary" disabled={busy || !value} onClick={() => void save(false)}>{lang === 'fa' ? 'ذخیره زمان' : 'Save time'}</button><button className="btn btn-ghost" disabled={busy} onClick={() => void save(true)}>{lang === 'fa' ? 'شروع اکنون' : 'Start now'}</button></div></div></Modal>
+}
+
 function TaskRow({
   task,
   selected,
   onSelect,
   onRemove,
+  onSchedule,
   onToast
 }: {
   task: DownloadTask
   selected: boolean
   onSelect: () => void
   onRemove: () => void
+  onSchedule: () => void
   onToast: (level: 'info' | 'success' | 'error', message: string) => void
 }): React.JSX.Element {
   const { t, lang } = useApp()
@@ -261,6 +283,7 @@ function TaskRow({
     if (task.resumable) metaParts.push(`${task.connections || 0} ${t.row.connections}`)
   }
   if (task.status === 'error' && task.error) metaParts.push(task.error)
+  if (task.startAt && task.status === 'queued') metaParts.push(`${lang === 'fa' ? 'شروع' : 'Starts'}: ${new Date(task.startAt).toLocaleString(lang)}`)
 
   const primaryAction = (): void => {
     if (completed) {
@@ -363,6 +386,7 @@ function TaskRow({
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition group-hover:opacity-100">
+          {!completed && !['connecting', 'downloading', 'verifying'].includes(task.status) && <button type="button" className="icon-btn" title={lang === 'fa' ? 'زمان‌بندی دانلود' : 'Schedule download'} onClick={event => { event.stopPropagation(); onSchedule() }}><CalendarClock size={14} /></button>}
           <button
             type="button"
             className="icon-btn"

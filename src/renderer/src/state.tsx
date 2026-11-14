@@ -19,6 +19,10 @@ import type { Lang } from './i18n'
 import { dictionaries, type Dict } from './i18n'
 
 export type ViewId =
+  | 'home'
+  | 'scheduled'
+  | 'instagram'
+  | 'links'
   | 'all'
   | 'active'
   | 'completed'
@@ -92,8 +96,12 @@ const fallbackSettings: Settings = {
   maxConcurrent: 3,
   connections: 8,
   globalSpeedLimit: 0,
+  torrentDownloadLimit: 0,
+  torrentUploadLimit: 0,
+  proxyMode: 'direct',
+  minimizeToTray: true,
   language: 'en',
-  theme: 'light',
+  theme: 'dark',
   clipboardWatch: true,
   notifyOnComplete: true,
   ytDlpPath: '',
@@ -118,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
   const [settings, setSettings] = useState<Settings>(fallbackSettings)
   const [stats, setStats] = useState<GlobalStats | null>(null)
   const [system, setSystem] = useState<AppSnapshot['system'] | null>(null)
-  const [view, setView] = useState<ViewId>('all')
+  const [view, setView] = useState<ViewId>('home')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortId>('newest')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -211,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
           openAdd({ url: event.url })
           break
         case 'navigate':
+          if (event.view === 'links') setView('links')
           break
         case 'window:state':
           setMaximized(event.maximized)

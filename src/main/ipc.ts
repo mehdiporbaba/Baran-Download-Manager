@@ -51,6 +51,7 @@ export function registerIpc(manager: DownloadManager, getWindow: () => BrowserWi
   })
 
   handle(IP.probe, (url: string, headers?: Record<string, string>) => manager.probe(url, headers))
+  handle(IP.scheduleTask, (id: string, startAt?: number) => manager.scheduleTask(id, startAt))
 
   handle(IP.probeYoutube, (url: string) => manager.youtube.probe(url))
 

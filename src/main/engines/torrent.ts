@@ -60,6 +60,7 @@ export class TorrentEngine {
           console.warn('[torrent] warning:', err?.message)
         })
         this.client = client
+        this.setLimit(settings.torrentDownloadLimit, settings.torrentUploadLimit)
         this.state = 'ready'
         this.startPolling()
         return client
@@ -194,9 +195,9 @@ export class TorrentEngine {
         announce: []
       }
       if (input.sequential ?? true) addOptions.sequential = true
-      if (settings.globalSpeedLimit > 0) {
+      if (settings.torrentDownloadLimit > 0) {
         try {
-          client.throttleDownload(settings.globalSpeedLimit)
+          client.throttleDownload(settings.torrentDownloadLimit)
         } catch {
           /* older versions */
         }
@@ -384,11 +385,11 @@ export class TorrentEngine {
     }
   }
 
-  setLimit(limit: number): void {
+  setLimit(download: number, upload: number): void {
     if (!this.client) return
     try {
-      this.client.throttleDownload(limit)
-      this.client.throttleUpload(0)
+      this.client.throttleDownload(download > 0 ? download : -1)
+      this.client.throttleUpload(upload > 0 ? upload : -1)
     } catch {
       /* ignore */
     }

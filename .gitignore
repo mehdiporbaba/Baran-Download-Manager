@@ -1,4 +1,8 @@
 node_modules/
+.tools/
+browser-extension/native-host/*.exe
+browser-extension/native-host/com.baran.downloadmanager.*.json
+coverage/
 out/
 dist/
 *.tsbuildinfo

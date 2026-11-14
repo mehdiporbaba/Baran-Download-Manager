@@ -1,4 +1,5 @@
 import { promises as fs, existsSync } from 'node:fs'
+import { networkFetch as fetch } from '../network'
 import type { FileHandle } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { DownloadTask, Settings, SegmentState } from '@shared/types'

@@ -28,6 +28,8 @@ import { HttpEngine, type EngineHost, type TaskHandle } from './engines/http'
 import { YoutubeEngine } from './engines/youtube'
 import { TorrentEngine } from './engines/torrent'
 import { applyLaunchAtStartup } from './autostart'
+import { isDue, validateStartAt } from '../shared/scheduling'
+import { proxyConfiguration } from '../shared/network-policy'
 
 interface ManagerDeps {
   store: Store
@@ -96,9 +98,7 @@ export class DownloadManager implements EngineHost {
     this.ticker = setInterval(() => this.tick(), 1000)
     void this.refreshTools()
     void this.torrent.init().catch(() => undefined)
-    if (this.store.settings.globalSpeedLimit > 0) {
-      this.torrent.setLimit(this.store.settings.globalSpeedLimit)
-    }
+    this.torrent.setLimit(this.store.settings.torrentDownloadLimit, this.store.settings.torrentUploadLimit)
     setTimeout(() => this.schedule(), 700)
   }
 
@@ -171,9 +171,10 @@ export class DownloadManager implements EngineHost {
   }
 
   async addDownload(input: AddDownloadInput): Promise<DownloadTask> {
+    const startAt = validateStartAt(input.startAt)
     const rawUrl = (input.url || '').trim()
     if (!rawUrl) throw new Error('URL is empty')
-    if (/^magnet:/i.test(rawUrl)) return this.addTorrent({ uri: rawUrl, dir: input.dir })
+    if (/^magnet:/i.test(rawUrl)) return this.addTorrent({ uri: rawUrl, dir: input.dir, startAt })
     let url: string
     try {
       url = new URL(rawUrl).toString()
@@ -202,6 +203,7 @@ export class DownloadManager implements EngineHost {
     )
 
     const task: DownloadTask = {
+      startAt,
       id: randomUUID(),
       kind,
       url,
@@ -252,6 +254,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async addTorrent(input: AddTorrentInput): Promise<DownloadTask> {
+    const startAt = validateStartAt(input.startAt)
     const dir = input.dir?.trim() || this.store.settings.downloadDir
     await ensureDir(dir)
     let name = input.name?.replace(/\.torrent$/i, '') || 'Torrent'
@@ -264,6 +267,7 @@ export class DownloadManager implements EngineHost {
     if (/^https?:/i.test(uri) && /\.torrent($|\?)/i.test(uri)) name = guessNameFromUrl(uri).replace(/\.torrent$/i, '')
 
     const task: DownloadTask = {
+      startAt,
       id: randomUUID(),
       kind: 'torrent',
       url: uri || `file:${input.name || 'torrent'}`,
@@ -292,7 +296,16 @@ export class DownloadManager implements EngineHost {
         seeding: false
       }
     }
-    // Stash the base64 payload / picked path on a transient field consumed by startTask.
+    // Persist imported torrent bytes before a scheduled job can outlive this process.
+    if (input.data) {
+      if (input.data.length > 48 * 1024 * 1024) throw new Error('Torrent file exceeds 32 MB')
+      const sourceDirectory = join(app.getPath('userData'), 'torrent-inputs')
+      await ensureDir(sourceDirectory)
+      const sourcePath = join(sourceDirectory, `${task.id}.torrent`)
+      await fs.writeFile(sourcePath, Buffer.from(input.data, 'base64'))
+      task.torrent!.torrentFile = sourcePath
+    }
+    // Stash the payload for the first engine start; persisted path supports restarts.
     this.torrentPayloads.set(task.id, {
       data: input.data ? Buffer.from(input.data, 'base64') : undefined,
       file: input.fileIndices
@@ -322,7 +335,7 @@ export class DownloadManager implements EngineHost {
     let slots = limit - active
     if (slots <= 0) return
     const queued = [...this.tasks.values()]
-      .filter((t) => t.status === 'queued')
+      .filter((t) => isDue(t))
       .sort((a, b) => a.order - b.order)
     for (const task of queued) {
       if (slots <= 0) break
@@ -534,11 +547,15 @@ export class DownloadManager implements EngineHost {
 
   updateSettings(patch: Partial<Settings>): Settings {
     const prev = this.store.settings
+    for (const key of ['globalSpeedLimit', 'torrentDownloadLimit', 'torrentUploadLimit'] as const) {
+      if (patch[key] !== undefined && (!Number.isFinite(patch[key]) || patch[key]! < 0)) throw new Error('Speed limits must be positive numbers or zero for unlimited')
+    }
+    proxyConfiguration({ ...prev, ...patch })
     const settings = this.store.patchSettings(patch)
     if (patch.globalSpeedLimit !== undefined) {
       this.throttle.setLimit(settings.globalSpeedLimit)
-      this.torrent.setLimit(settings.globalSpeedLimit)
     }
+    if (patch.torrentDownloadLimit !== undefined || patch.torrentUploadLimit !== undefined) this.torrent.setLimit(settings.torrentDownloadLimit, settings.torrentUploadLimit)
     if (patch.maxConcurrent !== undefined) this.schedule()
     if (patch.downloadDir && patch.downloadDir !== prev.downloadDir) {
       void ensureDir(settings.downloadDir)
@@ -561,8 +578,20 @@ export class DownloadManager implements EngineHost {
     this.updateSettings({ globalSpeedLimit: Math.max(0, bytes) })
   }
 
+  async scheduleTask(id: string, startAt?: number): Promise<void> {
+    const task = this.tasks.get(id)
+    if (!task) throw new Error('Download no longer exists')
+    if (task.status === 'completed') throw new Error('This download is already complete')
+    if (ACTIVE.includes(task.status)) throw new Error('Pause the download before changing its start time')
+    const time = validateStartAt(startAt)
+    this.resumeFlags.add(id)
+    this.patch(task, { startAt: time, status: 'queued', error: undefined })
+    this.schedule()
+  }
+
   private tick(): void {
     const now = Date.now()
+    this.schedule()
     for (const task of this.tasks.values()) {
       const last = this.lastDownloaded.get(task.id) ?? task.downloaded
       const isActive = task.status === 'downloading'

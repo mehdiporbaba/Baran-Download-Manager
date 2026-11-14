@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   ChevronRight,
   Clock,
@@ -30,13 +31,14 @@ import {
   percentOf
 } from '../lib/format'
 import { KindIcon, ProgressBar, Ring, StatusPill } from './primitives'
+import { ScheduleField, scheduledTime, localDateTime } from './ScheduleField'
 
 export function DetailPanel(): React.JSX.Element {
   const { t, selected, lang, setSelectedId, pushToast } = useApp()
 
   if (!selected) {
     return (
-      <aside className="hidden w-[330px] shrink-0 flex-col border-s border-line/70 bg-panel/35 lg:flex">
+      <aside className="hidden w-[280px] shrink-0 flex-col border-s border-line/70 bg-panel/35 2xl:flex">
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
           <div className="relative grid h-16 w-16 place-items-center rounded-2xl border border-line bg-elev/60">
             <Info size={22} className="text-faint" />
@@ -68,7 +70,7 @@ export function DetailPanel(): React.JSX.Element {
   }
 
   return (
-    <aside className="hidden w-[330px] shrink-0 flex-col border-s border-line/70 bg-panel/35 lg:flex">
+    <aside className="hidden w-[280px] shrink-0 flex-col border-s border-line/70 bg-panel/35 xl:flex">
       <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3.5">
         <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-faint">
           {t.detail.title}
@@ -80,6 +82,7 @@ export function DetailPanel(): React.JSX.Element {
 
       <div className="scroll-y flex-1 px-4 pb-4">
         <div className="anim-fade">
+          <TaskSchedule task={task} />
           <div className="flex items-start gap-3">
             {thumb ? (
               <div className="relative h-[62px] w-[104px] shrink-0 overflow-hidden rounded-xl border border-line bg-elev">
@@ -326,6 +329,21 @@ export function DetailPanel(): React.JSX.Element {
       </div>
     </aside>
   )
+}
+
+function TaskSchedule({ task }: { task: DownloadTask }): React.JSX.Element | null {
+  const { lang, pushToast } = useApp()
+  const [value, setValue] = useState(localDateTime(task.startAt))
+  useEffect(() => setValue(localDateTime(task.startAt)), [task.id, task.startAt])
+  if (['completed', 'connecting', 'downloading', 'verifying'].includes(task.status)) return null
+  const save = async (now: boolean): Promise<void> => {
+    try { await window.pulse.scheduleTask(task.id, now ? undefined : scheduledTime(value)) }
+    catch (error) { pushToast('error', (error as Error).message) }
+  }
+  return <div className="mb-4 space-y-2 rounded-xl border border-brand/20 p-3">
+    <ScheduleField value={value} onChange={setValue} fa={lang === 'fa'} />
+    <div className="flex gap-2"><button className="btn btn-primary text-[10px]" disabled={!value} onClick={() => void save(false)}>{lang === 'fa' ? 'زمان‌بندی' : 'Schedule'}</button><button className="btn btn-ghost text-[10px]" onClick={() => void save(true)}>{lang === 'fa' ? 'شروع اکنون' : 'Start now'}</button></div>
+  </div>
 }
 
 function isRunning(task: DownloadTask): boolean {

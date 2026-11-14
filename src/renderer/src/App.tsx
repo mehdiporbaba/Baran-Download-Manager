@@ -11,6 +11,9 @@ import { StatusBar } from './components/StatusBar'
 import { AddDownloadModal } from './components/AddDownloadModal'
 import { SettingsModal } from './components/SettingsModal'
 import { GithubBrowser } from './components/GithubBrowser'
+import { LinkGrabber } from './components/LinkGrabber'
+import { Home } from './components/Home'
+import { InstagramDownloader } from './components/InstagramDownloader'
 import { Toasts } from './components/Toasts'
 import { Logo } from './components/primitives'
 
@@ -99,7 +102,7 @@ export function App(): React.JSX.Element {
         <div className="h-1 w-32 overflow-hidden rounded-full bg-elev2">
           <div className="indeterminate h-full rounded-full" />
         </div>
-        <div className="text-[10px] uppercase tracking-[0.3em] text-faint">Pulse</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-faint">Baran</div>
       </div>
     )
   }
@@ -111,7 +114,8 @@ export function App(): React.JSX.Element {
         <Sidebar />
         <main className="flex min-w-0 flex-1 flex-col">
           <TopBar />
-          {view === 'github' ? (
+          <div className={view === 'links' ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}><LinkGrabber /></div>
+          {view === 'home' ? <Home /> : view === 'instagram' ? <InstagramDownloader /> : view === 'links' ? null : view === 'github' ? (
             <GithubBrowser />
           ) : (
             <>

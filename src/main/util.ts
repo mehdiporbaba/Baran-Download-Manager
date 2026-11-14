@@ -215,9 +215,11 @@ export class GlobalThrottle {
       this.budget = Math.min(this.limit, this.budget + ((now - this.last) / 1000) * this.limit)
       this.last = now
       this.budget -= bytes
-      if (this.budget < 0) {
-        const wait = Math.min(2000, (-this.budget / this.limit) * 1000)
-        await sleep(wait, signal)
+      while (this.limit && this.budget < 0) {
+        const before = Date.now()
+        await sleep(Math.min(200, Math.ceil((-this.budget / this.limit) * 1000)), signal)
+        this.budget += ((Date.now() - before) / 1000) * this.limit
+        this.last = Date.now()
       }
     })
     this.chain = run.catch(() => undefined)

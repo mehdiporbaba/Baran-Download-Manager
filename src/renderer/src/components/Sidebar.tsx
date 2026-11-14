@@ -13,6 +13,10 @@ import {
   HardDrive,
   Image as ImageIcon,
   LayoutGrid,
+  House,
+  CalendarClock,
+  Camera as Instagram,
+  Link2,
   Magnet,
   Music,
   PauseCircle,
@@ -65,9 +69,11 @@ export function Sidebar(): React.JSX.Element {
   const free = system?.freeDisk || 0
 
   return (
-    <aside className="flex w-[236px] shrink-0 flex-col border-e border-line/70 bg-panel/55">
+    <aside className="flex w-[192px] shrink-0 flex-col border-e border-line/70 bg-panel/55 xl:w-[212px]">
       <nav className="scroll-y flex-1 px-2.5 py-3.5">
         <Section title={t.nav.library}>
+          <Item icon={<House size={16} />} label={settings.language === 'fa' ? 'خانه باران' : 'Baran home'} count={0} active={view === 'home'} onClick={() => setView('home')} />
+          <Item icon={<CalendarClock size={16} />} label={settings.language === 'fa' ? 'زمان‌بندی دانلود' : 'Scheduled'} count={tasks.filter(task => task.status === 'queued' && Boolean(task.startAt && task.startAt > Date.now())).length} active={view === 'scheduled'} onClick={() => setView('scheduled')} />
           <Item icon={<LayoutGrid size={16} />} label={t.nav.all} count={counts.all} active={view === 'all'} onClick={() => setView('all')} />
           <Item
             icon={<Activity size={16} />}
@@ -83,6 +89,8 @@ export function Sidebar(): React.JSX.Element {
         </Section>
 
         <Section title={t.nav.sources}>
+          <Item icon={<Instagram size={16} />} label={settings.language === 'fa' ? 'اینستاگرام' : 'Instagram'} count={0} active={view === 'instagram'} onClick={() => setView('instagram')} />
+          <Item icon={<Link2 size={16} />} label={settings.language === 'fa' ? 'لینک‌گیر و اسکنر' : 'Link Grabber'} count={0} active={view === 'links'} onClick={() => setView('links')} />
           <Item icon={<Youtube size={16} />} label={t.nav.youtube} count={counts.youtube} active={view === 'youtube'} onClick={() => setView('youtube')} />
           <Item icon={<Magnet size={16} />} label={t.nav.torrents} count={counts.torrents} active={view === 'torrents'} onClick={() => setView('torrents')} />
           <Item icon={<Globe size={16} />} label={t.nav.direct} count={counts.direct} active={view === 'direct'} onClick={() => setView('direct')} />

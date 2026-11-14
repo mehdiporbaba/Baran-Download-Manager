@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Baran Download Manager — Browser Extension",
+  "version": "1.0.0",
+  "description": "Send a link or collect page links into the Baran inbox for review.",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "nativeMessaging"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Baran Download Manager"
+  },
+  "icons": {
+    "128": "icon128.png"
+  }
+}

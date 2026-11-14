@@ -32,6 +32,10 @@ export interface Settings {
   maxConcurrent: number
   connections: number
   globalSpeedLimit: number
+  torrentDownloadLimit: number
+  torrentUploadLimit: number
+  proxyMode: 'direct' | 'system' | 'manual'
+  minimizeToTray: boolean
   language: Language
   theme: Theme
   clipboardWatch: boolean
@@ -137,6 +141,7 @@ export interface TorrentMeta {
 }
 
 export interface DownloadTask {
+  startAt?: number
   id: string
   kind: TaskKind
   url: string
@@ -196,6 +201,7 @@ export interface ProbeResult {
 }
 
 export interface AddDownloadInput {
+  startAt?: number
   url: string
   kind?: 'auto' | 'http' | 'youtube'
   fileName?: string
@@ -278,6 +284,7 @@ export interface GithubSearchResult {
 }
 
 export interface AddTorrentInput {
+  startAt?: number
   /** magnet uri, http(s) .torrent url, or an absolute path to a .torrent file */
   uri?: string
   /** base64 encoded contents of a dropped .torrent file */
@@ -306,6 +313,7 @@ export interface AppSnapshot {
 }
 
 export type MainEvent =
+  | { type: 'links:changed' }
   | { type: 'task:update'; task: DownloadTask }
   | { type: 'task:remove'; id: string }
   | { type: 'task:add'; task: DownloadTask }
@@ -318,6 +326,16 @@ export type MainEvent =
   | { type: 'settings'; settings: Settings }
 
 export interface PulseAPI {
+  instagramCollect(url: string): Promise<number>
+  installGallery(): Promise<void>
+  linksList(): Promise<CollectedLink[]>
+  linksImport(text: string): Promise<number>
+  linksRemove(ids: string[]): Promise<void>
+  linksProbe(ids: string[]): Promise<void>
+  linksDownload(ids: string[], dir: string, startAt?: number): Promise<{ added: number; errors: string[] }>
+  scheduleTask(id: string, startAt?: number): Promise<void>
+  scanStart(input: ScanInput): Promise<ScanSummary>
+  scanCancel(): Promise<void>
   snapshot(): Promise<AppSnapshot>
   probe(url: string, headers?: Record<string, string>): Promise<ProbeResult>
   probeYoutube(url: string): Promise<YoutubeProbe>
@@ -352,3 +370,19 @@ declare global {
     pulse: PulseAPI
   }
 }
+
+export interface CollectedLink {
+  headers?: Record<string, string>
+  id: string
+  url: string
+  fileName: string
+  source?: string
+  size?: number
+  contentType?: string
+  resumable?: boolean
+  status: 'new' | 'checking' | 'ready' | 'error'
+  error?: string
+}
+
+export interface ScanInput { url: string; depth: number; maxPages: number }
+export interface ScanSummary { pages: number; found: number; canceled: boolean; limited: boolean; errors: string[] }

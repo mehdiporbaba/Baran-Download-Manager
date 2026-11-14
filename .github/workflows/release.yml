@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -15,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -26,7 +27,9 @@ jobs:
 
       - name: Build app
         run: |
+          npm test
           npm run typecheck
+          npm run test:network
           npm run build
 
       - name: Package for Windows
@@ -35,18 +38,23 @@ jobs:
       - name: Verify Windows installer
         shell: pwsh
         run: |
-          $setup = Get-ChildItem dist -Filter 'Pulse-Setup-*.exe' -ErrorAction SilentlyContinue
+          $setup = Get-ChildItem dist -Filter 'Baran-Download-Manager-Setup-*.exe' -ErrorAction SilentlyContinue
           if (-not $setup) { throw 'NSIS installer was not generated' }
           $setup | Select-Object Name, Length | Format-Table
+
+      - name: Package browser extension
+        shell: pwsh
+        run: ./scripts/package-extension.ps1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pulse-win
+          name: baran-win
           path: |
-            dist/Pulse-Setup-*.exe
-            dist/Pulse-Setup-*.exe.blockmap
-            dist/Pulse-Portable-*.exe
+            dist/Baran-Download-Manager-Setup-*.exe
+            dist/Baran-Download-Manager-Setup-*.exe.blockmap
+            dist/Baran-Download-Manager-Portable-*.exe
+            dist/Baran-Browser-Extension-*.zip
           if-no-files-found: error
 
   build-linux:
@@ -58,7 +66,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -78,10 +86,10 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pulse-linux
+          name: baran-linux
           path: |
-            dist/Pulse-*.AppImage
-            dist/Pulse-*.deb
+            dist/Baran-Download-Manager-*.AppImage
+            dist/Baran-Download-Manager-*.deb
           if-no-files-found: error
 
   release:
@@ -94,13 +102,13 @@ jobs:
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pulse-win
+          name: baran-win
           path: artifacts/win
 
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pulse-linux
+          name: baran-linux
           path: artifacts/linux
 
       - name: Create Release

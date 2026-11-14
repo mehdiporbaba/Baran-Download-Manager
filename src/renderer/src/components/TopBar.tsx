@@ -38,6 +38,10 @@ export function TopBar(): React.JSX.Element {
   }, [limitOpen])
 
   const titles: Record<ViewId, string> = {
+    home: lang === 'fa' ? 'خانه باران' : 'Welcome to Baran',
+    scheduled: lang === 'fa' ? 'دانلودهای زمان‌بندی‌شده' : 'Scheduled downloads',
+    instagram: lang === 'fa' ? 'رسانه‌های اینستاگرام' : 'Instagram media',
+    links: lang === 'fa' ? 'لینک‌گیر و اسکن پوشه' : 'Link Grabber & Scanner',
     all: t.nav.all,
     active: t.nav.active,
     completed: t.nav.completed,
@@ -62,17 +66,17 @@ export function TopBar(): React.JSX.Element {
     `${Math.round(currentLimit / (1024 * 1024))} MB/s`
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-line/60 px-5 py-3">
-      <div className="min-w-0">
+    <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-line/60 px-4 py-3">
+      <div className="min-w-0 flex-1">
         <h1 className="truncate text-[17px] font-bold tracking-tight">{titles[view]}</h1>
         <p className="truncate text-[10.5px] text-muted">
           {view === 'github' ? t.github.subtitle : `${tasks.length} ${t.stats.tasks}`}
         </p>
       </div>
 
-      <div className="ms-auto flex items-center gap-2">
-        {view !== 'github' ? (
-          <div className="relative hidden md:block">
+      <div className="ms-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+        {view !== 'github' && view !== 'home' ? (
+          <div className="relative hidden 2xl:block">
             <Search
               size={14}
               className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint"
@@ -174,6 +178,7 @@ export function TopBar(): React.JSX.Element {
           </kbd>
         </button>
       </div>
+      {view !== 'home' && view !== 'github' && <div className="relative w-full 2xl:hidden"><Search size={14} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint" /><input aria-label={t.toolbar.search} className="field h-9 w-full ps-9 pe-3" value={query} onChange={event => setQuery(event.target.value)} placeholder={t.toolbar.search} /></div>}
     </div>
   )
 }

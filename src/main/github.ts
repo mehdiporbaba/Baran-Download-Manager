@@ -1,3 +1,4 @@
+import { networkFetch as fetch } from './network'
 import type {
   GithubAsset,
   GithubRelease,

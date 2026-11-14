@@ -20,7 +20,7 @@ export function Logo({ size = 30, glow = true }: { size?: number; glow?: boolean
       style={{
         width: size,
         height: size,
-        background: 'linear-gradient(145deg, var(--c-brand), #7c5cf5 55%, var(--c-brand2))',
+        background: 'linear-gradient(145deg, var(--c-brand), #0284c7 55%, var(--c-brand2))',
         boxShadow: glow ? '0 10px 26px -12px var(--c-brand)' : 'none'
       }}
     >
@@ -32,7 +32,7 @@ export function Logo({ size = 30, glow = true }: { size?: number; glow?: boolean
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
-          d="M4 18h4.4l2.3-7.2 4.2 14 3-9.4 2 4.6H28"
+          d="M8 18a6 6 0 0 1-1-11 8 8 0 0 1 15 1 5 5 0 0 1 2 10M16 13v14m-5-5 5 5 5-5"
           stroke="white"
           strokeWidth="2.5"
           strokeLinecap="round"
@@ -52,7 +52,7 @@ export function KindIcon({ task, size = 42 }: { task: DownloadTask; size?: numbe
   } as CSSProperties
 
   let Icon: typeof Globe = Globe
-  let gradient = 'linear-gradient(145deg, #6366f1, #8b5cf6)'
+  let gradient = 'linear-gradient(145deg, #2563eb, #38bdf8)'
   let isImage = false
 
   if (task.kind === 'youtube') {
@@ -65,7 +65,7 @@ export function KindIcon({ task, size = 42 }: { task: DownloadTask; size?: numbe
     switch (task.category) {
       case 'video':
         Icon = Film
-        gradient = 'linear-gradient(145deg, #8b5cf6, #6366f1)'
+        gradient = 'linear-gradient(145deg, #38bdf8, #2563eb)'
         break
       case 'audio':
         Icon = Music
@@ -73,7 +73,7 @@ export function KindIcon({ task, size = 42 }: { task: DownloadTask; size?: numbe
         break
       case 'image':
         Icon = ImageIcon
-        gradient = 'linear-gradient(145deg, #14b8a6, #22d3ee)'
+        gradient = 'linear-gradient(145deg, #3b82f6, #22d3ee)'
         isImage = true
         break
       case 'archive':
@@ -82,11 +82,11 @@ export function KindIcon({ task, size = 42 }: { task: DownloadTask; size?: numbe
         break
       case 'document':
         Icon = FileText
-        gradient = 'linear-gradient(145deg, #3b82f6, #6366f1)'
+        gradient = 'linear-gradient(145deg, #3b82f6, #2563eb)'
         break
       case 'app':
         Icon = AppWindow
-        gradient = 'linear-gradient(145deg, #10b981, #14b8a6)'
+        gradient = 'linear-gradient(145deg, #10b981, #3b82f6)'
         break
       default:
         Icon = Globe

@@ -1,0 +1,32 @@
+name: Validate Baran Download Manager
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Install Electron for Windows runtime checks
+        if: runner.os == 'Windows'
+        run: node node_modules/electron/install.js
+      - name: Windows runtime integration checks
+        if: runner.os == 'Windows'
+        run: npm run test:network

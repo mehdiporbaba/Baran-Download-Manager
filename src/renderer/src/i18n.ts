@@ -1,7 +1,7 @@
 export type Lang = 'fa' | 'en' | 'ja' | 'ru'
 
 const en = {
-  appName: 'Pulse',
+  appName: 'Baran',
   tagline: 'Download at the speed of thought',
   nav: {
     library: 'Library',
@@ -217,7 +217,7 @@ const en = {
   },
   settings: {
     title: 'Settings',
-    subtitle: 'Tune Pulse to your connection and taste.',
+    subtitle: 'Tune Baran to your connection and taste.',
     tabs: {
       general: 'General',
       speed: 'Bandwidth',
@@ -233,13 +233,13 @@ const en = {
       connections: 'Connections per download',
       connectionsHint: 'Range requests used in parallel for direct links.',
       autoResume: 'Resume unfinished downloads on launch',
-      autoResumeHint: 'Continue where you left off when Pulse starts.',
-      launchAtStartup: 'Launch Pulse when the system starts',
-      launchAtStartupHint: 'Automatically start Pulse after you sign in to Windows or Linux.',
+      autoResumeHint: 'Continue where you left off when Baran starts.',
+      launchAtStartup: 'Launch Baran when the system starts',
+      launchAtStartupHint: 'Automatically start Baran after you sign in to Windows or Linux.',
       launchAtStartupUnsupported: 'Auto-start is available in the installed version, not the portable build.',
       notify: 'Show a notification when a download finishes',
       clipboard: 'Watch the clipboard for links',
-      clipboardHint: 'Pulse offers to download links you copy in other apps.'
+      clipboardHint: 'Baran offers to download links you copy in other apps.'
     },
     speed: {
       title: 'Global speed limit',
@@ -345,7 +345,7 @@ const en = {
 }
 
 const fa: typeof en = {
-  appName: 'پالس',
+  appName: 'باران',
   tagline: 'با سرعت فکر دانلود کن',
   nav: {
     library: 'کتابخانه',
@@ -561,7 +561,7 @@ const fa: typeof en = {
   },
   settings: {
     title: 'تنظیمات',
-    subtitle: 'پالس را مطابق اتصال و سلیقه‌تان تنظیم کنید.',
+    subtitle: 'باران را مطابق اتصال و سلیقه‌تان تنظیم کنید.',
     tabs: {
       general: 'عمومی',
       speed: 'پهنای باند',
@@ -577,13 +577,13 @@ const fa: typeof en = {
       connections: 'اتصال برای هر دانلود',
       connectionsHint: 'درخواست‌های Range موازی برای لینک‌های مستقیم.',
       autoResume: 'ادامه دانلودهای نیمه‌کاره در اجرای بعدی',
-      autoResumeHint: 'هنگام بازشدن پالس، از همان‌جا که رها شدید ادامه دهید.',
-      launchAtStartup: 'اجرای خودکار پالس هنگام روشن‌شدن سیستم',
-      launchAtStartupHint: 'پس از ورود به ویندوز یا لینوکس، پالس به‌صورت خودکار اجرا شود.',
+      autoResumeHint: 'هنگام بازشدن باران، از همان‌جا که رها شدید ادامه دهید.',
+      launchAtStartup: 'اجرای خودکار باران هنگام روشن‌شدن سیستم',
+      launchAtStartupHint: 'پس از ورود به ویندوز یا لینوکس، باران به‌صورت خودکار اجرا شود.',
       launchAtStartupUnsupported: 'اجرای خودکار فقط در نسخهٔ نصب‌شده فعال است، نه نسخهٔ Portable.',
       notify: 'نمایش اعلان پس از پایان دانلود',
       clipboard: 'پایش حافظه موقت برای یافتن لینک',
-      clipboardHint: 'وقتی لینکی را در برنامه‌های دیگر کپی می‌کنید، پالس پیشنهاد دانلود می‌دهد.'
+      clipboardHint: 'وقتی لینکی را در برنامه‌های دیگر کپی می‌کنید، باران پیشنهاد دانلود می‌دهد.'
     },
     speed: {
       title: 'محدودیت سرعت کل',
@@ -689,7 +689,7 @@ const fa: typeof en = {
 }
 
 const ja: typeof en = {
-  appName: 'Pulse',
+  appName: 'Baran',
   tagline: '思考の速さでダウンロード',
   nav: {
     library: 'ライブラリ',
@@ -905,7 +905,7 @@ const ja: typeof en = {
   },
   settings: {
     title: '設定',
-    subtitle: 'Pulse をご自身の接続と好みに合わせて調整してください。',
+    subtitle: 'Baran をご自身の接続と好みに合わせて調整してください。',
     tabs: {
       general: '一般',
       speed: '帯域幅',
@@ -921,13 +921,13 @@ const ja: typeof en = {
       connections: 'ダウンロードあたりの接続数',
       connectionsHint: 'ダイレクトリンク向けの並列レンジリクエスト。',
       autoResume: '起動時に未完了のダウンロードを再開',
-      autoResumeHint: 'Pulse 起動時に、中断したところから続行します。',
-      launchAtStartup: 'システム起動時に Pulse を自動起動',
-      launchAtStartupHint: 'Windows または Linux へのサインイン後に Pulse を自動的に起動します。',
+      autoResumeHint: 'Baran 起動時に、中断したところから続行します。',
+      launchAtStartup: 'システム起動時に Baran を自動起動',
+      launchAtStartupHint: 'Windows または Linux へのサインイン後に Baran を自動的に起動します。',
       launchAtStartupUnsupported: '自動起動はインストール版でのみ利用できます（ポータブル版では使用できません）。',
       notify: 'ダウンロード完了時に通知を表示',
       clipboard: 'クリップボードのリンクを監視',
-      clipboardHint: '他のアプリでリンクをコピーしたとき、Pulse がダウンロードを提案します。'
+      clipboardHint: '他のアプリでリンクをコピーしたとき、Baran がダウンロードを提案します。'
     },
     speed: {
       title: '全体速度制限',
@@ -1033,7 +1033,7 @@ const ja: typeof en = {
 }
 
 const ru: typeof en = {
-  appName: 'Pulse',
+  appName: 'Baran',
   tagline: 'Скорость мышления при скачивании',
   nav: {
     library: 'Библиотека',
@@ -1249,7 +1249,7 @@ const ru: typeof en = {
   },
   settings: {
     title: 'Настройки',
-    subtitle: 'Настройте Pulse под ваше соединение и вкус.',
+    subtitle: 'Настройте Baran под ваше соединение и вкус.',
     tabs: {
       general: 'Основное',
       speed: 'Пропускная способность',
@@ -1265,13 +1265,13 @@ const ru: typeof en = {
       connections: 'Подключений на загрузку',
       connectionsHint: 'Параллельные запросы Range для прямых ссылок.',
       autoResume: 'Возобновлять незавершённые загрузки при запуске',
-      autoResumeHint: 'При запуске Pulse продолжить с места остановки.',
-      launchAtStartup: 'Запускать Pulse при входе в систему',
-      launchAtStartupHint: 'Автоматически запускать Pulse после входа в Windows или Linux.',
+      autoResumeHint: 'При запуске Baran продолжить с места остановки.',
+      launchAtStartup: 'Запускать Baran при входе в систему',
+      launchAtStartupHint: 'Автоматически запускать Baran после входа в Windows или Linux.',
       launchAtStartupUnsupported: 'Автозапуск доступен только в установленной версии, не в портативной.',
       notify: 'Показывать уведомление после завершения загрузки',
       clipboard: 'Следить за буфером обмена на наличие ссылок',
-      clipboardHint: 'Когда вы копируете ссылку в другом приложении, Pulse предложит скачать её.'
+      clipboardHint: 'Когда вы копируете ссылку в другом приложении, Baran предложит скачать её.'
     },
     speed: {
       title: 'Общий лимит скорости',

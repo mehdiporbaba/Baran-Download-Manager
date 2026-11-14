@@ -1,136 +1,108 @@
-# Pulse — Download Manager
+<div align="center">
 
-A fast, professional cross-platform download manager for direct links, YouTube videos, and BitTorrent. Built with Electron, React and TypeScript.
+<img src="resources/banner.svg" alt="Baran Download Manager — Your download workspace" width="100%" />
 
-[![GitHub](https://img.shields.io/badge/GitHub-TheGreatAzizi%2FPulse--Download--Manager-181717?logo=github)](https://github.com/TheGreatAzizi/Pulse-Download-Manager)
-[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-14b8a6)](https://github.com/mehdiporbaba/Baran-Download-Manager/releases)
+[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
+[![Windows](https://img.shields.io/badge/Windows-x64-0284c7)](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest)
 
-## Downloads
+**Collect links. Plan your queue. Control your connection.**
 
-Get the latest releases from the [Releases page](https://github.com/TheGreatAzizi/Pulse-Download-Manager/releases).
+[Download](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [Browser extension](browser-extension) · [Setup guide](docs/GUIDE.md) · [فارسی](#باران-دانلود-منیجر)
 
-**Windows**
-- `Pulse-Setup-*.exe` — NSIS installer with optional auto-start, desktop and Start Menu shortcuts
-- `Pulse-Portable-*.exe` — portable build, no installation required
+</div>
 
-**Linux**
-- `Pulse-*.AppImage` — runs on most distributions including Arch
-- `Pulse-*.deb` — Debian/Ubuntu package
+## A workspace built around your downloads
 
-> Arch / similar distros: install `fuse2` for AppImage support `sudo pacman -S fuse2`. If FUSE is unavailable, run `./Pulse-*.AppImage --appimage-extract-and-run`. `.deb` can be converted with `debtap`.
+Baran Download Manager brings direct files, scheduled jobs, browser links, media and torrents into one desktop workspace. A compact home dashboard, cloud/download identity and adaptive window sizes make it comfortable on ordinary laptop screens and high-DPI monitors.
 
-### Installation and Auto-start
+This is an independently maintained GPL fork of [Pulse Download Manager](https://github.com/TheGreatAzizi/Pulse-Download-Manager), extended by **Mehdi Porbaba**. The original authors and licensing are credited below.
 
-The Windows installer allows choosing the install directory, creates desktop and Start Menu shortcuts, and registers Pulse in Programs and Features. After install, Pulse launches at system start by default. Toggle this in **Settings → General → Launch Pulse when the system starts**. Portable builds do not enable auto-start.
+## What's inside
 
-## Screenshots
+| Workspace | What you can do |
+| --- | --- |
+| **Link Grabber** | Paste text or import TXT, deduplicate links, check availability, filter file extensions, and download a selection. |
+| **Folder scanner** | Discover linked files in an HTML directory or page tree, with depth/page limits, cancellation and an explicit preview. |
+| **Scheduling** | Set a local start date/time when adding files or a batch. Scheduled jobs are saved with the download queue. |
+| **Browser extension** | Send a link, collect page links or collect visible media from Chrome/Edge through Windows Native Messaging. |
+| **YouTube & video** | Use yt-dlp to select quality, audio, subtitles and playlist items. Optional tools are managed in Settings. |
+| **Instagram** | Use gallery-dl to collect photos, video posts, reels, carousels and accessible stories into the review inbox. |
+| **Torrent controls** | Configure separate download and upload/seeding rate limits and select whether seeding continues after completion. |
+| **Proxy routing** | Direct, automatic system/PAC, or manual HTTP(S)/SOCKS routing for web downloads and media tools. |
+| **Desktop integration** | Installed Windows startup, minimize/close to system tray, notifications, Persian RTL and light/dark themes. |
 
-### Main Dashboard
-![Main Dashboard](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_03_54.png)
+## Download & start
 
-### YouTube Downloader
-![YouTube Downloader](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_10.png)
+Open the [latest release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest).
 
-### GitHub Browser
-![GitHub Browser](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_18.png)
+- **Setup**: `Baran-Download-Manager-Setup-1.0.0-x64.exe` — Windows installer and shortcuts.
+- **Portable**: `Baran-Download-Manager-Portable-1.0.0-x64.exe` — no installation; Windows startup registration is disabled for portable builds.
+- **Extension**: `Baran-Browser-Extension-1.0.0.zip` — unpack, load in Chrome/Edge, then register its native host using the included guide.
 
-### Torrent Details
-![Torrent Details](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_23.png)
+The first Windows release is unsigned. Optional `yt-dlp`, `gallery-dl` and `ffmpeg` are separate tools; check the guide for their installation and availability. This release does not claim that every website or media link can be downloaded.
 
-### Settings & Appearance
-![Settings](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_26.png)
+## Browser integration
 
-### Download List
-![Download List](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_42.png)
+1. In `chrome://extensions` or `edge://extensions`, turn on **Developer mode** and choose **Load unpacked**.
+2. Select the unpacked `browser-extension` directory and copy the extension ID.
+3. Register the Windows native host for that extension:
 
-### Speed Limit
-![Speed Limit](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_45.png)
-
-### Add Download Modal
-![Add Download](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_04_48.png)
-
-### Tools
-![Tools](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_05_06.png)
-
-### About
-![About](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_05_11.png)
-
-### Tray / System Integration
-![Tray](https://github.com/TheGreatAzizi/Pulse-Download-Manager/blob/main/docs/screenshots/Pulse%20%E2%80%94%20Download%20Manager%2023_08_1405%2001_05_40.png)
-
-## Features
-
-- **Multi-connection HTTP downloads** — Range requests, resume on disconnect, smart queue, speed limit
-- **YouTube & 1000+ sites** via `yt-dlp` — quality selection, audio extraction, subtitles, thumbnails, playlists
-- **BitTorrent** — magnet and .torrent files, file selection, secure resume, peer/seeder stats, upload ratio
-- **GitHub browser** — search public repositories, download source ZIPs, release assets and archives. Optional GitHub token raises API limits
-- **Multilingual UI** — English, Persian RTL, Japanese, Russian; Light/Dark theme
-- **Built-in tools** — automatic `yt-dlp` installer, `ffmpeg` detection, torrent engine management
-- **Auto-start** — optional launch on Windows login and Linux autostart
-- **Clipboard monitor** — suggests adding copied links
-
-## GitHub Integration
-
-Open **GitHub** in the sidebar to search public repositories, download ZIP archives of default branches or tags, and fetch release assets directly into the download queue. Add a personal access token in **Settings → Tools → GitHub token** to increase API rate limits from 60 to 5,000 requests/hour.
-
-## Development
-
-```bash
-npm install
-npm run dev        # development mode
-npm run typecheck  # type check
-npm run build      # production build
-npm start          # run built app
+```powershell
+& .\browser-extension\native-host\register.ps1 -ExtensionId 'YOUR_32_CHARACTER_ID' -Browser chrome
 ```
 
-Build distributions:
+Use `-Browser edge` for Edge. Keep the extension directory in place while registered. Baran must be running to receive links. See the [complete guide](docs/GUIDE.md) for removal and troubleshooting.
 
-```bash
-npm run dist:win   # Windows NSIS + Portable
-npm run dist:linux # AppImage + deb
+## Why do some media links need a login?
+
+Public content may work without logging in. A desktop downloader cannot automatically inherit the session from an open browser tab. Restricted stories, private posts, age checks and service-side bot checks may require cookies from your own authorized session.
+
+The extension can collect HTTP(S) media URLs already present in a page you can access. This is different from guaranteeing access to every video player: `blob:` objects, encrypted streams, expiring URLs and POST-based downloads may need a different integration. Baran does not bypass account permissions or DRM.
+
+## Scope & current limits
+
+- A scanner can discover **linked files**, not hidden files that the server never lists. Traversal stays within the seed origin and containing directory. Remote subfolder recreation is not included in 1.0.
+- The link review inbox is session-only. Download tasks and scheduled start times are persistent. Keep Baran running; the scheduler does not wake a sleeping or shut-down computer.
+- Web proxy settings do not tunnel torrent peer or DHT traffic. Use an operating-system VPN when all torrent traffic must be routed. Authenticated proxy URLs are not supported in 1.0.
+- Instagram extraction depends on gallery-dl, Instagram availability and your access. Stories/private content may require an authorized session. CDN URLs can expire and need re-extraction.
+- The extension is shipped unpacked, not published in browser stores. Native Messaging setup in 1.0 targets Windows; Linux source builds do not yet include that host.
+- The inherited dependency audit includes findings in WebTorrent/build-tool chains. See [validation notes](docs/VALIDATION.md) for the release's checks and limits.
+
+## Build from source
+
+Use **Node.js 24** and npm.
+
+```powershell
+git clone https://github.com/mehdiporbaba/Baran-Download-Manager.git
+cd Baran-Download-Manager
+npm ci
+npm test
+npm run typecheck
+npm run test:network
+npm run dev
 ```
 
-Output is written to `dist/`.
-
-Optional binaries can be placed in `resources/bin/` — `yt-dlp` and `ffmpeg` — to be bundled with the app. Otherwise Pulse discovers them from system paths or user data.
-
-## YouTube bot detection
-
-If YouTube returns “Sign in to confirm you’re not a bot”:
-
-1. Update `yt-dlp` in **Settings → Tools**
-2. Provide authentication:
-   - Browser cookies: choose a logged-in browser
-   - Cookies file: load a `cookies.txt` exported with an extension such as “Get cookies.txt LOCALLY”
-3. Re-analyze the link
-
-Keep `yt-dlp` newer than 2025.11 for JavaScript runtime support.
-
-## Project Structure
-
-```
-src/
-  main/       Electron main process: HTTP, YouTube, torrent engines, queue, persistence
-  preload/    Secure window.pulse bridge
-  renderer/   React + Tailwind UI
-  shared/     Types and IPC contracts
-resources/bin/  Optional bundled binaries
+```powershell
+npm run build
+npm run dist:win
 ```
 
-- State is persisted in `userData/pulse-state.json`
-- Unfinished HTTP downloads use `.pulse-part` and `.pulse-meta` sidecars
-- Global speed limit is configurable in **Settings → Speed** or the status bar
+Source builds can also target Linux using `npm run dist:linux`. Windows is the packaged and locally verified target for version 1.0.0.
 
-## Contributing
+## باران دانلود منیجر
 
-Repository: [github.com/TheGreatAzizi/Pulse-Download-Manager](https://github.com/TheGreatAzizi/Pulse-Download-Manager)
+**Baran Download Manager** یک فضای یکپارچه برای مدیریت دانلود است: لینک‌گیر گروهی، اسکن پوشه‌های دارای فهرست، زمان‌بندی شروع، افزونه مرورگر، دریافت رسانه و تنظیم اتصال.
 
-Report bugs and request features via [Issues](https://github.com/TheGreatAzizi/Pulse-Download-Manager/issues). Pull requests are welcome.
+- پنجره اولیه با فضای نمایشگر هماهنگ می‌شود و به‌صورت پیش‌فرض بزرگ و تمام‌صفحه نیست.
+- برای زمان‌بندی، در پنجره دانلود جدید یا لینک‌گیر، تاریخ و ساعت شروع را وارد کن؛ برنامه باید هنگام موعد باز باشد.
+- در **Settings → Speed** سرعت HTTP/ویدیو و سقف‌های دانلود و آپلود تورنت را تنظیم کن. صفر یعنی نامحدود.
+- در **Settings → Network & proxy** اتصال مستقیم، پراکسی سیستم/PAC یا پراکسی دستی را انتخاب کن.
+- برای اینستاگرام، بخش **Instagram** را باز کن و ابزار مربوط را نصب کن. محتوای عمومی الزاماً به ورود نیاز ندارد؛ محتوای خصوصی و برخی استوری‌ها ممکن است نشست مجاز خودت را بخواهند.
+- تنظیمات اجرای خودکار ویندوز و ادامه فعالیت در Tray در بخش عمومی تنظیمات قرار دارد.
 
-## License
+## Credits & license
 
-GNU General Public License v3.0 or later
+Copyright © 2026 **TheGreatAzizi** and the original Pulse contributors for the upstream application. Baran extensions, integration and identity © 2026 **Mehdi Porbaba**.
 
-Copyright (C) 2026 TheGreatAzizi
-
-See [LICENSE](LICENSE) for full text. Pulse is free software; you may redistribute and modify it under GPL-3.0 terms.
+Distributed under **GNU GPL v3.0 or later**. See [LICENSE](LICENSE). Source for this release is available in this repository. yt-dlp, gallery-dl, ffmpeg, Electron, WebTorrent and other dependencies retain their respective licenses.
