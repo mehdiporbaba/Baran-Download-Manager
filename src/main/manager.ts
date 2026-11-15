@@ -50,6 +50,7 @@ export class DownloadManager implements EngineHost {
   private controllers = new Map<string, AbortController>()
   private autoNames = new Set<string>()
   private resumeFlags = new Set<string>()
+  private replacingUrls = new Set<string>()
   private lastDownloaded = new Map<string, number>()
   private history: SpeedSample[] = []
   private ticker: NodeJS.Timeout | null = null
@@ -339,7 +340,7 @@ export class DownloadManager implements EngineHost {
       .sort((a, b) => a.order - b.order)
     for (const task of queued) {
       if (slots <= 0) break
-      if (this.controllers.has(task.id)) continue
+      if (this.controllers.has(task.id) || this.replacingUrls.has(task.id)) continue
       slots--
       void this.startTask(task)
     }
@@ -420,6 +421,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async resume(id: string): Promise<void> {
+    if (this.replacingUrls.has(id)) throw new Error('Wait for link verification to finish')
     const task = this.tasks.get(id)
     if (!task) return
     if (!RESUMABLE.includes(task.status)) return
@@ -435,6 +437,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async cancel(id: string): Promise<void> {
+    if (this.replacingUrls.has(id)) throw new Error('Wait for link verification to finish')
     const task = this.tasks.get(id)
     if (!task) return
     this.controllers.get(id)?.abort()
@@ -452,6 +455,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async remove(id: string, deleteFile: boolean): Promise<void> {
+    if (this.replacingUrls.has(id)) throw new Error('Wait for link verification to finish')
     const task = this.tasks.get(id)
     if (!task) return
     this.controllers.get(id)?.abort()
@@ -500,6 +504,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async retry(id: string): Promise<void> {
+    if (this.replacingUrls.has(id)) throw new Error('Wait for link verification to finish')
     const task = this.tasks.get(id)
     if (!task) return
     this.resumeFlags.add(id)
@@ -511,6 +516,18 @@ export class DownloadManager implements EngineHost {
       connections: 0
     })
     this.schedule()
+  }
+
+  async replaceUrl(id: string, url: string): Promise<void> {
+    const task = this.tasks.get(id)
+    if (!task || task.kind !== 'http' || !['paused', 'error'].includes(task.status) || this.controllers.has(id) || this.replacingUrls.has(id)) throw new Error('Pause the direct download before replacing its link')
+    this.replacingUrls.add(id)
+    try {
+      const replacement = await this.http.replaceUrl(task, url)
+      if (this.tasks.get(id) !== task) return
+      this.patch(task, { ...replacement, error: undefined, status: 'paused', speed: 0, eta: 0 })
+      this.persistSoon()
+    } finally { this.replacingUrls.delete(id) }
   }
 
   reveal(id: string): void {
@@ -579,6 +596,7 @@ export class DownloadManager implements EngineHost {
   }
 
   async scheduleTask(id: string, startAt?: number): Promise<void> {
+    if (this.replacingUrls.has(id)) throw new Error('Wait for link verification to finish')
     const task = this.tasks.get(id)
     if (!task) throw new Error('Download no longer exists')
     if (task.status === 'completed') throw new Error('This download is already complete')

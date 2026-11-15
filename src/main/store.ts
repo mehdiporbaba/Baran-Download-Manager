@@ -23,6 +23,7 @@ export function defaultSettings(): Settings {
     torrentUploadLimit: 0,
     proxyMode: 'direct',
     minimizeToTray: true,
+    sidebarAlwaysOpen: false,
     language: 'en',
     theme: 'dark',
     clipboardWatch: true,
@@ -45,7 +46,7 @@ export class Store {
   private file: string
   private data: Persisted
   private timer: NodeJS.Timeout | null = null
-  private writing = false
+  private writing: Promise<void> | null = null
   private dirty = false
 
   constructor() {
@@ -94,32 +95,36 @@ export class Store {
     if (this.timer) return
     this.timer = setTimeout(() => {
       this.timer = null
-      void this.flush()
+      void this.flush().catch(error => console.error('[store] save failed', error))
     }, 700)
   }
 
   async flush(): Promise<void> {
+    if (this.timer) { clearTimeout(this.timer); this.timer = null }
+    this.dirty = true
     if (this.writing) {
-      this.dirty = true
+      await this.writing
+      if (this.dirty) await this.flush()
       return
     }
-    this.writing = true
-    this.dirty = false
-    try {
-      const tmp = `${this.file}.tmp`
-      const payload = JSON.stringify(
-        { version: 1, tasks: this.data.tasks, settings: this.data.settings },
-        null,
-        0
-      )
-      await fs.mkdir(join(this.file, '..'), { recursive: true })
-      await fs.writeFile(tmp, payload, 'utf8')
-      await fs.rename(tmp, this.file)
-    } catch (err) {
-      console.error('[store] save failed', err)
-    } finally {
-      this.writing = false
-      if (this.dirty) this.scheduleSave()
+    this.writing = (async () => {
+      do {
+        this.dirty = false
+        const tmp = `${this.file}.tmp`
+        const payload = JSON.stringify({ version: 1, tasks: this.data.tasks, settings: this.data.settings })
+        await fs.mkdir(dirname(this.file), { recursive: true })
+        await fs.writeFile(tmp, payload, 'utf8')
+        for (let attempt = 0; ; attempt++) {
+          try { await fs.rename(tmp, this.file); break }
+          catch (error) {
+            if (attempt >= 5 || !['EPERM', 'EACCES', 'EBUSY'].includes((error as NodeJS.ErrnoException).code || '')) throw error
+            await new Promise(resolve => setTimeout(resolve, 20 * 2 ** attempt))
+          }
+        }
+      } while (this.dirty)
+    })()
+    try { await this.writing } finally {
+      this.writing = null
     }
   }
 

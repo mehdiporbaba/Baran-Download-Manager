@@ -5,6 +5,7 @@ import { IP } from '@shared/ipc'
 import type { DownloadManager } from './manager'
 import { isAutoStartSupported } from './autostart'
 import { getGithubRepo, searchGithubRepos } from './github'
+import { registerBrowserHost } from './browser-integration'
 
 export function registerIpc(manager: DownloadManager, getWindow: () => BrowserWindow | null): void {
   const handle = (channel: string, fn: (...args: any[]) => any): void => {
@@ -76,6 +77,8 @@ export function registerIpc(manager: DownloadManager, getWindow: () => BrowserWi
   handle(IP.clearCompleted, () => manager.clearCompleted())
 
   handle(IP.updateSettings, (patch: Partial<Settings>) => manager.updateSettings(patch))
+  handle(IP.registerBrowserHost, (browser: string, extensionId?: string) => registerBrowserHost(browser, extensionId))
+  handle(IP.replaceUrl, (id: string, url: string) => manager.replaceUrl(id, url))
 
   handle(IP.setSpeedLimit, (bytes: number) => manager.setSpeedLimit(bytes))
 

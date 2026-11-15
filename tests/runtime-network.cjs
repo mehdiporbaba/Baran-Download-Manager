@@ -13,6 +13,17 @@ app.whenReady().then(async () => {
   const target = createServer((req, res) => {
     targetRequests++
     const range = req.headers.range
+    if (req.url.startsWith('/refresh/')) {
+      if (req.url === '/refresh/expired') { res.writeHead(403); res.end(); return }
+      const etag = req.url === '/refresh/different' ? '"other-file"' : '"same-file"'
+      const data = req.url === '/refresh/lying' ? Buffer.alloc(payload.length, 120) : payload
+      const match = /^bytes=(\d+)-(\d+)$/.exec(range || '')
+      if (match && req.url !== '/refresh/no-range') {
+        const start = +match[1], end = +match[2]
+        res.writeHead(206, { ETag: etag, 'Content-Range': `bytes ${start}-${end}/${data.length}`, 'Content-Length': end - start + 1 }); res.end(data.subarray(start, end + 1))
+      } else { res.writeHead(200, { ETag: etag, 'Content-Length': data.length }); res.end(data) }
+      return
+    }
     if (range === 'bytes=0-3') { res.writeHead(206, { 'Content-Range': `bytes 0-3/${payload.length}`, 'Content-Length': 4 }); res.end(payload.subarray(0, 4)) }
     else { res.writeHead(200, { 'Content-Length': payload.length }); res.end(payload) }
   })
@@ -63,11 +74,42 @@ app.whenReady().then(async () => {
     }
     await completed(task)
     const pending = await manager.addDownload({ url, kind: 'http', fileName: 'future.bin', startAt: Date.now() + 3600000 })
+    manager.updateSettings({ sidebarAlwaysOpen: true })
     await store.flush()
     const restored = new Store(); await restored.load()
     assert.equal(restored.tasks.find(row => row.id === pending.id).startAt, pending.startAt)
+    assert.equal(restored.settings.sidebarAlwaysOpen, true, 'pinned navigation must persist across restart')
     await manager.scheduleTask(pending.id)
     await completed(pending)
+    const fs = require('node:fs/promises')
+    const refresh = await manager.addDownload({ url: `http://127.0.0.1:${port}/refresh/expired`, kind: 'http', fileName: 'refresh.bin', startAt: Date.now() + 3600000 })
+    manager.pause(refresh.id)
+    const path = join(store.settings.downloadDir, 'refresh.bin')
+    const partial = Buffer.alloc(payload.length); payload.copy(partial, 0, 0, 12)
+    const metadata = { version: 1, finalUrl: refresh.url, size: payload.length, resumable: true, etag: '"same-file"', segments: [{ start: 0, end: payload.length, position: 12 }], downloaded: 12, savedAt: Date.now() }
+    await fs.writeFile(`${path}.pulse-part`, partial)
+    await fs.writeFile(`${path}.pulse-meta`, JSON.stringify(metadata))
+    manager.patch(refresh, { filePath: path, downloaded: 12, size: payload.length, resumable: true, startAt: undefined })
+    await manager.resume(refresh.id)
+    const expiredDeadline = Date.now() + 3000
+    while (refresh.status !== 'error' && Date.now() < expiredDeadline) await new Promise(resolve => setTimeout(resolve, 20))
+    assert.equal(refresh.status, 'error')
+    assert.match(refresh.error, /401\/403/)
+    assert.equal(refresh.downloaded, 12)
+    assert.deepEqual(await fs.readFile(`${path}.pulse-part`), partial)
+    const savedMeta = await fs.readFile(`${path}.pulse-meta`, 'utf8')
+    for (const route of ['different', 'no-range', 'lying']) {
+      await assert.rejects(manager.replaceUrl(refresh.id, `http://127.0.0.1:${port}/refresh/${route}`))
+      assert.equal(refresh.url.endsWith('/expired'), true)
+      assert.equal(await fs.readFile(`${path}.pulse-meta`, 'utf8'), savedMeta)
+      assert.deepEqual(await fs.readFile(`${path}.pulse-part`), partial)
+    }
+    await manager.replaceUrl(refresh.id, `http://127.0.0.1:${port}/refresh/fresh`)
+    assert.equal(refresh.downloaded, 12)
+    assert.equal(JSON.parse(await fs.readFile(`${path}.pulse-meta`, 'utf8')).segments[0].position, 12)
+    await manager.resume(refresh.id)
+    await completed(refresh)
+    console.log('PASS: expired-link replacement rejects changed files, missing Range and false ETags; verified partial download resumes with exact final bytes')
     const limits = []
     manager.torrent.client = { throttleDownload(value) { limits.push(['down', value]) }, throttleUpload(value) { limits.push(['up', value]) } }
     manager.updateSettings({ torrentDownloadLimit: 2048, torrentUploadLimit: 1024 })

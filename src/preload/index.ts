@@ -14,6 +14,8 @@ import type {
 import { IP } from '../shared/ipc'
 
 const api: PulseAPI = {
+  registerBrowserHost: (browser, extensionId) => ipcRenderer.invoke(IP.registerBrowserHost, browser, extensionId),
+  replaceUrl: (id, url) => ipcRenderer.invoke(IP.replaceUrl, id, url),
   instagramCollect: (url) => ipcRenderer.invoke(IP.instagramCollect, url),
   installGallery: () => ipcRenderer.invoke(IP.installGallery),
   linksList: () => ipcRenderer.invoke(IP.linksList),

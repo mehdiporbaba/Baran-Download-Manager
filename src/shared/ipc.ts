@@ -1,4 +1,6 @@
 export const IP = {
+  registerBrowserHost: 'baran:browser:register-host',
+  replaceUrl: 'baran:task:replace-url',
   instagramCollect: 'baran:instagram:collect',
   installGallery: 'baran:instagram:install',
   scheduleTask: 'baran:task:schedule',

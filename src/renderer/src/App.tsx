@@ -31,6 +31,17 @@ export function App(): React.JSX.Element {
   const { ready, loadError, openAdd, pushToast, t, addOpen, settings, view } = useApp()
   const [dropping, setDropping] = useState(false)
   const [dropKind, setDropKind] = useState<'url' | 'torrent'>('url')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const [sidebarFocused, setSidebarFocused] = useState(false)
+  const pinnedSidebar = Boolean(settings.sidebarAlwaysOpen)
+  const menuVisible = pinnedSidebar || sidebarOpen
+
+  useEffect(() => {
+    if (!sidebarOpen || pinnedSidebar || sidebarHovered || sidebarFocused) return
+    const timeout = window.setTimeout(() => setSidebarOpen(false), 15000)
+    return () => window.clearTimeout(timeout)
+  }, [sidebarOpen, pinnedSidebar, sidebarHovered, sidebarFocused])
 
   useEffect(() => {
     let depth = 0
@@ -109,9 +120,14 @@ export function App(): React.JSX.Element {
 
   return (
     <div className="app-bg flex h-full flex-col overflow-hidden text-ink">
-      <TitleBar />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar />
+      <TitleBar menuOpen={menuVisible} onToggleMenu={() => { if (!pinnedSidebar) { setSidebarOpen(!sidebarOpen); setSidebarHovered(false); setSidebarFocused(false) } }} />
+      <div className="relative flex min-h-0 flex-1">
+        {menuVisible && <div id="baran-navigation" className={pinnedSidebar ? 'flex shrink-0' : 'absolute inset-y-0 start-0 z-20 flex border-e border-line bg-panel shadow-2xl'}
+          onPointerEnter={() => setSidebarHovered(true)} onPointerLeave={() => setSidebarHovered(false)}
+          onFocusCapture={() => setSidebarFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSidebarFocused(false) }}
+          onKeyDown={event => { if (event.key === 'Escape' && !pinnedSidebar) { setSidebarOpen(false); document.querySelector<HTMLButtonElement>('[aria-controls="baran-navigation"]')?.focus() } }}>
+          <Sidebar />
+        </div>}
         <main className="flex min-w-0 flex-1 flex-col">
           <TopBar />
           <div className={view === 'links' ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}><LinkGrabber /></div>

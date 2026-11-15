@@ -100,6 +100,7 @@ const fallbackSettings: Settings = {
   torrentUploadLimit: 0,
   proxyMode: 'direct',
   minimizeToTray: true,
+  sidebarAlwaysOpen: false,
   language: 'en',
   theme: 'dark',
   clipboardWatch: true,
@@ -126,7 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
   const [settings, setSettings] = useState<Settings>(fallbackSettings)
   const [stats, setStats] = useState<GlobalStats | null>(null)
   const [system, setSystem] = useState<AppSnapshot['system'] | null>(null)
-  const [view, setView] = useState<ViewId>('home')
+  const [view, setView] = useState<ViewId>('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortId>('newest')
   const [selectedId, setSelectedId] = useState<string | null>(null)

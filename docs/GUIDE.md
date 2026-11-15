@@ -2,6 +2,8 @@
 
 ## Windows setup
 
+Version 1.0.1 opens **All downloads** at launch. The menu starts closed; use the three-line button in the title bar. When neither pointer nor keyboard focus is inside the open menu for 15 seconds, it closes. **Settings → General → Keep navigation menu open** keeps it visible across restarts. In Persian it opens on the right. Escape also closes an unpinned menu.
+
 Use the Setup build for normal installation. The Portable build does not register Windows startup because its executable is unpacked into a temporary directory. Settings → General controls launch at sign-in, desktop notifications and closing/minimizing to the tray. Use **Quit** in the tray menu to exit completely.
 
 ## Add or schedule a download
@@ -18,17 +20,31 @@ The scanner follows linked HTML pages within the selected origin and containing 
 
 ## Browser extension — Windows
 
+Version 1.0.1 adds **Settings → Browser integration → Connect browser**. Firefox uses a fixed add-on ID and needs no copied ID. Chrome/Edge development builds still require their extension ID until store publication provides a stable identity. The bridge is copied into Baran's user-data directory, so the extracted extension folder can move after connecting through the app. This registers the native bridge; it does not install the extension.
+
+Open the extension popup and enable **Handle new downloads in Baran** to request the optional browser downloads permission. This setting is off initially and applies only to that browser. The browser pauses a new HTTP(S) download, waits for Baran to acknowledge staging its URL, and only then cancels its own transfer. If Baran is closed or the bridge fails, the browser resumes. Review the link in Baran before downloading. Private downloads, `blob:`/`data:` URLs and downloads initiated by other extensions are excluded. Cookies, authorization headers and POST request bodies are not copied; leave handoff off for downloads that require them. If IDM/FDM also captures downloads, disable that other extension yourself to avoid conflicts. There is no system-wide setting that makes every browser assign downloads to Baran.
+
+`scripts/package-extension.ps1` creates a Chrome/Edge development ZIP and a separate **unsigned** Firefox XPI. Normal Firefox needs an XPI signed by Mozilla (AMO public listing or signed self-distribution). Chrome on Windows needs a Chrome Web Store listing for normal public installation; Edge has its add-ons store. Renaming a ZIP to CRX/XPI does not grant permission to install it. Store listing and Mozilla signing are pending; unsigned developer packages are not presented as one-click installers.
+
+For source-checkout development, the command-line registration method remains available:
+
 Load the browser-extension directory unpacked in Chrome or Edge. Copy its ID and run:
 
 ```powershell
 & .\browser-extension\native-host\register.ps1 -ExtensionId 'YOUR_EXTENSION_ID' -Browser chrome
 ```
 
-The script compiles the included C# Native Messaging host with the Windows .NET Framework compiler and registers it for the current user only. It does not need administrator rights. Use `-Browser edge` for Edge. If local script policy blocks it, review the script and use your approved development workflow.
+The script compiles the included C# Native Messaging host with the Windows .NET Framework compiler and registers it for the current user only. It does not need administrator rights. Use `-Browser edge` for Edge, or `-Browser firefox` without an extension ID for Firefox. If local script policy blocks it, review the script and use your approved development workflow.
 
 Keep Baran running, then right-click a link or use **Collect page links / Collect visible media**. If page text is selected, the collection is limited to elements intersecting that selection. Imports stage up to 2,000 links and never request automatic downloading. A native message is limited to 256 KB. Browser cookies and passwords are not transferred by this extension.
 
 To remove registration, run the same command with `-Unregister`, then remove the extension in the browser. Moving the extracted extension directory requires re-registration. Chrome/Edge internal pages cannot be scanned.
+
+## Replace an expired direct-download link (1.0.1)
+
+For a paused or failed HTTP download with saved bytes, use the chain-link action on its row and paste a fresh URL for **the same file**. Baran checks the total size, a matching strong ETag, real Range responses, and the first/last saved bytes of each downloaded segment. It updates the saved source without resetting segment offsets, stays paused, and lets you press Resume. It does not obtain a paid/signed URL automatically or extend the server's expiry time.
+
+A weak/missing ETag, changed size/content or unsupported Range is rejected; your original URL and partial file remain. HTTP 401/403 stops the job and keeps partial data. File boundaries and HTTP validators are not a cryptographic full-file checksum. These checks assume an honest server's strong ETag semantics; a trusted publisher checksum is still the strongest final integrity check. This feature is for direct HTTP(S) files, not torrent sources or yt-dlp media URLs.
 
 ## Video & Instagram
 

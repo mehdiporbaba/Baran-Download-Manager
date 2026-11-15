@@ -29,7 +29,7 @@ import { Logo, Toggle } from './primitives'
 import { cn } from '../lib/format'
 import { proxyConfiguration } from '@shared/network-policy'
 
-type Tab = 'general' | 'speed' | 'network' | 'appearance' | 'tools' | 'about'
+type Tab = 'general' | 'speed' | 'network' | 'browsers' | 'appearance' | 'tools' | 'about'
 
 export function SettingsModal(): React.JSX.Element {
   const { settingsOpen, setSettingsOpen, t, settings, stats, system, patchSettings, pushToast, refreshTools } =
@@ -38,6 +38,10 @@ export function SettingsModal(): React.JSX.Element {
   const [draft, setDraft] = useState<Partial<Settings>>({})
   const [installing, setInstalling] = useState(false)
   const [customLimit, setCustomLimit] = useState('')
+  const [browser, setBrowser] = useState<'firefox' | 'chrome' | 'edge'>('firefox')
+  const [extensionId, setExtensionId] = useState('')
+  const [connectingBrowser, setConnectingBrowser] = useState(false)
+  const fa = settings.language === 'fa'
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -88,6 +92,7 @@ export function SettingsModal(): React.JSX.Element {
     { id: 'general', label: t.settings.tabs.general, icon: <Settings2 size={15} /> },
     { id: 'speed', label: t.settings.tabs.speed, icon: <Gauge size={15} /> },
     { id: 'network', label: settings.language === 'fa' ? 'شبکه و پراکسی' : 'Network & proxy', icon: <Network size={15} /> },
+    { id: 'browsers', label: fa ? 'اتصال مرورگرها' : 'Browser integration', icon: <Globe2 size={15} /> },
     { id: 'appearance', label: t.settings.tabs.appearance, icon: <Monitor size={15} /> },
     { id: 'tools', label: t.settings.tabs.tools, icon: <Wrench size={15} /> },
     { id: 'about', label: t.settings.tabs.about, icon: <Info size={15} /> }
@@ -131,6 +136,29 @@ export function SettingsModal(): React.JSX.Element {
         </div>
 
         <div className="scroll-y min-w-0 flex-1 p-5">
+          {tab === 'browsers' && (
+            <div className="space-y-5">
+              <Group title={fa ? 'اتصال افزونه به باران' : 'Connect the browser extension'} hint={fa ? 'ابتدا افزونه را نصب کن؛ سپس با این دکمه ارتباط آن با برنامه را فعال کن. دسترسی مدیر ویندوز لازم نیست.' : 'Install the extension first, then connect it here. No administrator access is needed.'}>
+                <div className="flex flex-wrap gap-2">
+                  <select aria-label={fa ? 'مرورگر' : 'Browser'} className="field px-3 py-2" value={browser} onChange={e => setBrowser(e.target.value as typeof browser)}>
+                    <option value="firefox">Firefox</option><option value="chrome">Chrome</option><option value="edge">Edge</option>
+                  </select>
+                  {browser !== 'firefox' && <input className="field min-w-0 flex-1 px-3 py-2" dir="ltr" aria-label="Extension ID" placeholder="Extension ID" value={extensionId} onChange={e => setExtensionId(e.target.value.trim())} />}
+                  <button type="button" className="btn btn-primary" disabled={connectingBrowser || system?.platform !== 'win32' || (browser !== 'firefox' && !/^[a-p]{32}$/.test(extensionId))} onClick={() => {
+                    setConnectingBrowser(true)
+                    void window.pulse.registerBrowserHost(browser, extensionId).then(() => pushToast('success', fa ? 'ارتباط مرورگر ثبت شد؛ افزونه را باز کن و یک لینک بفرست.' : 'Browser bridge registered. Send a link from the extension.')).catch(error => pushToast('error', error.message)).finally(() => setConnectingBrowser(false))
+                  }}>{connectingBrowser ? <Loader2 className="animate-spin" size={14} /> : <Globe2 size={14} />}{fa ? 'فعال‌کردن اتصال' : 'Connect browser'}</button>
+                </div>
+                {browser !== 'firefox' && <p className="mt-2 text-[11px] leading-relaxed text-muted">{fa ? 'تا زمان انتشار در فروشگاه، شناسهٔ افزونه را از صفحهٔ افزونه‌های مرورگر کپی کن. شناسهٔ نسخهٔ فروشگاهی ثابت خواهد بود.' : 'Until a store build is published, copy the extension ID from your browser extensions page. Store builds will have a fixed ID.'}</p>}
+              </Group>
+              <Group title={fa ? 'سپردن دانلودهای مرورگر به باران' : 'Handle browser downloads in Baran'} hint={fa ? 'این گزینه را در پنجرهٔ خود افزونه فعال کن و اجازهٔ دانلود را بده. برای هر مرورگر جداست.' : 'Enable this in the extension popup and grant its downloads permission, separately for each browser.'}>
+                <p className="text-[12px] leading-7 text-muted">{fa ? 'لینک دانلودهای جدید HTTP و HTTPS برای بررسی به لینک‌گیر باران می‌رود. اگر برنامه در دسترس نباشد، مرورگر دانلود را ادامه می‌دهد. دانلودهای خصوصی، blob و دانلودهای افزونه‌های دیگر منتقل نمی‌شوند. سایت‌هایی که به ورود یا درخواست POST نیاز دارند ممکن است در مرورگر بهتر کار کنند؛ در این موارد گزینه را خاموش کن.' : 'New HTTP(S) downloads are staged for review in Link Grabber. If Baran is unavailable, your browser continues downloading. Private downloads, blob URLs and downloads started by other extensions are excluded. Login-dependent or POST downloads may require leaving handoff off.'}</p>
+              </Group>
+              <Group title={fa ? 'نصب سادهٔ افزونه' : 'Simple extension installation'} hint={fa ? 'نسخهٔ فروشگاهی هنوز منتشر نشده است.' : 'Store listings are not published yet.'}>
+                <p className="text-[12px] leading-7 text-muted">{fa ? 'فایرفاکس به فایل XPI امضاشده توسط Mozilla نیاز دارد. نصب عمومی Chrome و Edge از فروشگاه رسمی انجام می‌شود. اتصال باران به معنی غیرفعال‌کردن افزونه‌های IDM یا FDM نیست؛ اگر تداخل دارند، افزونهٔ دانلودمنیجر دیگر را خودت خاموش کن.' : 'Firefox requires a Mozilla-signed XPI. Public Chrome/Edge installation uses their stores. Connecting Baran does not disable IDM or FDM extensions; turn the other integration off if they conflict.'}</p>
+              </Group>
+            </div>
+          )}
           {tab === 'general' ? (
             <div className="space-y-5">
               <Group title={t.settings.general.dir} hint={t.settings.general.dirHint}>
@@ -173,6 +201,7 @@ export function SettingsModal(): React.JSX.Element {
               </div>
 
               <div className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
+                <ToggleRow title={fa ? 'منو همیشه باز بماند' : 'Keep navigation menu open'} hint={fa ? 'در حالت خاموش، منو با آیکون سه‌خط باز می‌شود و پس از ۱۵ ثانیه حضور نداشتن نشانگر یا فوکوس در آن بسته می‌شود.' : 'Otherwise, open it with the menu icon; it closes after 15 seconds without the pointer or keyboard focus inside.'} checked={merged.sidebarAlwaysOpen} onChange={value => set('sidebarAlwaysOpen', value)} />
                 <ToggleRow
                   title={t.settings.general.autoResume}
                   hint={t.settings.general.autoResumeHint}

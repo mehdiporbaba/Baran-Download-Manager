@@ -79,6 +79,58 @@ export class HttpEngine {
     this.host = host
   }
 
+  async replaceUrl(task: DownloadTask, input: string): Promise<{ url: string; headers?: Record<string, string> }> {
+    const url = new URL(input.trim())
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || input.length > 8192) throw new Error('Enter a valid HTTP(S) file URL without credentials')
+    if (!task.filePath || task.downloaded <= 0) throw new Error('No partial download is available')
+    const metaPath = `${task.filePath}${META_SUFFIX}`
+    const meta: HttpMeta = JSON.parse(await fs.readFile(metaPath, 'utf8'))
+    if (meta.version !== 1 || !meta.resumable || !meta.segments?.length || meta.size !== task.size) throw new Error('This partial file cannot be safely resumed')
+    if (!meta.etag || !/^"[^"\r\n]*"$/.test(meta.etag)) throw new Error('The original server did not provide a strong file validator. Safe link replacement is unavailable for this download.')
+    const crossOrigin = new URL(task.url).origin !== url.origin
+    const headers = Object.fromEntries(Object.entries(task.headers || {}).filter(([name]) =>
+      !/^(range|if-range|host)$/i.test(name) && !(crossOrigin && /^(authorization|cookie|proxy-authorization|referer)$/i.test(name))))
+    const probe = await this.probe(url.href, headers)
+    if (probe.size !== meta.size || probe.etag !== meta.etag || !probe.resumable) throw new Error('The new link does not identify the same resumable file; the partial file was kept')
+    const file = await fs.open(`${task.filePath}${PART_SUFFIX}`, 'r')
+    try {
+      const signal = AbortSignal.timeout(45000)
+      for (const segment of meta.segments) {
+        if (!Number.isSafeInteger(segment.position) || segment.start < 0 || segment.position < segment.start || segment.position > segment.end || segment.end > meta.size) throw new Error('Invalid partial-file metadata')
+        const count = Math.min(8192, segment.position - segment.start)
+        if (!count) continue
+        // Compare both boundaries of every downloaded segment as well as ETag.
+        for (const start of new Set([segment.start, segment.position - count])) {
+          const end = start + count - 1
+          const response = await fetch(probe.finalUrl, { headers: { ...headers, 'Accept-Encoding': 'identity', Range: `bytes=${start}-${end}`, 'If-Range': meta.etag }, signal })
+          if (response.status !== 206 || response.headers.get('content-range') !== `bytes ${start}-${end}/${meta.size}` || response.headers.get('etag') !== meta.etag || !response.body) {
+            await response.body?.cancel()
+            throw new Error('The replacement server did not confirm the requested file range')
+          }
+          const reader = response.body.getReader()
+          const remote = Buffer.alloc(count)
+          let offset = 0
+          try {
+            while (true) {
+              const { value, done } = await reader.read()
+              if (done) break
+              if (offset + value.byteLength > count) throw new Error('Unexpected range response size')
+              remote.set(value, offset); offset += value.byteLength
+            }
+          } finally { await reader.cancel().catch(() => undefined) }
+          const local = Buffer.alloc(count)
+          const read = await file.read(local, 0, count, start)
+          if (offset !== count || read.bytesRead !== count || !local.equals(remote)) throw new Error('File contents differ. The original partial download was kept.')
+        }
+      }
+    } finally { await file.close() }
+    const next = { ...meta, finalUrl: probe.finalUrl, savedAt: Date.now() }
+    const temporary = `${metaPath}.refresh`
+    try { await fs.writeFile(temporary, JSON.stringify(next)); await fs.rename(temporary, metaPath) }
+    finally { await fs.unlink(temporary).catch(() => undefined) }
+    return { url: url.href, headers }
+  }
+
   private baseHeaders(task: DownloadTask): Record<string, string> {
     const settings = this.host.settings()
     const headers: Record<string, string> = {
@@ -307,10 +359,13 @@ export class HttpEngine {
       )
     }
 
-    const persist = async (): Promise<void> => {
+    let persistence = Promise.resolve()
+    const persist = (): Promise<void> => {
       recompute()
       state.savedAt = Date.now()
-      await fs.writeFile(metaPath, JSON.stringify(state), 'utf8').catch(() => undefined)
+      const data = JSON.stringify(state)
+      persistence = persistence.then(() => fs.writeFile(metaPath, data, 'utf8')).catch(() => undefined)
+      return persistence
     }
 
     const tick = (): void => {
@@ -330,31 +385,44 @@ export class HttpEngine {
       }
     }
 
+    const transferController = new AbortController()
+    const downloadSignal = AbortSignal.any([handle.signal, transferController.signal])
     const downloadSegment = async (seg: SegmentState, index: number): Promise<void> => {
       let attempt = 0
       while (seg.position < seg.end) {
-        if (handle.signal.aborted) return
+        if (downloadSignal.aborted) return
         const controller = new AbortController()
         const relay = (): void => controller.abort()
-        handle.signal.addEventListener('abort', relay, { once: true })
+        downloadSignal.addEventListener('abort', relay, { once: true })
         try {
           const ranged = state.resumable || seg.position > 0 || state.segments.length > 1
           const headers = { ...this.baseHeaders(task) }
           if (ranged) headers.Range = `bytes=${seg.position}-${seg.end - 1}`
+          if (ranged && state.etag && !state.etag.startsWith('W/')) headers['If-Range'] = state.etag
 
           const res = await fetch(state.finalUrl, {
             headers,
             signal: controller.signal,
             redirect: 'follow'
           })
-          if (res.status === 416) throw new Error('RANGE_CHANGED')
-          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-          if (res.status === 200 && seg.position > 0) throw new Error('RANGE_UNSUPPORTED')
+          if (res.status === 416 || res.status === 401 || res.status === 403) {
+            await res.body?.cancel()
+            throw new Error(res.status === 416 ? 'RANGE_CHANGED' : 'LINK_EXPIRED')
+          }
+          if (!res.ok) { await res.body?.cancel(); throw new Error(`HTTP ${res.status} ${res.statusText}`) }
+          if (state.etag && res.headers.get('etag') && res.headers.get('etag') !== state.etag) {
+            await res.body?.cancel()
+            throw new Error('RANGE_CHANGED')
+          }
+          if (ranged && (res.status !== 206 || res.headers.get('content-range') !== `bytes ${seg.position}-${seg.end - 1}/${state.size}`)) {
+            await res.body?.cancel()
+            throw new Error('RANGE_UNSUPPORTED')
+          }
           if (!res.body) throw new Error('Empty response body')
 
           const reader = res.body.getReader()
           while (true) {
-            if (handle.signal.aborted) {
+            if (downloadSignal.aborted) {
               await reader.cancel().catch(() => undefined)
               return
             }
@@ -367,28 +435,32 @@ export class HttpEngine {
             const buf = Buffer.from(value.buffer, value.byteOffset, len)
             await handleFs.write(buf, 0, len, seg.position)
             seg.position += len
-            await this.host.throttle.consume(len, handle.signal)
+            await this.host.throttle.consume(len, downloadSignal)
             tick()
             if (len < value.byteLength) break
           }
+          await reader.cancel().catch(() => undefined)
+          if (seg.position < seg.end) throw new Error('Incomplete range response')
           attempt = 0
         } catch (err) {
-          if (handle.signal.aborted) return
+          if (downloadSignal.aborted) return
           const message = (err as Error).message || 'network error'
-          if (message === 'RANGE_CHANGED' || message === 'RANGE_UNSUPPORTED') throw err
+          if (message === 'RANGE_CHANGED' || message === 'RANGE_UNSUPPORTED' || message === 'LINK_EXPIRED') throw err
           attempt++
           if (attempt > MAX_RETRIES) {
             throw new Error(`Connection ${index + 1} failed: ${message}`)
           }
-          await sleep(Math.min(5000, 350 * Math.pow(2, attempt)), handle.signal)
+          await sleep(Math.min(5000, 350 * Math.pow(2, attempt)), downloadSignal)
         } finally {
-          handle.signal.removeEventListener('abort', relay)
+          downloadSignal.removeEventListener('abort', relay)
         }
       }
     }
 
     try {
-      await Promise.all(segments.map((seg, i) => downloadSegment(seg, i)))
+      const transfers = segments.map((seg, i) => downloadSegment(seg, i))
+      try { await Promise.all(transfers) }
+      catch (error) { transferController.abort(); await Promise.allSettled(transfers); throw error }
       if (handle.signal.aborted) throw new DOMException('Aborted', 'AbortError')
       await handleFs.close().catch(() => undefined)
       await persist()
@@ -413,18 +485,18 @@ export class HttpEngine {
     } catch (err) {
       await handleFs.close().catch(() => undefined)
       await persist()
+      handle.patch({ downloaded: state.downloaded, segments: state.segments.map(segment => ({ ...segment })) })
       if (handle.signal.aborted || (err as Error).name === 'AbortError') {
         handle.patch({ status: 'paused', speed: 0, eta: 0, connections: 0 })
         return
       }
       const message = (err as Error).message || 'Download failed'
       if (message === 'RANGE_UNSUPPORTED' || message === 'RANGE_CHANGED') {
-        await fs.unlink(partPath).catch(() => undefined)
-        await fs.unlink(metaPath).catch(() => undefined)
-        if (message === 'RANGE_CHANGED') {
-          handle.toast('info', 'The file changed on the server — restarting the download.')
-        }
-        await this.start({ ...handle, task: { ...task, filePath: undefined } }, false)
+        handle.patch({ status: 'error', error: 'The server changed the file or refused its byte range. Your partial file was kept; replace the link with one for the same file.', speed: 0, eta: 0, connections: 0 })
+        return
+      }
+      if (message === 'LINK_EXPIRED') {
+        handle.patch({ status: 'error', error: 'The link expired or access was refused (HTTP 401/403). Your partial file was kept. Get a fresh link and use Replace expired link.', speed: 0, eta: 0, connections: 0 })
         return
       }
       handle.patch({

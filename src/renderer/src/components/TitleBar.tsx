@@ -1,12 +1,13 @@
-import { Maximize2, Minus, X } from 'lucide-react'
+import { Maximize2, Minus, X, Menu } from 'lucide-react'
 import { useApp } from '../state'
 import { Logo } from './primitives'
 
-export function TitleBar(): React.JSX.Element {
+export function TitleBar({ menuOpen, onToggleMenu }: { menuOpen: boolean; onToggleMenu: () => void }): React.JSX.Element {
   const { maximized, settings, stats, system, t } = useApp()
   return (
     <header className="drag relative z-30 flex h-11 shrink-0 items-center justify-between border-b border-line/70 bg-panel/45 px-3">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <button type="button" className="no-drag icon-btn shrink-0" aria-label={settings.language === 'fa' ? 'منوی برنامه' : 'Navigation menu'} aria-expanded={menuOpen} aria-controls="baran-navigation" onClick={onToggleMenu}><Menu size={19} /></button>
         <Logo size={24} glow={false} />
         <span className="truncate text-[12.5px] font-bold tracking-tight">Baran Download Manager</span>
         <span className="chip py-0! text-[9.5px]!">v{system?.appVersion ?? '1.0.0'}</span>

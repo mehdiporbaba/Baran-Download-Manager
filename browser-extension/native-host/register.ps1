@@ -1,10 +1,14 @@
 param(
-    [Parameter(Mandatory=$true)][ValidatePattern('^[a-p]{32}$')][string]$ExtensionId,
-    [ValidateSet('chrome','edge')][string]$Browser = 'chrome',
+    [string]$ExtensionId,
+    [ValidateSet('chrome','edge','firefox')][string]$Browser = 'chrome',
     [switch]$Unregister
 )
 $ErrorActionPreference = 'Stop'
-$vendor = if ($Browser -eq 'edge') { 'Microsoft\Edge' } else { 'Google\Chrome' }
+$vendor = switch ($Browser) { 'edge' { 'Microsoft\Edge' }; 'firefox' { 'Mozilla' }; default { 'Google\Chrome' } }
+if ($Browser -eq 'firefox') {
+    if (-not $ExtensionId) { $ExtensionId = 'baran-download-manager@mehdiporbaba' }
+    if ($ExtensionId -ne 'baran-download-manager@mehdiporbaba') { throw 'Unknown Firefox extension ID' }
+} elseif ($ExtensionId -notmatch '^[a-p]{32}$') { throw 'A valid Chrome or Edge extension ID is required' }
 $registryPath = "HKCU:\Software\$vendor\NativeMessagingHosts\com.baran.downloadmanager"
 if ($Unregister) {
     if (Test-Path -LiteralPath $registryPath) { Remove-Item -LiteralPath $registryPath }
@@ -24,8 +28,10 @@ $configuration = @{
     description = 'Baran browser link bridge'
     path = $hostExe
     type = 'stdio'
-    allowed_origins = @("chrome-extension://$ExtensionId/")
-} | ConvertTo-Json
+}
+if ($Browser -eq 'firefox') { $configuration.allowed_extensions = @($ExtensionId) }
+else { $configuration.allowed_origins = @("chrome-extension://$ExtensionId/") }
+$configuration = $configuration | ConvertTo-Json
 [System.IO.File]::WriteAllText($manifest, $configuration, [System.Text.UTF8Encoding]::new($false))
 New-Item -Path $registryPath -Force | Out-Null
 Set-Item -LiteralPath $registryPath -Value $manifest

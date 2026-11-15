@@ -36,6 +36,7 @@ export interface Settings {
   torrentUploadLimit: number
   proxyMode: 'direct' | 'system' | 'manual'
   minimizeToTray: boolean
+  sidebarAlwaysOpen: boolean
   language: Language
   theme: Theme
   clipboardWatch: boolean
@@ -326,6 +327,8 @@ export type MainEvent =
   | { type: 'settings'; settings: Settings }
 
 export interface PulseAPI {
+  registerBrowserHost(browser: 'chrome' | 'edge' | 'firefox', extensionId?: string): Promise<void>
+  replaceUrl(id: string, url: string): Promise<void>
   instagramCollect(url: string): Promise<number>
   installGallery(): Promise<void>
   linksList(): Promise<CollectedLink[]>

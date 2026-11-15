@@ -1,4 +1,14 @@
-# Version 1.0.0 validation
+# Validation
+
+## 1.0.1 development checks
+
+- 17 automated checks including Chrome/Firefox API boundary tests for acknowledged download handoff, offline resume, opt-out and private/unsupported downloads.
+- Electron runtime integration covers HTTP 403 preservation, link replacement, unchanged byte offsets, changed ETag, lying ETag with changed sampled content, missing Range, final file equality, and persistence of the pinned menu setting.
+- Frontend preview verified All downloads on launch, closed navigation, opening from the hamburger, closure after 15 seconds outside, the keep-open option surviving the timeout, Persian layout and browser integration settings. The preview has empty fixture data and is not an installed browser-extension acceptance test.
+- Windows packaging retains four Electron language packs and omits duplicated resources and Electron's demo application. Maximum compression reduces the installer, but does not remove the bundled Chromium runtime.
+- Firefox XPI is unsigned and must be signed through Mozilla before public installation. Chrome/Edge store publication and real-browser extension acceptance remain pending. No store installation is claimed.
+
+## Version 1.0.0 baseline
 
 Local validation target: Windows x64, Node.js 24, Electron 45.3.1.
 

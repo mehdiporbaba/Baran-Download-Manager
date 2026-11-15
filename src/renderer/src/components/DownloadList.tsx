@@ -9,6 +9,7 @@ import {
   Pause,
   Play,
   RotateCw,
+  Link2,
   Search,
   Trash2,
   Trash,
@@ -52,6 +53,7 @@ export function DownloadList(): React.JSX.Element {
   const [removeTarget, setRemoveTarget] = useState<DownloadTask | null>(null)
   const [deleteFile, setDeleteFile] = useState(false)
   const [scheduleTarget, setScheduleTarget] = useState<DownloadTask | null>(null)
+  const [replaceTarget, setReplaceTarget] = useState<DownloadTask | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -167,6 +169,7 @@ export function DownloadList(): React.JSX.Element {
                 selected={selectedId === task.id}
                 onSelect={() => setSelectedId(task.id)}
                 onSchedule={() => setScheduleTarget(task)}
+                onReplace={() => setReplaceTarget(task)}
                 onRemove={() => {
                   setRemoveTarget(task)
                   setDeleteFile(false)
@@ -184,6 +187,7 @@ export function DownloadList(): React.JSX.Element {
       </div>
 
       {scheduleTarget && <ScheduleDialog key={scheduleTarget.id} task={scheduleTarget} onClose={() => setScheduleTarget(null)} />}
+      {replaceTarget && <ReplaceLinkDialog key={replaceTarget.id} task={replaceTarget} onClose={() => setReplaceTarget(null)} />}
       <Modal
         open={!!removeTarget}
         onClose={() => setRemoveTarget(null)}
@@ -235,6 +239,29 @@ export function DownloadList(): React.JSX.Element {
   )
 }
 
+function ReplaceLinkDialog({ task, onClose }: { task: DownloadTask; onClose: () => void }): React.JSX.Element {
+  const { lang, pushToast } = useApp()
+  const fa = lang === 'fa'
+  const [url, setUrl] = useState('')
+  const [busy, setBusy] = useState(false)
+  const replace = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      await window.pulse.replaceUrl(task.id, url)
+      pushToast('success', fa ? 'لینک تأیید و عوض شد. با دکمهٔ ادامه، دانلود را از همان‌جا دنبال کن.' : 'Link verified and replaced. Press Resume to continue from the saved position.')
+      onClose()
+    } catch (error) { pushToast('error', (error as Error).message) }
+    finally { setBusy(false) }
+  }
+  return <Modal open onClose={() => { if (!busy) onClose() }} width={520}><div className="space-y-4 p-5">
+    <h2 className="font-semibold">{fa ? 'تعویض لینک منقضی‌شده' : 'Replace expired download link'}</h2>
+    <p className="truncate text-[12px] text-muted">{task.name} · {formatBytes(task.downloaded)}</p>
+    <p className="text-[12px] leading-6 text-muted">{fa ? 'لینک تازهٔ همان فایل را وارد کن. حجم، شناسهٔ معتبر فایل و بخش‌هایی از دادهٔ ذخیره‌شده بررسی می‌شود. اگر تطابق تأیید نشود، فایل ناقص دست‌نخورده باقی می‌ماند. این بررسی به پشتیبانی Range و ETag معتبر از سمت سرور نیاز دارد.' : 'Enter a fresh URL for the same file. Baran checks size, a strong ETag and saved segment boundaries. If verification fails, the partial file is kept. The server must support Range requests and a strong ETag.'}</p>
+    <input autoFocus className="field w-full px-3 py-2" type="url" dir="ltr" aria-label={fa ? 'لینک جدید فایل' : 'New file URL'} value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com/file?new-token=..." disabled={busy} />
+    <div className="flex flex-wrap gap-2"><button className="btn btn-primary" disabled={busy || !url.trim()} onClick={() => void replace()}>{busy ? (fa ? 'در حال بررسی تطابق…' : 'Verifying file…') : (fa ? 'بررسی و تعویض لینک' : 'Verify and replace link')}</button><button className="btn btn-ghost" disabled={busy} onClick={onClose}>{fa ? 'انصراف' : 'Cancel'}</button></div>
+  </div></Modal>
+}
+
 function ScheduleDialog({ task, onClose }: { task: DownloadTask; onClose: () => void }): React.JSX.Element {
   const { lang, pushToast } = useApp()
   const [value, setValue] = useState(localDateTime(task.startAt))
@@ -254,6 +281,7 @@ function TaskRow({
   onSelect,
   onRemove,
   onSchedule,
+  onReplace,
   onToast
 }: {
   task: DownloadTask
@@ -261,6 +289,7 @@ function TaskRow({
   onSelect: () => void
   onRemove: () => void
   onSchedule: () => void
+  onReplace: () => void
   onToast: (level: 'info' | 'success' | 'error', message: string) => void
 }): React.JSX.Element {
   const { t, lang } = useApp()
@@ -385,7 +414,8 @@ function TaskRow({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition group-hover:opacity-100">
+        <div className="flex w-[84px] shrink-0 flex-wrap items-center justify-end gap-0.5 opacity-70 transition group-hover:opacity-100">
+          {task.kind === 'http' && task.downloaded > 0 && ['paused', 'error'].includes(task.status) && <button type="button" className="icon-btn" title={lang === 'fa' ? 'تعویض لینک منقضی‌شده' : 'Replace expired link'} onClick={event => { event.stopPropagation(); onReplace() }}><Link2 size={14} /></button>}
           {!completed && !['connecting', 'downloading', 'verifying'].includes(task.status) && <button type="button" className="icon-btn" title={lang === 'fa' ? 'زمان‌بندی دانلود' : 'Schedule download'} onClick={event => { event.stopPropagation(); onSchedule() }}><CalendarClock size={14} /></button>}
           <button
             type="button"

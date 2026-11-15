@@ -1,6 +1,6 @@
 {
   "name": "baran-download-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Baran Download Manager — collect links, schedule downloads, and manage your connection.",
   "main": "./out/main/index.js",
   "author": "Mehdi Porbaba",
@@ -42,13 +42,22 @@
     "appId": "io.github.mehdiporbaba.baran",
     "productName": "Baran Download Manager",
     "npmRebuild": false,
+    "compression": "maximum",
+    "electronLanguages": [
+      "en-US",
+      "fa",
+      "ja",
+      "ru"
+    ],
+    "beforePack": "scripts/before-pack.cjs",
+    "afterPack": "scripts/after-pack.cjs",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
     },
     "files": [
       "out/**/*",
-      "resources/**/*"
+      "!resources/**/*"
     ],
     "extraResources": [
       {
@@ -72,6 +81,12 @@
       }
     ],
     "win": {
+      "extraResources": [
+        {
+          "from": ".tools/build/native-host",
+          "to": "native-host"
+        }
+      ],
       "icon": "icon.ico",
       "target": [
         {

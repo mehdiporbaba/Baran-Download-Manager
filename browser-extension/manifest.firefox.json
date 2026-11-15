@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Baran Download Manager — Browser Extension",
+  "version": "1.0.1",
+  "description": "Collect links and optionally hand browser downloads to the Baran inbox.",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "nativeMessaging",
+    "storage"
+  ],
+  "optional_permissions": [
+    "downloads"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "baran-download-manager@mehdiporbaba",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["browsingActivity", "websiteContent"]
+      }
+    }
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Baran Download Manager"
+  },
+  "icons": {
+    "128": "icon128.png"
+  }
+}

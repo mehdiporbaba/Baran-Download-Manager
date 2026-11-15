@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1 — unreleased
+
+- Open All downloads on every launch. Navigation starts collapsed, opens from the hamburger icon and closes after 15 seconds outside; a persisted setting keeps it open.
+
+- Smaller Electron packaging: maximum compression, four supported runtime languages and removal of duplicated app resources and Electron's demo app.
+- Firefox Manifest V3 background support, stable add-on identity and a separate unsigned XPI for Mozilla signing.
+- In-app Windows Native Messaging registration for Firefox, Chrome and Edge.
+- Optional browser download handoff, with browser resume when the native app cannot acknowledge receipt. No automatic disabling of other download-manager extensions.
+- Verified expired-link replacement for paused/error HTTP downloads: matching size, strong ETag and stored segment boundaries; preserve partial data on 401/403 and rejected byte ranges.
+- Wait for every segment writer to stop before saving or replacing its partial metadata.
+
 ## 1.0.0 — 2026-11-14
 
 First Baran Download Manager release, based on Pulse Download Manager.
