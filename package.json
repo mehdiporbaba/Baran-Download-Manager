@@ -16,7 +16,7 @@
     "dist:win": "npm run build:native",
     "dist:linux": "electron-vite build && electron-builder --linux",
     "test:network": "node tests/run-network.mjs",
-    "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File native/build.ps1",
+    "build:native": "node scripts/build-native.cjs",
     "test:native": "node tests/native.integration.mjs",
     "dist:electron:win": "electron-vite build && electron-builder --win",
     "dist:electron:linux": "electron-vite build && electron-builder --linux",
