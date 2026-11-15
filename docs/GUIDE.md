@@ -2,9 +2,9 @@
 
 ## Windows setup
 
-Version 1.0.1 opens **All downloads** at launch. The menu starts closed; use the three-line button in the title bar. When neither pointer nor keyboard focus is inside the open menu for 15 seconds, it closes. **Settings → General → Keep navigation menu open** keeps it visible across restarts. In Persian it opens on the right. Escape also closes an unpinned menu.
+The native version opens **All downloads** at launch. The menu starts closed; use the three-line button in the title bar. When neither pointer nor keyboard focus is inside the open menu for 15 seconds, it closes. **Settings → General → Keep navigation menu open** keeps it visible across restarts. In Persian it opens on the right. Escape also closes an unpinned menu.
 
-Use the Setup build for normal installation. The Portable build does not register Windows startup because its executable is unpacked into a temporary directory. Settings → General controls launch at sign-in, desktop notifications and closing/minimizing to the tray. Use **Quit** in the tray menu to exit completely.
+Use the native Setup build for normal installation. For native Portable, extract the ZIP into a stable folder; startup registration points at that folder, so reconfigure it if you move the executable. The older Electron self-extracting Portable disables startup because it runs from a temporary directory. Settings → General controls launch at sign-in, desktop notifications and closing/minimizing to the tray. Use **Quit** in the tray menu to exit completely. The shared Microsoft WebView2 Runtime and .NET Framework are prerequisites; optional media tools are separate downloads. See [native architecture](NATIVE.md).
 
 ## Add or schedule a download
 
@@ -14,13 +14,13 @@ To change an existing job's time, pause it and use the clock action on its downl
 
 ## Link workspace & folder scanner
 
-Paste one or many HTTP(S) links or import a TXT file. Select visible rows, check availability and select a destination before downloading. No import starts a download on its own. A start time applies to the selected batch. The staging inbox is kept in memory until the app closes; queued download jobs are persistent.
+Paste one or many HTTP(S) links or import a TXT file. Select visible rows, check availability and select a destination before downloading. No import starts a download on its own. A start time applies to the selected batch. The native app persists the staging inbox in `baran-inbox.json` in its roaming profile, up to 5,000 items. Queued jobs are also persistent. Older Electron 1.0 inboxes were session-only.
 
 The scanner follows linked HTML pages within the selected origin and containing folder. Depth zero checks only the supplied page. Limits: 100 pages, depth 5, 2 MB per HTML page, 2,000 file links and 90 seconds. Cancellation keeps discovered links. Directory listings can be scanned recursively; hidden or unlisted server files cannot be enumerated. Downloads currently share one destination rather than reproducing the remote folder tree.
 
 ## Browser extension — Windows
 
-Version 1.0.1 adds **Settings → Browser integration → Connect browser**. Firefox uses a fixed add-on ID and needs no copied ID. Chrome/Edge development builds still require their extension ID until store publication provides a stable identity. The bridge is copied into Baran's user-data directory, so the extracted extension folder can move after connecting through the app. This registers the native bridge; it does not install the extension.
+Use **Settings → Browser integration → Connect browser**. Firefox uses a fixed add-on ID and needs no copied ID. Chrome/Edge development builds still require their extension ID until store publication provides a stable identity. The bridge is copied into Baran's user-data directory, so the extracted extension folder can move after connecting through the app. This registers the native bridge without a PowerShell command; it does not install the extension.
 
 Open the extension popup and enable **Handle new downloads in Baran** to request the optional browser downloads permission. This setting is off initially and applies only to that browser. The browser pauses a new HTTP(S) download, waits for Baran to acknowledge staging its URL, and only then cancels its own transfer. If Baran is closed or the bridge fails, the browser resumes. Review the link in Baran before downloading. Private downloads, `blob:`/`data:` URLs and downloads initiated by other extensions are excluded. Cookies, authorization headers and POST request bodies are not copied; leave handoff off for downloads that require them. If IDM/FDM also captures downloads, disable that other extension yourself to avoid conflicts. There is no system-wide setting that makes every browser assign downloads to Baran.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0 — native Windows
+
+- Replace the packaged Electron runtime with a C#/.NET Framework WebView2 app; reuse the installed Evergreen runtime and ship a compact native installer/Portable ZIP.
+- Native segmented HTTP engine, shared rate limit, verified expired-link replacement, preserved legacy partial offsets and a pre-migration state backup.
+- Native scheduler, bounded scanner, persistent Inbox and optional media tool integration; aria2 handles torrents with independent rate controls.
+- All downloads on launch, collapsed/timed navigation with pinning, in-app browser host registration and optional browser download handoff.
+- SHA-256-pinned build inputs, runtime component inventory, packaged dependency licenses and a trusted-certificate signing hook. Windows binaries remain unsigned without an owner-supplied signing identity; browser store signing/listings remain pending.
+- Validate native behavior with a local HTTP server, HTTP/SOCKS5h proxies, private torrent tracker/seeder, media CLI fixtures and full-process Inbox restart tests.
+
 ## 1.0.1 — unreleased
 
 - Open All downloads on every launch. Navigation starts collapsed, opens from the hamburger icon and closes after 15 seconds outside; a persisted setting keeps it open.

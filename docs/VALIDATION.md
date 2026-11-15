@@ -1,5 +1,17 @@
 # Validation
 
+## Native 2.0.0 checks
+
+- Native C# application and NSIS Setup compile on Windows; the Portable ZIP contains roughly 8 MB of app files and no Electron/Node/WebTorrent runtime. Exact final package sizes and hashes are recorded with release assets.
+- Native integration tests cover a pre-migration state backup, preserved two-segment legacy offsets, HTTP 403 preservation, rejected changed ETags/content/missing Range, verified new-link continuation and byte-for-byte output.
+- Future tasks do not connect early; native settings and the persistent Inbox survive a full process restart. Browser imports are durable before acknowledgement. The compiled C# Native Messaging host is tested against the native pipe.
+- Controlled HTTP and SOCKS5h proxy routes, shared rate limiting, drained pause/resume writers, scanner origin/path/redirect boundaries and ordinary non-Range HTTP files are tested.
+- The bundled aria2 engine downloads a private torrent through a local tracker and WebTorrent test seeder with exact final bytes. WebTorrent is a test/legacy dependency, not part of the native package. DHT/PEX/LPD are disabled for this controlled test.
+- Media CLI fixture executables generated from source exercise metadata, output-file completion and Instagram photo/video filtering. Live authenticated accounts and every upstream YouTube challenge are not claimed tested.
+- The actual WebView2 window opened on All downloads and was inspected through Windows accessibility. Native screenshots failed twice; the shared frontend's menu, 15-second auto-close, pinning and Persian layout were separately checked in a browser preview.
+- Firefox `web-ext lint` passed with zero errors/warnings. The XPI remains unsigned; signing/store submission and real installed-browser acceptance are pending.
+- Native third-party libraries need independent security/update monitoring. Root npm audit findings remain for the legacy/build/test environment; this release does not claim a complete clean vulnerability audit.
+
 ## 1.0.1 development checks
 
 - 17 automated checks including Chrome/Firefox API boundary tests for acknowledged download handoff, offline resume, opt-out and private/unsupported downloads.

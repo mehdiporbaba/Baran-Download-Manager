@@ -13,7 +13,8 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Native host build failed' }
 Copy-Item -LiteralPath (Join-Path $repository 'docs\GUIDE.md') -Destination (Join-Path $destination 'GUIDE.md')
 Copy-Item -LiteralPath (Join-Path $repository 'LICENSE') -Destination (Join-Path $destination 'LICENSE')
-$version = (Get-Content (Join-Path $repository 'package.json') -Raw | ConvertFrom-Json).version
+Copy-Item -LiteralPath (Join-Path $repository 'browser-extension/PRIVACY.md') -Destination (Join-Path $destination 'PRIVACY.md')
+$version = (Get-Content (Join-Path $repository 'browser-extension/manifest.json') -Raw | ConvertFrom-Json).version
 $archive = Join-Path $repository "dist\Baran-Browser-Extension-$version.zip"
 Compress-Archive -Path $destination -DestinationPath $archive -Force
 Write-Output $archive
@@ -26,6 +27,7 @@ foreach ($file in @('background.js', 'popup.html', 'popup.js', 'icon128.png')) {
     Copy-Item -LiteralPath (Join-Path $repository "browser-extension\$file") -Destination (Join-Path $firefox $file)
 }
 Copy-Item -LiteralPath (Join-Path $repository 'browser-extension\manifest.firefox.json') -Destination (Join-Path $firefox 'manifest.json')
+Copy-Item -LiteralPath (Join-Path $repository 'LICENSE'), (Join-Path $repository 'browser-extension/PRIVACY.md') -Destination $firefox
 $firefoxZip = Join-Path $repository "dist\Baran-Firefox-Extension-$version-unsigned.zip"
 Compress-Archive -Path (Join-Path $firefox '*') -DestinationPath $firefoxZip -Force
 $xpi = Join-Path $repository "dist\Baran-Firefox-Extension-$version-unsigned.xpi"

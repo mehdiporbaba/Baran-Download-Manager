@@ -605,7 +605,7 @@ export function SettingsModal(): React.JSX.Element {
               <h3 className="mt-4 text-[19px] font-extrabold tracking-tight">
                 Baran <span className="text-gradient">Download Manager</span>
               </h3>
-              <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted">{t.settings.about.built}</p>
+              <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted">{system?.runtime.electron ? t.settings.about.built : (fa ? 'رابط باران با موتور بومی دانلود و WebView2 ویندوز.' : 'Baran with a native download engine and Windows WebView2.')}</p>
               <div className="mt-3 flex flex-wrap justify-center gap-1.5">
                 <span className="chip"><Sparkles size={10} /> HTTP ×{merged.connections}</span>
                 <span className="chip"><Globe2 size={10} /> yt-dlp</span>
@@ -616,7 +616,7 @@ export function SettingsModal(): React.JSX.Element {
               <div className="mt-5 w-full max-w-sm divide-y divide-line/60 overflow-hidden rounded-xl border border-line text-start">
                 <Row label={t.settings.about.version} value={system?.appVersion ?? '1.0.0'} />
                 <Row label={t.settings.about.platform} value={`${system?.platform} ${system?.version}`} />
-                <Row label={t.settings.about.electron} value={`Electron ${system?.runtime?.electron ?? ''}`} />
+                <Row label={system?.runtime.electron ? t.settings.about.electron : 'WebView2'} value={system?.runtime.electron ? `Electron ${system.runtime.electron}` : system?.runtime.chrome ?? ''} />
                 <LinkRow
                   label={t.settings.about.repository}
                   value="mehdiporbaba/Baran-Download-Manager (Baran)"

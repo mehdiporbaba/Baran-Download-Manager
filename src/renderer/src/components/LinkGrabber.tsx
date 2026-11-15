@@ -67,7 +67,7 @@ export function LinkGrabber(): React.JSX.Element {
   })[link.status]
 
   return <section className="scroll-y flex min-h-0 flex-1 flex-col gap-4 p-4 text-[12px]">
-    <div className="flex items-center gap-2 text-muted"><Link2 size={18} /><p>{tr('Collect, review and select files before downloading. This inbox lasts until you close the app.', 'لینک‌ها را جمع‌آوری و بررسی کن، سپس فایل‌های دلخواه را دانلود کن. این فهرست تا زمان بستن برنامه نگهداری می‌شود.')}</p></div>
+    <div className="flex items-center gap-2 text-muted"><Link2 size={18} /><p>{tr('Collect, review and select files before downloading. The native version saves this inbox on your computer.', 'لینک‌ها را جمع‌آوری و بررسی کن، سپس فایل‌های دلخواه را دانلود کن. نسخهٔ بومی این فهرست را روی کامپیوترت ذخیره می‌کند.')}</p></div>
     <div className="grid gap-4 xl:grid-cols-2">
       <div className="space-y-2 rounded-xl border border-line bg-panel p-4">
         <label className="block font-semibold" htmlFor="link-text">{tr('Paste links or text', 'متن یا لینک‌ها')}</label>
