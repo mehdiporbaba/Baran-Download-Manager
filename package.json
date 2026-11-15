@@ -1,6 +1,6 @@
 {
   "name": "baran-download-manager",
-  "version": "2.0.0",
+  "version": "2.1.0-beta.1",
   "description": "Baran Download Manager — collect links, schedule downloads, and manage your connection.",
   "main": "./out/main/index.js",
   "author": "Mehdi Porbaba",
@@ -22,7 +22,8 @@
     "dist:electron:linux": "electron-vite build && electron-builder --linux",
     "start:electron": "electron-vite preview",
     "dev:electron": "electron-vite dev",
-    "dev:native": "npm run build:native && npm start"
+    "dev:native": "npm run build:native && npm start",
+    "test:connected": "node tests/connected.integration.mjs"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

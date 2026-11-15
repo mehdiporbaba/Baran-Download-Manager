@@ -12,6 +12,11 @@ namespace Baran {
     public readonly Links Inbox;
     public readonly Media Media;
     public readonly Torrents Torrent;
+    public readonly MobileControl Mobile;
+    readonly UserSecrets secrets;
+    readonly RealDebrid debrid;
+    readonly WakeScheduler wake;
+    readonly bool testing;
     readonly HttpDownload http;
     readonly RateLimiter throttle = new RateLimiter();
     readonly Dictionary<string, DownloadRecord> records = new Dictionary<string, DownloadRecord>();
@@ -23,9 +28,13 @@ namespace Baran {
     bool dirty; long saved; int ticking; bool closed;
     public Func<string, object[], Task<object>> Ui;
     public Action RevealBrowserImport;
-    public string Runtime = "WebView2", Version = "2.0.0";
+    public string Runtime = "WebView2", Version = "2.1.0-beta.1";
     public Core(string profile, string root, Action<object> notify, bool testing = false) {
+      this.testing = testing;
       emit = notify; Store = new StateStore(profile); Network = new NativeNetwork(Store);
+      secrets = new UserSecrets(profile); debrid = new RealDebrid(secrets, Network);
+      wake = new WakeScheduler(Path.Combine(root, "Baran Download Manager.exe"), testing);
+      Mobile = new MobileControl(this, root);
       Inbox = new Links(Network, () => Emit(J.Obj("type", "links:changed")), profile);
       Media = new Media(Store, Network, root); Torrent = new Torrents(Store, root, testing);
       http = new HttpDownload(Network, Store, throttle, Patch); throttle.Set(J.Num(Store.Settings, "globalSpeedLimit"));
@@ -38,6 +47,7 @@ namespace Baran {
         records[J.Str(data, "id")] = new DownloadRecord(data);
       }
       timer = new Timer(state => { if (Interlocked.Exchange(ref ticking, 1) == 0) Task.Run(async () => { try { await Tick().ConfigureAwait(false); } catch (Exception error) { Toast("error", error.Message); } finally { Interlocked.Exchange(ref ticking, 0); } }); }, null, 1000, 1000);
+      SyncWake();
     }
     void Emit(object value) { if (!closed) emit(value); }
     public void Toast(string level, string message) { Emit(J.Obj("type", "toast", "level", level, "message", message)); }
@@ -47,13 +57,22 @@ namespace Baran {
       lock (gate) { data = new Dictionary<string, object>(record.Data); foreach (var item in values) data[item.Key] = item.Value; data["updatedAt"] = J.Now(); record.Data = data; dirty = true; }
       if (values.ContainsKey("status") || values.ContainsKey("error") || J.Now() - record.LastEmit >= 120) { record.LastEmit = J.Now(); Emit(J.Obj("type", "task:update", "task", data)); }
     }
-    void Save() { lock (gate) { Store.Tasks = records.Values.Select(row => row.Data).ToList(); Store.Save(); dirty = false; saved = J.Now(); } }
+    void Save() { lock (gate) { Store.Tasks = records.Values.Select(row => row.Data).ToList(); Store.Save(); dirty = false; saved = J.Now(); SyncWake(); } }
+    long NextWake() { lock (gate) return records.Values.Where(row => J.Str(row.Data, "status") == "queued" && J.Num(row.Data, "startAt") > J.Now()).Select(row => J.Num(row.Data, "startAt")).DefaultIfEmpty(0).Min(); }
+    long wakeAttempt; string wakeError = "";
+    void SyncWake() {
+      if (wakeError.Length > 0 && J.Now() - wakeAttempt < 30000) return;
+      wakeAttempt = J.Now();
+      try { wake.Sync(J.Bool(Store.Settings, "wakeToRun"), NextWake()); wakeError = ""; }
+      catch (Exception error) { if (wakeError != error.Message) Toast("error", error.Message); wakeError = error.Message; }
+    }
     static long? StartAt(object input) {
       object raw = J.Get(input, "startAt"); if (raw == null) return null;
       long value = Convert.ToInt64(raw); if (value <= 0 || value > 8640000000000000L) throw new Exception("Invalid scheduled start time"); return value;
     }
     static bool MediaUrl(string url) { var value = new Uri(url); return new [] { "youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com", "vimeo.com", "www.vimeo.com" }.Contains(value.Host); }
     public Dictionary<string, object> Add(object input, bool torrent = false) {
+      if (Network.Vpn.Enabled && (torrent || new [] { "youtube" }.Contains(J.Str(input, "kind")) || MediaUrlSafe(J.Str(input, "url")))) throw new Exception("Only HTTP downloads are available while VPN interface binding is enabled");
       long? start = StartAt(input); string url = J.Str(input, torrent ? "uri" : "url").Trim();
       string kind = torrent ? "torrent" : J.Str(input, "kind", "auto");
       if (!torrent) { url = J.Url(url).AbsoluteUri; if (kind == "auto") kind = MediaUrl(url) ? "youtube" : "http"; if (!new [] { "http", "youtube" }.Contains(kind)) throw new Exception("Unsupported download kind"); }
@@ -77,6 +96,7 @@ namespace Baran {
       lock (gate) { data["order"] = records.Count == 0 ? 1 : records.Values.Max(row => J.Num(row.Data, "order")) + 1; records[id] = new DownloadRecord(data); dirty = true; }
       Emit(J.Obj("type", "task:add", "task", data)); Save(); Schedule(); return data;
     }
+    static bool MediaUrlSafe(string url) { try { return MediaUrl(url); } catch { return false; } }
     internal static string Category(string name) {
       string extension = Path.GetExtension(name).ToLowerInvariant();
       if (new [] { ".mp4", ".mkv", ".webm", ".avi", ".mov" }.Contains(extension)) return "video";
@@ -217,6 +237,7 @@ namespace Baran {
       Func<int, object> arg = index => index < args.Length ? args[index] : null;
       Func<int, string> str = index => Convert.ToString(arg(index)) ?? "";
       switch (method) {
+        case "connected": return await Connected(str(0), arg(1)).ConfigureAwait(false);
         case "snapshot": return Snapshot();
         case "addDownload": return Add(arg(0));
         case "addTorrent": return Add(arg(0), true);
@@ -231,7 +252,11 @@ namespace Baran {
           Patch(row, J.Obj("startAt", StartAt(J.Obj("startAt", arg(1))), "status", "queued", "error", null)); Save(); Schedule(); return null;
         }
         case "clearCompleted": { string[] ids; lock (gate) ids = records.Values.Where(row => J.Str(row.Data, "status") == "completed").Select(row => J.Str(row.Data, "id")).ToArray(); foreach (string id in ids) await Remove(id, false).ConfigureAwait(false); return null; }
-        case "updateSettings": Store.Patch(J.Map(arg(0))); throttle.Set(J.Num(Store.Settings, "globalSpeedLimit")); await Torrent.Limits().ConfigureAwait(false); Emit(J.Obj("type", "settings", "settings", Store.Settings)); if (Ui != null) await Ui("applySettings", new object[0]).ConfigureAwait(false); Schedule(); return Store.Settings;
+        case "updateSettings": {
+          var patch = J.Map(arg(0));
+          if (patch.ContainsKey("vpnInterfaceId") || patch.ContainsKey("wakeToRun")) throw new Exception("Use Connected services to configure VPN binding and wake tasks");
+          Store.Patch(patch); throttle.Set(J.Num(Store.Settings, "globalSpeedLimit")); await Torrent.Limits().ConfigureAwait(false); Emit(J.Obj("type", "settings", "settings", Store.Settings)); if (Ui != null) await Ui("applySettings", new object[0]).ConfigureAwait(false); Schedule(); return Store.Settings;
+        }
         case "setSpeedLimit": return await Invoke("updateSettings", new object[] { J.Obj("globalSpeedLimit", Convert.ToInt64(arg(0))) }).ConfigureAwait(false);
         case "linksList": return Inbox.List();
         case "linksImport": return Inbox.Import(str(0));
@@ -267,12 +292,42 @@ namespace Baran {
       result["releases"] = releases.Where(release => !J.Bool(release, "draft")).Select(release => J.Obj("id", J.Get(release, "id"), "tagName", J.Str(release, "tag_name"), "name", J.Str(release, "name", J.Str(release, "tag_name")), "publishedAt", J.Get(release, "published_at"), "prerelease", J.Bool(release, "prerelease"), "draft", false, "htmlUrl", J.Get(release, "html_url"), "zipUrl", "https://github.com/" + query + "/archive/refs/tags/" + Uri.EscapeDataString(J.Str(release, "tag_name")) + ".zip", "tarballUrl", J.Get(release, "tarball_url"), "assets", J.List(J.Get(release, "assets")).Select(asset => J.Obj("id", J.Get(asset, "id"), "name", J.Str(asset, "name"), "size", J.Num(asset, "size"), "contentType", J.Str(asset, "content_type"), "downloadCount", J.Num(asset, "download_count"), "url", J.Str(asset, "browser_download_url"), "apiUrl", J.Str(asset, "url"))).ToArray())).ToArray();
       return result;
     }
+    public object MobileSnapshot() { lock (gate) return J.Obj("stats", J.Obj("downSpeed", J.Num(Stats(), "downSpeed"), "upSpeed", J.Num(Stats(), "upSpeed")), "tasks", records.Values.OrderByDescending(row => J.Num(row.Data, "createdAt")).Take(500).Select(row => J.Obj("id", J.Str(row.Data, "id"), "name", J.Str(row.Data, "name"), "status", J.Str(row.Data, "status"), "size", J.Num(row.Data, "size"), "downloaded", J.Num(row.Data, "downloaded"))).ToArray()); }
+    object ConnectedStatus() { return J.Obj("debridConfigured", debrid.Configured, "mobile", Mobile.Status(true), "interfaces", VpnBinding.Interfaces(), "vpnInterfaceId", J.Str(Store.Settings, "vpnInterfaceId"), "wakeEnabled", J.Bool(Store.Settings, "wakeToRun"), "wakeError", wakeError, "nextWake", NextWake()); }
+    async Task<object> Connected(string action, object input) {
+      switch (action) {
+        case "status": return ConnectedStatus();
+        case "debridSave": secrets.Write(J.Str(input, "token").Trim()); return ConnectedStatus();
+        case "debridAccount": return await debrid.Request("user", "").ConfigureAwait(false);
+        case "debridCollect": {
+          var link = await debrid.Request("unrestrict/link", J.Str(input, "url")).ConfigureAwait(false);
+          string url = J.Str(link, "url"); int count = Inbox.Add(new [] { url }, "Real-Debrid");
+          foreach (object item in Inbox.List()) if (J.Str(item, "url") == url) Inbox.Patch(J.Str(item, "id"), J.Obj("fileName", J.Str(link, "fileName"), "size", J.Num(link, "size")));
+          return J.Obj("added", count);
+        }
+        case "mobileStart": return Mobile.Start(J.Str(input, "address"), testing);
+        case "mobileStop": Mobile.Dispose(); return Mobile.Status();
+        case "wake": {
+          bool enable = J.Bool(input, "enabled"); wake.Sync(enable, NextWake()); Store.Patch(J.Obj("wakeToRun", enable)); wakeError = ""; Save(); return ConnectedStatus();
+        }
+        case "vpn": {
+          string id = J.Str(input, "id");
+          if (id.Length > 0 && !VpnBinding.Interfaces().Any(value => J.Str(value, "id") == id)) throw new Exception("Select an installed network interface");
+          if (Torrent.Ready) throw new Exception("Restart Baran before changing VPN binding after using torrents");
+          string[] ids; lock (gate) ids = records.Values.Where(row => row.Work != null && !row.Work.IsCompleted).Select(row => J.Str(row.Data, "id")).ToArray();
+          foreach (string value in ids) await Pause(value).ConfigureAwait(false);
+          Inbox.CancelScan(); Media.ConfigureRouting(() => Network.Configure(() => Store.Patch(J.Obj("vpnInterfaceId", id, "proxyMode", "direct"))));
+          Emit(J.Obj("type", "settings", "settings", Store.Settings)); return ConnectedStatus();
+        }
+        default: throw new Exception("Unsupported connected service action");
+      }
+    }
     static Dictionary<string, object> MapRepo(object repo) {
       string name = J.Str(repo, "full_name"), branch = J.Str(repo, "default_branch", "main");
       return J.Obj("id", J.Get(repo, "id"), "fullName", name, "name", J.Str(repo, "name"), "owner", J.Str(J.Get(repo, "owner"), "login"), "ownerAvatar", J.Get(J.Get(repo, "owner"), "avatar_url"), "description", J.Get(repo, "description"), "htmlUrl", J.Get(repo, "html_url"), "stars", J.Num(repo, "stargazers_count"), "forks", J.Num(repo, "forks_count"), "openIssues", J.Num(repo, "open_issues_count"), "language", J.Get(repo, "language"), "license", J.Get(J.Get(repo, "license"), "spdx_id"), "updatedAt", J.Get(repo, "updated_at"), "defaultBranch", branch, "topics", J.List(J.Get(repo, "topics")).Take(8).ToArray(), "archived", J.Bool(repo, "archived"), "private", J.Bool(repo, "private"), "zipUrl", "https://github.com/" + name + "/archive/refs/heads/" + Uri.EscapeDataString(branch) + ".zip");
     }
     public async Task Stop() {
-      if (closed) return; closed = true; timer.Dispose(); Inbox.CancelScan();
+      if (closed) return; closed = true; timer.Dispose(); Mobile.Dispose(); Inbox.CancelScan();
       DownloadRecord[] values; lock (gate) values = records.Values.ToArray();
       foreach (var row in values) if (row.Cancel != null) row.Cancel.Cancel();
       await Task.WhenAll(values.Where(row => row.Work != null).Select(row => row.Work)).ConfigureAwait(false);

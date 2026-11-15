@@ -1,0 +1,48 @@
+name: Publish Mozilla-signed Firefox installer
+on:
+  push:
+    branches: [codex/release-firefox-1.0.1]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify signed package identity and pinned digest
+        run: |
+          python3 - <<'PY'
+          import json, hashlib, pathlib, zipfile
+          root = pathlib.Path('browser-extension/signed')
+          release = json.loads((root / 'release.json').read_text())
+          package = root / release['file']
+          assert hashlib.sha256(package.read_bytes()).hexdigest() == release['sha256']
+          with zipfile.ZipFile(package) as archive:
+              manifest = json.loads(archive.read('manifest.json'))
+              assert manifest['version'] == release['version']
+              assert manifest['browser_specific_settings']['gecko']['id'] == release['extensionId']
+              names = [name.lower() for name in archive.namelist()]
+              assert 'meta-inf/mozilla.rsa' in names or 'meta-inf/cose.sig' in names
+          (root / 'SHA256SUMS-Firefox-1.0.1.txt').write_text(release['sha256'] + '  ' + release['file'] + '\n')
+          PY
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const root = 'browser-extension/signed/';
+            const metadata = JSON.parse(fs.readFileSync(root + 'release.json', 'utf8'));
+            const tag = 'firefox-v1.0.1';
+            const body = 'Mozilla-signed Firefox extension 1.0.1 for Baran Download Manager. Install the signed XPI in ordinary Firefox (142+) with signature protection enabled. Then open Baran Settings → Browser integration → Firefox → Connect browser. No Developer Mode or signature bypass is required. This is a self-distributed signed extension, not a public AMO store listing. Browser download handoff is optional in the extension popup.\n\nافزونهٔ امضاشده توسط موزیلا؛ فایل signed.xpi را در فایرفاکس نصب کن، سپس اتصال فایرفاکس را در تنظیمات باران فعال کن. نسخهٔ بدون امضا را استفاده نکن.\n\nSee docs/FIREFOX-SIGNING.md for provenance and update limitations.';
+            const releases = await github.paginate(github.rest.repos.listReleases, {...context.repo, per_page: 100});
+            let release = releases.find(item => item.tag_name === tag);
+            if (release && !release.draft) { core.notice('Signed Firefox release is already published'); return; }
+            if (!release) release = (await github.rest.repos.createRelease({...context.repo, tag_name: tag, target_commitish: context.sha, name: 'Baran Firefox Extension 1.0.1 — Mozilla signed', body, draft: true, prerelease: false, make_latest: 'false'})).data;
+            for (const name of [metadata.file, 'SHA256SUMS-Firefox-1.0.1.txt']) {
+              const old = release.assets.find(item => item.name === name);
+              if (old) await github.rest.repos.deleteReleaseAsset({...context.repo, asset_id: old.id});
+              const data = fs.readFileSync(root + name);
+              const asset = (await github.rest.repos.uploadReleaseAsset({...context.repo, release_id: release.id, name, data})).data;
+              if (asset.size !== data.length || asset.state !== 'uploaded') throw Error('Incomplete upload');
+            }
+            await github.rest.repos.updateRelease({...context.repo, release_id: release.id, draft: false, make_latest: 'false'});

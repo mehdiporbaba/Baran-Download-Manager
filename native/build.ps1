@@ -1,6 +1,7 @@
 param([switch]$SkipFrontend, [switch]$SkipInstaller, [string]$CertificateThumbprint = $env:BARAN_SIGNING_THUMBPRINT)
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent $PSScriptRoot
+$version = (Get-Content -LiteralPath (Join-Path $repository 'package.json') -Raw | ConvertFrom-Json).version
 $dependencies = Join-Path $repository '.tools/native-deps'
 New-Item -ItemType Directory -Force -Path $dependencies | Out-Null
 function Get-Dependency([string]$Name, [string]$Url, [string]$Hash) {
@@ -25,6 +26,7 @@ if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination
 New-Item -ItemType Directory -Force -Path $destination, "$destination/bin", "$destination/native-host", "$destination/licenses" | Out-Null
 Copy-Item -LiteralPath (Join-Path $repository 'out/renderer') -Destination (Join-Path $destination 'ui') -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'bridge.js'), (Join-Path $repository 'resources/icon.ico') -Destination $destination
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'mobile.html') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'runtime-components.json') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $webview 'lib/net462/Microsoft.Web.WebView2.Core.dll'), (Join-Path $webview 'lib/net462/Microsoft.Web.WebView2.WinForms.dll'), (Join-Path $webview 'runtimes/win-x64/native/WebView2Loader.dll'), (Join-Path $html 'lib/Net45/HtmlAgilityPack.dll') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $aria 'aria2-1.37.0-win-64bit-build1/aria2c.exe') -Destination "$destination/bin"
@@ -39,12 +41,12 @@ foreach ($folder in @($webview, $html)) {
 }
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 $sources = Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.cs' -File | ForEach-Object FullName
-& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/win32icon:$(Join-Path $repository 'resources/icon.ico')" "/out:$destination/Baran Download Manager.exe" /r:System.Web.Extensions.dll /r:System.Core.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll "/r:$destination/HtmlAgilityPack.dll" "/r:$destination/Microsoft.Web.WebView2.Core.dll" "/r:$destination/Microsoft.Web.WebView2.WinForms.dll" $sources
+& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/win32icon:$(Join-Path $repository 'resources/icon.ico')" "/out:$destination/Baran Download Manager.exe" /r:System.Web.Extensions.dll /r:System.Core.dll /r:System.Security.dll /r:Microsoft.CSharp.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll "/r:$destination/HtmlAgilityPack.dll" "/r:$destination/Microsoft.Web.WebView2.Core.dll" "/r:$destination/Microsoft.Web.WebView2.WinForms.dll" $sources
 if ($LASTEXITCODE -ne 0) { throw 'Native application compilation failed' }
 & $compiler /nologo /target:exe "/out:$destination/native-host/BaranNativeHost.exe" (Join-Path $repository 'browser-extension/native-host/NativeHost.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Native messaging host compilation failed' }
 if ($CertificateThumbprint) { & (Join-Path $PSScriptRoot 'sign.ps1') -Files @((Join-Path $destination 'Baran Download Manager.exe'), (Join-Path $destination 'native-host/BaranNativeHost.exe')) -CertificateThumbprint $CertificateThumbprint }
-$archive = Join-Path $repository 'dist/Baran-Download-Manager-Native-Portable-2.0.0-x64.zip'
+$archive = Join-Path $repository "dist/Baran-Download-Manager-Native-Portable-$version-x64.zip"
 Compress-Archive -Path (Join-Path $destination '*') -DestinationPath $archive -Force
 Write-Output $archive
 if (-not $SkipInstaller) {
@@ -62,7 +64,7 @@ if (-not $SkipInstaller) {
         $nsis = Get-ChildItem -LiteralPath $nsisFolder -Filter 'makensis.exe' -File -Recurse | Select-Object -First 1
         if (-not $nsis) { throw 'NSIS compiler was not found after extraction' }
     }
-    & $nsis.FullName "/DAPP_SOURCE=$destination" "/DOUTPUT=$(Join-Path $repository 'dist/Baran-Download-Manager-Native-Setup-2.0.0-x64.exe')" (Join-Path $PSScriptRoot 'installer.nsi')
+    & $nsis.FullName "/DAPP_VERSION=$version" "/DAPP_SOURCE=$destination" "/DOUTPUT=$(Join-Path $repository "dist/Baran-Download-Manager-Native-Setup-$version-x64.exe")" (Join-Path $PSScriptRoot 'installer.nsi')
     if ($LASTEXITCODE -ne 0) { throw 'Native installer compilation failed' }
-    if ($CertificateThumbprint) { & (Join-Path $PSScriptRoot 'sign.ps1') -Files @((Join-Path $repository 'dist/Baran-Download-Manager-Native-Setup-2.0.0-x64.exe')) -CertificateThumbprint $CertificateThumbprint }
+    if ($CertificateThumbprint) { & (Join-Path $PSScriptRoot 'sign.ps1') -Files @((Join-Path $repository "dist/Baran-Download-Manager-Native-Setup-$version-x64.exe")) -CertificateThumbprint $CertificateThumbprint }
 }

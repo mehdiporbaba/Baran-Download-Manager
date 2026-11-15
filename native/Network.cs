@@ -17,12 +17,19 @@ namespace Baran {
   public sealed class NativeNetwork : IDisposable {
     readonly StateStore store;
     readonly Dictionary<string, ProxyTunnel> tunnels = new Dictionary<string, ProxyTunnel>();
+    public readonly VpnBinding Vpn;
+    readonly object routing = new object();
+    readonly List<WeakReference> requests = new List<WeakReference>();
     public NativeNetwork(StateStore state) {
-      store = state;
+      store = state; Vpn = new VpnBinding(state);
       ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
       ServicePointManager.DefaultConnectionLimit = 64;
     }
     public IWebProxy Proxy(string url) {
+      if (Vpn.Enabled) {
+        Vpn.Ensure();
+        lock (tunnels) { ProxyTunnel bound; if (!tunnels.TryGetValue("vpn", out bound)) { bound = new ProxyTunnel(null, Vpn); tunnels["vpn"] = bound; } return bound.Proxy; }
+      }
       string address = store.Proxy(url);
       if (String.IsNullOrEmpty(address)) return null;
       var uri = new Uri(address);
@@ -33,12 +40,24 @@ namespace Baran {
         return tunnel.Proxy;
       }
     }
+    public void Configure(Action change) {
+      lock (routing) {
+        foreach (var entry in requests) { var request = entry.Target as HttpWebRequest; if (request != null) request.Abort(); }
+        requests.Clear(); change();
+      }
+    }
+    HttpWebRequest Request(string url) {
+      lock (routing) {
+        var request = (HttpWebRequest)WebRequest.Create(J.Url(url)); request.Proxy = Proxy(url);
+        request.ConnectionGroupName = "Baran-" + J.Str(store.Settings, "vpnInterfaceId");
+        requests.RemoveAll(entry => !entry.IsAlive); requests.Add(new WeakReference(request)); return request;
+      }
+    }
     public async Task<HttpWebResponse> Open(string input, IDictionary<string, string> headers, CancellationToken token, long? start = null, long? end = null, bool redirects = true) {
       var uri = J.Url(input);
-      var request = (HttpWebRequest)WebRequest.Create(uri);
+      var request = Request(uri.AbsoluteUri);
       request.Method = "GET"; request.AllowAutoRedirect = redirects; request.MaximumAutomaticRedirections = 8;
       request.AutomaticDecompression = DecompressionMethods.None;
-      request.Proxy = Proxy(uri.AbsoluteUri);
       request.UserAgent = J.Str(store.Settings, "userAgent");
       request.Accept = "*/*"; request.Headers["Accept-Encoding"] = "identity";
       request.Timeout = 30000; request.ReadWriteTimeout = 30000;
@@ -102,6 +121,26 @@ namespace Baran {
       }
       }
     }
-    public void Dispose() { lock (tunnels) { foreach (var value in tunnels.Values) value.Dispose(); tunnels.Clear(); } }
+    public async Task<string> Api(string url, object headers, string form) {
+      var request = Request(url);
+      request.AllowAutoRedirect = false;
+      request.UserAgent = J.Str(store.Settings, "userAgent"); request.Method = form == null ? "GET" : "POST";
+      foreach (var entry in Headers(headers)) request.Headers[entry.Key] = entry.Value;
+      using (var timeout = new CancellationTokenSource(30000))
+      using (timeout.Token.Register(request.Abort)) {
+        if (form != null) {
+          byte[] bytes = System.Text.Encoding.UTF8.GetBytes(form); request.ContentType = "application/x-www-form-urlencoded"; request.ContentLength = bytes.Length;
+          using (var output = await request.GetRequestStreamAsync().ConfigureAwait(false)) await output.WriteAsync(bytes, 0, bytes.Length, timeout.Token).ConfigureAwait(false);
+        }
+        HttpWebResponse response;
+        try { response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false); }
+        catch (WebException error) { if (!(error.Response is HttpWebResponse)) throw new Exception("Real-Debrid connection failed"); response = (HttpWebResponse)error.Response; }
+        using (response) {
+          if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300) throw new Exception("Real-Debrid HTTP " + (int)response.StatusCode + ". Check your token, account and host availability.");
+          return System.Text.Encoding.UTF8.GetString(await Read(response.GetResponseStream(), 1024 * 1024, timeout.Token).ConfigureAwait(false));
+        }
+      }
+    }
+    public void Dispose() { Vpn.Dispose(); lock (tunnels) { foreach (var value in tunnels.Values) value.Dispose(); tunnels.Clear(); } }
   }
 }

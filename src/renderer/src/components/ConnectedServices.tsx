@@ -1,0 +1,81 @@
+import { useEffect, useState } from 'react'
+import { useApp } from '../state'
+
+interface Status {
+  debridConfigured: boolean
+  mobile: { running: boolean; url: string; token: string; addresses: string[] }
+  interfaces: Array<{ id: string; name: string; up: boolean; addresses: string[] }>
+  vpnInterfaceId: string
+  wakeEnabled: boolean
+  wakeError: string
+  nextWake: number
+}
+
+export function ConnectedServices(): React.JSX.Element {
+  const { settings, pushToast } = useApp()
+  const fa = settings.language === 'fa'
+  const [status, setStatus] = useState<Status>()
+  const [busy, setBusy] = useState(false)
+  const [token, setToken] = useState('')
+  const [link, setLink] = useState('')
+  const [address, setAddress] = useState('')
+  const [vpn, setVpn] = useState('')
+  const [account, setAccount] = useState('')
+  const api = window.pulse.connected
+  async function refresh(): Promise<void> {
+    if (!api) return
+    const value = await api('status') as Status
+    setStatus(value)
+    setVpn(value.vpnInterfaceId)
+    setAddress(previous => previous || value.mobile.addresses[0] || '')
+  }
+  useEffect(() => { void refresh().catch(error => pushToast('error', error.message)) }, [])
+  async function run(work: () => Promise<void>): Promise<void> {
+    setBusy(true)
+    try { await work(); await refresh() } catch (error) { pushToast('error', (error as Error).message) } finally { setBusy(false) }
+  }
+  if (!api) return <p>{fa ? 'این امکانات به نسخهٔ Native باران نیاز دارند.' : 'These services require the native Windows build.'}</p>
+  if (!status) return <p>{fa ? 'در حال دریافت وضعیت…' : 'Loading services…'}</p>
+  const box = 'space-y-3 rounded-xl border border-line bg-panel/50 p-4'
+  const input = 'field w-full min-w-0 px-3 py-2 text-[12px]'
+  return <div className="space-y-5 text-[12px] leading-7">
+    <p className="text-muted">{fa ? 'دکمه‌های این صفحه تغییرات را همان لحظه اعمال می‌کنند.' : 'Buttons on this page apply changes immediately.'}</p>
+    <section className={box}>
+      <h3 className="font-semibold text-ink">Real-Debrid</h3>
+      <p className="text-muted">{fa ? 'توکن حساب خودت را ذخیره کن؛ لینک تولیدشده برای بررسی وارد لینک‌گیر می‌شود. ارسال هر لینک به Real-Debrid ممکن است سهمیهٔ حساب را مصرف کند.' : 'Use your own account token. Generated links go to Link Grabber for review. Each generation sends the link to Real-Debrid and may consume account traffic.'}</p>
+      <button className="text-brand underline" type="button" onClick={() => void window.pulse.openExternal('https://real-debrid.com/apitoken')}>{fa ? 'دریافت توکن از حساب Real-Debrid' : 'Get your Real-Debrid token'}</button>
+      <input aria-label="Real-Debrid token" className={input} type="password" autoComplete="off" dir="ltr" placeholder={status.debridConfigured ? '•••••••• — connected' : 'API token'} value={token} onChange={event => setToken(event.target.value)} />
+      <div className="flex flex-wrap gap-2">
+        <button className="btn btn-primary" disabled={busy || !token.trim()} onClick={() => void run(async () => { await api('debridSave', { token }); setToken('') })}>{fa ? 'ذخیرهٔ توکن' : 'Save token'}</button>
+        <button className="btn btn-ghost" disabled={busy || !status.debridConfigured} onClick={() => void run(async () => { const user = await api('debridAccount') as { username: string; type: string }; setAccount(`${user.username} · ${user.type}`) })}>{fa ? 'آزمایش حساب' : 'Test account'}</button>
+        <button className="btn btn-ghost" disabled={busy || !status.debridConfigured} onClick={() => void run(async () => { await api('debridSave', { token: '' }); setAccount('') })}>{fa ? 'حذف توکن' : 'Remove token'}</button>
+      </div>
+      {account && <p>{account}</p>}
+      <input className={input} aria-label="Real-Debrid source link" dir="ltr" type="url" value={link} placeholder="https://host.example/file" onChange={event => setLink(event.target.value)} />
+      <button className="btn btn-primary" disabled={busy || !status.debridConfigured || !link.trim()} onClick={() => void run(async () => { await api('debridCollect', { url: link }); setLink(''); pushToast('success', fa ? 'لینک به لینک‌گیر اضافه شد.' : 'Link added to Link Grabber.') })}>{fa ? 'تولید لینک و افزودن به لینک‌گیر' : 'Generate link into Link Grabber'}</button>
+      <p className="text-faint">{fa ? 'توکن با رمزگذاری حساب ویندوز ذخیره می‌شود؛ در خروجی صف یا صفحهٔ موبایل نمایش داده نمی‌شود.' : 'The token is encrypted for your Windows account; queue snapshots and mobile control never contain it.'}</p>
+    </section>
+    <section className={box}>
+      <h3 className="font-semibold">{fa ? 'کنترل از موبایل در شبکهٔ محلی' : 'Mobile control on your LAN'}</h3>
+      <p className="text-muted">{fa ? 'فقط روی شبکهٔ خصوصی قابل اعتماد فعال کن. این نسخه از HTTP بدون رمزگذاری استفاده می‌کند. دسترسی شامل مشاهدهٔ نام و وضعیت دانلودها، توقف/ادامه و ارسال لینک به لینک‌گیر است. فایروال یا Port forwarding خودکار تغییر نمی‌کند.' : 'Enable only on a trusted private network. This version uses unencrypted HTTP. Access is limited to task names/status, pause/resume and collecting links. Baran does not change the firewall or port forwarding.'}</p>
+      {!status.mobile.running ? <><select className={input} aria-label="Mobile bind address" value={address} onChange={event => setAddress(event.target.value)}><option value="">{fa ? 'انتخاب IP خصوصی' : 'Choose private IP'}</option>{status.mobile.addresses.map(ip => <option key={ip}>{ip}</option>)}</select><button className="btn btn-primary" disabled={busy || !address} onClick={() => void run(async () => { await api('mobileStart', { address }) })}>{fa ? 'فعال‌کردن کنترل موبایل' : 'Enable mobile control'}</button></> : <>
+        <p>{fa ? 'این نشانی را روی گوشیِ متصل به همان شبکه باز کن:' : 'Open this address on a phone on the same network:'}</p><p dir="ltr" className="select-text break-all text-brand">{status.mobile.url}</p>
+        <label className="block">{fa ? 'کد اتصال' : 'Pairing token'}<input className={input} dir="ltr" readOnly value={status.mobile.token} onFocus={event => event.target.select()} /></label>
+        <button className="btn btn-ghost" disabled={busy} onClick={() => void run(async () => { await api('mobileStop') })}>{fa ? 'توقف و باطل‌کردن کد اتصال' : 'Stop and revoke token'}</button>
+      </>}
+    </section>
+    <section className={box}>
+      <h3 className="font-semibold">{fa ? 'بیدارکردن ویندوز برای دانلود زمان‌بندی‌شده' : 'Wake Windows for scheduled downloads'}</h3>
+      <p className="text-muted">{fa ? 'با فعال‌سازی، یک تسک برای نزدیک‌ترین دانلود آینده در Windows Task Scheduler ثبت می‌شود و باران را اجرا می‌کند. نیازمند واردبودن حساب ویندوز و پشتیبانی سخت‌افزار و Wake timers است؛ کامپیوتر خاموش را روشن نمی‌کند.' : 'Opt in to register a Windows task for the next queued schedule and launch Baran. Requires a signed-in Windows session, supported hardware and allowed wake timers. It cannot power on a shut-down computer.'}</p>
+      <button className="btn btn-primary" disabled={busy} onClick={() => void run(async () => { await api('wake', { enabled: !status.wakeEnabled }) })}>{status.wakeEnabled ? (fa ? 'غیرفعال‌کردن و حذف تسک' : 'Disable and remove task') : (fa ? 'فعال‌کردن Wake timer' : 'Enable wake task')}</button>
+      {status.nextWake > 0 && <p>{fa ? 'نزدیک‌ترین زمان: ' : 'Next schedule: '}{new Date(status.nextWake).toLocaleString(fa ? 'fa-IR' : 'en-US')}</p>}
+      {status.wakeError && <p role="alert" className="text-warn">{status.wakeError}</p>}
+    </section>
+    <section className={box}>
+      <h3 className="font-semibold">{fa ? 'اتصال HTTP به اینترفیس VPN — آزمایشی' : 'HTTP VPN interface binding — experimental'}</h3>
+      <p className="text-muted">{fa ? 'HTTP و DNS آن فقط از IPv4 اینترفیس انتخابی عبور می‌کنند و با قطع آن مسیر جایگزین ندارند. برای جلوگیری از خروج ترافیک، تورنت و ابزارهای رسانه در این حالت مسدود می‌شوند. این قابلیت Kill-switch کل سیستم نیست. تغییر مسیر، دانلودهای جاری را متوقف و حالت پراکسی را مستقیم می‌کند.' : 'HTTP and its DNS use only the selected IPv4 interface, with no fallback on disconnect. Torrents and external media tools are blocked in this mode. This is not a system-wide kill switch. Changing the binding pauses transfers and selects Direct proxy mode.'}</p>
+      <select className={input} aria-label="VPN interface" value={vpn} onChange={event => setVpn(event.target.value)}><option value="">{fa ? 'بدون اتصال اجباری' : 'No interface binding'}</option>{status.interfaces.map(nic => <option key={nic.id} value={nic.id}>{nic.name} · {nic.up ? nic.addresses.join(', ') : 'offline'}</option>)}</select>
+      <button className="btn btn-primary" disabled={busy || vpn === status.vpnInterfaceId} onClick={() => void run(async () => { await api('vpn', { id: vpn }) })}>{fa ? 'اعمال مسیر اتصال' : 'Apply interface binding'}</button>
+    </section>
+  </div>
+}

@@ -1,0 +1,41 @@
+name: Sign Firefox extension with Mozilla
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/prepare-firefox.cjs
+      - name: Validate the Firefox submission
+        run: npx --yes web-ext@10.5.0 lint --source-dir dist/firefox-submission --warnings-as-errors
+      - name: Request a real Mozilla signature for self-distribution
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        shell: bash
+        run: |
+          test -n "$WEB_EXT_API_KEY" && test -n "$WEB_EXT_API_SECRET" || { echo 'Configure the owner AMO_JWT_ISSUER and AMO_JWT_SECRET repository secrets first.'; exit 1; }
+          npx --yes web-ext@10.5.0 sign --source-dir dist/firefox-submission --channel unlisted --artifacts-dir dist/mozilla-signed --approval-timeout 1200000
+      - name: Check that Mozilla returned a signed XPI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile
+          files = list(pathlib.Path('dist/mozilla-signed').glob('*.xpi'))
+          assert len(files) == 1, 'Mozilla has not returned a signed XPI; do not distribute an unsigned replacement.'
+          with zipfile.ZipFile(files[0]) as package:
+              entries = [name.lower() for name in package.namelist()]
+              assert 'meta-inf/mozilla.rsa' in entries or 'meta-inf/cose.sig' in entries
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Baran-Firefox-Mozilla-signed
+          path: dist/mozilla-signed/*.xpi
+          if-no-files-found: error

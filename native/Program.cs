@@ -20,6 +20,7 @@ namespace Baran {
     [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr handle);
     [STAThread] static int Main(string[] args) {
       string root = AppDomain.CurrentDomain.BaseDirectory;
+      if (args.Contains("--remove-wake-task")) { try { new WakeScheduler(Path.Combine(root, "Baran Download Manager.exe"), false).Sync(false, 0); return 0; } catch { return 1; } }
       int profileAt = Array.IndexOf(args, "--profile");
       string profile = profileAt >= 0 && args.Length > profileAt + 1 ? Path.GetFullPath(args[profileAt + 1]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Baran");
       if (args.Contains("--test-driver")) return Driver(profile, root).GetAwaiter().GetResult();

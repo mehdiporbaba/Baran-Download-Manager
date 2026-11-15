@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0-beta.1
+
+- Mozilla-signed Firefox 1.0.1 package and a direct installation link; repeatable owner-controlled signing workflow.
+- Native Connected services: DPAPI-protected Real-Debrid token/account/link flow, scoped paired LAN mobile control, and opt-in Windows WakeToRun tasks using Gregorian invariant timestamps.
+- Experimental IPv4 HTTP/interface binding, including bound DNS and disconnect closure. External media/torrent traffic is blocked in this mode; this is not a system-wide kill switch.
+- Local contract/security-boundary tests and actual Windows task registration/removal. Live provider, physical sleep/wake, phone/firewall and full VPN leak acceptance remain pending; desktop 2.0.0 stays stable.
+
 ## 2.0.0 — native Windows
 
 - Replace the packaged Electron runtime with a C#/.NET Framework WebView2 app; reuse the installed Evergreen runtime and ship a compact native installer/Portable ZIP.

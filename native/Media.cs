@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace Baran {
   public sealed class Media {
+    readonly object routing = new object(); int running;
+    public void ConfigureRouting(Action change) { lock (routing) { if (running != 0) throw new Exception("Wait for media inspection or downloads to stop before changing VPN binding"); change(); } }
     readonly StateStore store; readonly NativeNetwork network; readonly string root;
     public Media(StateStore state, NativeNetwork net, string directory) { store = state; network = net; root = directory; }
     public string Binary(string name) {
@@ -22,6 +24,7 @@ namespace Baran {
     }
     public Dictionary<string, object> Status(string name) { string file = Binary(name); return J.Obj("available", file.Length > 0, "path", file); }
     List<string> Common(string url, bool gallery) {
+      if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("Media tools are blocked while VPN HTTP binding is enabled; their DNS cannot yet be confined to the selected interface");
       var args = new List<string> { gallery ? "--config-ignore" : "--ignore-config", "--no-colors", "--proxy", store.Proxy(url) };
       string cookies = J.Str(store.Settings, "cookiesFile"), browser = J.Str(store.Settings, "cookiesBrowser");
       if (!String.IsNullOrEmpty(cookies) && File.Exists(cookies)) args.AddRange(new [] { "--cookies", cookies });
@@ -34,6 +37,8 @@ namespace Baran {
       return args;
     }
     public async Task<string> Run(string file, IEnumerable<string> args, int timeout, CancellationToken token, Action<string> line = null) {
+      lock (routing) { if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("External media tools are blocked while VPN HTTP binding is enabled"); running++; }
+      try {
       if (String.IsNullOrEmpty(file)) throw new Exception("Install the required media tool in Settings first");
       var info = new ProcessStartInfo(file, String.Join(" ", args.Select(J.Quote))) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
       using (var process = new Process { StartInfo = info })
@@ -52,6 +57,7 @@ namespace Baran {
           return stdout.ToString();
         }
       }
+      } finally { lock (routing) running--; }
     }
     public async Task<Dictionary<string, object>> Probe(string input) {
       string url = J.Url(input).AbsoluteUri;

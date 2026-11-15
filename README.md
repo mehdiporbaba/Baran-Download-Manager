@@ -12,6 +12,10 @@
 
 </div>
 
+**Firefox installation fixed:** use the [Mozilla-signed Firefox 1.0.1 XPI](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1), then connect Firefox in Baran Settings → Browser integration. Do not use the old unsigned development XPI. [Signing details](docs/FIREFOX-SIGNING.md).
+
+**2.1.0-beta.1 prerelease:** Real-Debrid, authenticated private-LAN mobile control, Windows wake tasks and experimental HTTP-only IPv4 VPN binding. [Scope and limits](docs/RELEASE-2.1.0-beta.1.md). Latest stable desktop: **2.0.0**.
+
 ## A workspace built around your downloads
 
 Baran Download Manager brings direct files, scheduled jobs, browser links, media and torrents into one desktop workspace. Version 2.0 uses a native C# backend and the shared Windows WebView2 Runtime: roughly 2.5 MB Setup / 3.2 MB Portable ZIP in local builds, with no bundled Electron, Node.js or Chromium runtime. It opens All downloads with a collapsible menu and keeps your review inbox on disk. [Architecture and measurements](docs/NATIVE.md).
@@ -25,7 +29,7 @@ This is an independently maintained GPL fork of [Pulse Download Manager](https:/
 | **Link Grabber** | Paste text or import TXT, deduplicate links, check availability, filter file extensions, and download a selection. |
 | **Folder scanner** | Discover linked files in an HTML directory or page tree, with depth/page limits, cancellation and an explicit preview. |
 | **Scheduling** | Set a local start date/time when adding files or a batch. Scheduled jobs are saved with the download queue. |
-| **Browser extension** | Chrome/Edge and Firefox sources, optional acknowledged download handoff, and in-app Native Messaging registration. Store signing/publication is pending. |
+| **Browser extension** | Mozilla-signed Firefox XPI, Chrome/Edge development sources, optional acknowledged handoff and in-app Native Messaging registration. Public store listings remain pending. |
 | **Expired links** | Replace a paused/error HTTP URL after verifying size, a strong ETag and saved segment boundaries, then resume without resetting offsets. |
 | **YouTube & video** | Use yt-dlp to select quality, audio, subtitles and playlist items. Optional tools are managed in Settings. |
 | **Instagram** | Use gallery-dl to collect photos, video posts, reels, carousels and accessible stories into the review inbox. |
@@ -39,7 +43,7 @@ Open the [latest release](https://github.com/mehdiporbaba/Baran-Download-Manager
 
 - **Setup**: `Baran-Download-Manager-Native-Setup-2.0.0-x64.exe` — compact Windows installer and shortcuts.
 - **Portable**: `Baran-Download-Manager-Native-Portable-2.0.0-x64.zip` — extract into a stable folder and run `Baran Download Manager.exe`.
-- **Extensions**: Chrome/Edge development ZIP and a separate **unsigned** Firefox XPI; see the guide for signing/store status.
+- **Extensions**: Chrome/Edge development ZIP; use the separate [Mozilla-signed Firefox release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1) instead of the historical unsigned XPI in desktop 2.0.0.
 
 Windows 10/11 x64 needs .NET Framework and the shared Microsoft WebView2 Evergreen Runtime. WebView2 is already present on many PCs; a missing runtime requires a separate Microsoft download. The app is unsigned unless the release explicitly provides a verified trusted publisher signature. Self-signed certificates do not solve public SmartScreen trust. Optional `yt-dlp`, `gallery-dl` and `ffmpeg` are separate tools and can be much larger than Baran. No guarantee is made that every source-site challenge or protected account works.
 
@@ -49,7 +53,7 @@ Windows 10/11 x64 needs .NET Framework and the shared Microsoft WebView2 Evergre
 2. Select the unpacked `browser-extension` directory and copy the extension ID.
 3. In Baran, open **Settings → Browser integration**, select the browser, paste that development extension ID and click **Connect browser**. No PowerShell command is required.
 
-Firefox has a fixed add-on ID and needs no copied ID in Baran. Its packaged XPI must be signed through Mozilla before normal public installation. A plain ZIP/CRX does not bypass Chrome's store requirements. Until owner-controlled store listings exist, these are development packages, not one-click public installers. In the extension popup you can opt in to handling new HTTP(S) downloads; it resumes the browser if Baran cannot acknowledge receipt. [Guide](docs/GUIDE.md) · [Privacy](browser-extension/PRIVACY.md).
+Firefox has a fixed add-on ID and needs no copied ID in Baran. Its **signed.xpi** is approved by Mozilla for self-distribution and ordinary Firefox installation. Chrome/Edge still need store publication for ordinary-user onboarding; a plain ZIP/CRX does not bypass store requirements. In the extension popup you can opt in to handling new HTTP(S) downloads; it resumes the browser if Baran cannot acknowledge receipt. [Guide](docs/GUIDE.md) · [Privacy](browser-extension/PRIVACY.md).
 
 ## Why do some media links need a login?
 

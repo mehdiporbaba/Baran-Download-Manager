@@ -327,6 +327,8 @@ export type MainEvent =
   | { type: 'settings'; settings: Settings }
 
 export interface PulseAPI {
+  /** Native-only, explicitly scoped connected-service actions. */
+  connected?(action: string, input?: unknown): Promise<unknown>
   registerBrowserHost(browser: 'chrome' | 'edge' | 'firefox', extensionId?: string): Promise<void>
   replaceUrl(id: string, url: string): Promise<void>
   instagramCollect(url: string): Promise<number>

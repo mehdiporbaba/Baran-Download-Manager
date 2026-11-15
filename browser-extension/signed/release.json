@@ -1,0 +1,11 @@
+{
+  "version": "1.0.1",
+  "extensionId": "baran-download-manager@mehdiporbaba",
+  "file": "Baran-Firefox-Extension-1.0.1-signed.xpi",
+  "sha256": "908de928372ff98ca24f021907b175ceeb686e269db2b605b793d8676dbbc0c8",
+  "mozillaVersionId": 6711549,
+  "mozillaFileId": 5255635,
+  "status": "approved",
+  "distribution": "unlisted",
+  "approvedDate": "2026-11-15"
+}

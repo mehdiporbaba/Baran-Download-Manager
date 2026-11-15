@@ -18,6 +18,7 @@ namespace Baran {
     public bool Ready { get { return process != null && !process.HasExited; } }
     public Torrents(StateStore state, string root, bool test) { store = state; executable = Path.Combine(root, "bin", "aria2c.exe"); testing = test; }
     public async Task Start() {
+      if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("Torrents are blocked while VPN HTTP binding is enabled; peer and DNS binding is not yet supported");
       await startGate.WaitAsync().ConfigureAwait(false);
       try {
         if (Ready) return;

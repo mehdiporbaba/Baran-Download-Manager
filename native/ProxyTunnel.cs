@@ -13,11 +13,12 @@ namespace Baran {
   public sealed class ProxyTunnel : IDisposable {
     readonly TcpListener listener;
     readonly Uri upstream;
+    readonly VpnBinding binding;
     readonly string password = Guid.NewGuid().ToString("N");
     readonly CancellationTokenSource stop = new CancellationTokenSource();
     public readonly IWebProxy Proxy;
-    public ProxyTunnel(Uri address) {
-      upstream = address; listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
+    public ProxyTunnel(Uri address, VpnBinding vpn = null) {
+      upstream = address; binding = vpn; listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
       Proxy = new FixedProxy(new Uri("http://127.0.0.1:" + ((IPEndPoint)listener.LocalEndpoint).Port), new NetworkCredential("baran", password));
       Task.Run((Func<Task>)Accept);
     }
@@ -53,11 +54,20 @@ namespace Baran {
           string[] lines = text.Split(new [] { "\r\n" }, StringSplitOptions.None);
           string[] first = lines[0].Split(' '); bool connect = first[0] == "CONNECT";
           Uri destination = connect ? new Uri("https://" + first[1]) : J.Url(first[1]);
-          using (var remote = new TcpClient()) {
+          var connected = binding == null ? new TcpClient() : await binding.Connect(destination.DnsSafeHost, destination.Port, token).ConfigureAwait(false);
+          try {
+          using (var remote = connected) {
             using (token.Register(remote.Close)) {
-              await remote.ConnectAsync(upstream.Host, upstream.IsDefaultPort ? (upstream.Scheme == "https" ? 443 : 1080) : upstream.Port).ConfigureAwait(false);
+              if (binding == null) await remote.ConnectAsync(upstream.Host, upstream.IsDefaultPort ? (upstream.Scheme == "https" ? 443 : 1080) : upstream.Port).ConfigureAwait(false);
               Stream output = remote.GetStream();
-              if (upstream.Scheme == "https") {
+              if (binding != null) {
+                if (connect) { byte[] ok = Encoding.ASCII.GetBytes("HTTP/1.1 200 Connection Established\r\n\r\n"); await input.WriteAsync(ok, 0, ok.Length, token).ConfigureAwait(false); }
+                else {
+                  lines[0] = first[0] + " " + destination.PathAndQuery + " " + first[2];
+                  string requestText = System.Text.RegularExpressions.Regex.Replace(String.Join("\r\n", lines), "^Proxy-(Authorization|Connection):[^\r\n]*\r\n", "", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                  byte[] request = Encoding.ASCII.GetBytes(requestText); await output.WriteAsync(request, 0, request.Length, token).ConfigureAwait(false);
+                }
+              } else if (upstream.Scheme == "https") {
                 var ssl = new SslStream(output, false); await ssl.AuthenticateAsClientAsync(upstream.Host).ConfigureAwait(false); output = ssl;
                 // Forward the proxy request through TLS, removing local credentials.
                 text = System.Text.RegularExpressions.Regex.Replace(text, "^Proxy-Authorization:[^\r\n]*\r\n", "", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -99,6 +109,7 @@ namespace Baran {
               deadline.Cancel();
             }
           }
+          } finally { if (binding != null) binding.Release(connected); }
         } catch { /* Request receives a normal proxy connection failure. */ }
       }
     }

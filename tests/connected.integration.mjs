@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict'
+import { spawn, spawnSync } from 'node:child_process'
+import { createInterface } from 'node:readline'
+import { resolve, join } from 'node:path'
+import { mkdir, copyFile, readFile } from 'node:fs/promises'
+import { request } from 'node:http'
+const directory = resolve('.tools/connected-integration', `${Date.now()}-${process.pid}`)
+await mkdir(directory, { recursive: true })
+const root = resolve('dist/native'), binary = join(root, 'Baran Download Manager.exe')
+const fixture = join(directory, 'ConnectedFixture.exe')
+const build = spawnSync(`${process.env.WINDIR}\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe`, ['/nologo', '/r:Microsoft.CSharp.dll', '/r:System.Xml.Linq.dll', '/r:System.Core.dll', '/r:System.Security.dll', `/r:${binary}`, `/out:${fixture}`, resolve('tests/ConnectedFixture.cs')], { encoding: 'utf8' })
+assert.equal(build.status, 0, build.stdout + build.stderr)
+await copyFile(binary, join(directory, 'Baran Download Manager.exe'))
+const compiled = spawnSync(fixture, [join(directory, 'fixture-profile')], { encoding: 'utf8', timeout: 20000 })
+process.stdout.write(compiled.stdout)
+assert.equal(compiled.status, 0, compiled.stderr)
+const profile = join(directory, 'driver-profile')
+const child = spawn(binary, ['--test-driver', '--profile', profile], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] })
+let serial = 0; const pending = new Map(); let stderr = ''
+child.stderr.on('data', data => { stderr += data })
+createInterface({ input: child.stdout }).on('line', line => { const data = JSON.parse(line), p = pending.get(data.id); if (!p) return; clearTimeout(p.timeout); pending.delete(data.id); data.error ? p.reject(new Error(data.error)) : p.resolve(data.result) })
+const exit = new Promise(done => child.on('exit', done))
+function invoke(method, ...args) { return new Promise((resolve, reject) => { const id = ++serial, timeout = setTimeout(() => { pending.delete(id); reject(Error(`Timeout ${method}: ${stderr}`)) }, 15000); pending.set(id, { resolve, reject, timeout }); child.stdin.write(JSON.stringify({ id, method, args }) + '\n') }) }
+try {
+  const services = await invoke('connected', 'status')
+  assert.equal(services.mobile.running, false)
+  assert.equal(services.wakeEnabled, false)
+  await assert.rejects(invoke('connected', 'mobileStart', { address: '0.0.0.0' }))
+  await invoke('connected', 'debridSave', { token: 'fixture-token-private' })
+  assert.equal((await invoke('connected', 'status')).debridConfigured, true)
+  assert.ok(!JSON.stringify(await invoke('snapshot')).includes('fixture-token-private'))
+  assert.ok(!(await readFile(join(profile, 'connected-secrets.bin'))).includes(Buffer.from('fixture-token-private')))
+  const mobile = await invoke('connected', 'mobileStart', { address: '127.0.0.1' })
+  const headers = { Authorization: `Bearer ${mobile.token}` }
+  assert.equal((await fetch(mobile.url + 'api/status')).status, 401)
+  assert.equal((await fetch(mobile.url + 'api/status', { headers: { ...headers, Origin: 'https://attacker.invalid' } })).status, 403)
+  for (let i = 0; i < 12; i++) assert.equal((await fetch(mobile.url + 'api/status', { headers: { Authorization: 'Bearer wrong' } })).status, 401, 'Rejected requests must release connection slots')
+  const wrongHost = await new Promise((resolve, reject) => { const req = request(mobile.url + 'api/status', { headers: { ...headers, Host: 'attacker.invalid' } }, res => { res.resume(); resolve(res.statusCode) }); req.on('error', reject); req.end() })
+  assert.equal(wrongHost, 403)
+  const page = await fetch(mobile.url); assert.equal(page.status, 200); assert.match(await page.text(), /Baran Download Manager/)
+  assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/)
+  const command = async data => fetch(mobile.url + 'api/command', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+  assert.equal((await command({ action: 'collect', url: 'https://example.com/from-mobile.zip' })).status, 200)
+  assert.ok((await invoke('linksList')).some(link => link.url === 'https://example.com/from-mobile.zip'))
+  assert.equal((await command({ action: 'updateSettings', downloadDir: 'C:\\' })).status, 400)
+  const task = await invoke('addDownload', { url: 'https://example.com/scheduled.zip', startAt: Date.now() + 3600000 })
+  assert.equal((await command({ action: 'pause', id: task.id })).status, 200)
+  assert.equal((await command({ action: 'resume', id: task.id })).status, 200)
+  const status = await (await fetch(mobile.url + 'api/status', { headers })).json()
+  assert.ok(!JSON.stringify(status).includes('https://example.com/scheduled.zip'))
+  assert.ok(!JSON.stringify(status).includes(profile))
+  assert.ok(!JSON.stringify(status).includes('fixture-token-private'))
+  assert.ok(status.tasks.some(item => item.id === task.id))
+  await invoke('connected', 'mobileStop')
+  await assert.rejects(fetch(mobile.url + 'api/status', { headers }))
+  const restarted = await invoke('connected', 'mobileStart', { address: '127.0.0.1' })
+  assert.notEqual(restarted.token, mobile.token)
+  assert.equal((await fetch(restarted.url + 'api/status', { headers })).status, 401)
+  await invoke('connected', 'mobileStop')
+  await invoke('connected', 'debridSave', { token: '' })
+  assert.equal((await invoke('connected', 'status')).debridConfigured, false)
+  console.log('PASS connected: mobile pairing, token rotation/revocation, CSRF/Host rejection, scoped commands and secret/path redaction')
+} finally { child.stdin.end(); const code = await Promise.race([exit, new Promise(done => setTimeout(() => { child.kill(); done(-1) }, 10000).unref())]); assert.equal(code, 0, stderr) }

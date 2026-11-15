@@ -20,6 +20,12 @@ This backlog incorporates the product feedback supplied by the project owner. Co
 
 ## Subsequent capabilities
 
+### 2.1.0-beta.1 status
+
+Implemented for prerelease acceptance testing: Real-Debrid account/link flow with DPAPI token storage; scoped, paired private-LAN HTTP mobile control; opt-in Windows wake tasks; experimental HTTP-only IPv4 binding with bound DNS and disconnect closure. Torrents/media are blocked in binding mode. Actual Windows task registration and local transport/provider/control tests pass. Live paid-provider, physical sleep/wake, phone/firewall and real VPN reconnect/DNS/IPv6 leak acceptance remain. See [release limits](RELEASE-2.1.0-beta.1.md).
+
+Mozilla approved/signed Firefox 1.0.1 on 2026-11-15. Its signed self-distribution package is preserved and published separately. Public AMO listing, automatic update hosting and ordinary-browser native-handoff acceptance remain.
+
 - Debrid provider abstraction, starting with Real-Debrid, then AllDebrid, Premiumize and TorBox as warranted. Keep provider tokens out of logs, source, release assets and ordinary link text. Verify current provider APIs before implementation.
 - Link health checks and smart grouping; multi-part archive grouping and extraction only with path-traversal protection, archive limits and clear overwrite behavior.
 - Publisher-supplied SHA-256 verification and file-type destination rules. MD5 may be useful for accidental-corruption checks but is not a secure authenticity guarantee.

@@ -28,8 +28,9 @@ import { Modal } from './Modal'
 import { Logo, Toggle } from './primitives'
 import { cn } from '../lib/format'
 import { proxyConfiguration } from '@shared/network-policy'
+import { ConnectedServices } from './ConnectedServices'
 
-type Tab = 'general' | 'speed' | 'network' | 'browsers' | 'appearance' | 'tools' | 'about'
+type Tab = 'general' | 'speed' | 'network' | 'browsers' | 'connected' | 'appearance' | 'tools' | 'about'
 
 export function SettingsModal(): React.JSX.Element {
   const { settingsOpen, setSettingsOpen, t, settings, stats, system, patchSettings, pushToast, refreshTools } =
@@ -93,6 +94,7 @@ export function SettingsModal(): React.JSX.Element {
     { id: 'speed', label: t.settings.tabs.speed, icon: <Gauge size={15} /> },
     { id: 'network', label: settings.language === 'fa' ? 'شبکه و پراکسی' : 'Network & proxy', icon: <Network size={15} /> },
     { id: 'browsers', label: fa ? 'اتصال مرورگرها' : 'Browser integration', icon: <Globe2 size={15} /> },
+    { id: 'connected', label: fa ? 'سرویس‌ها و کنترل' : 'Connected services', icon: <Network size={15} /> },
     { id: 'appearance', label: t.settings.tabs.appearance, icon: <Monitor size={15} /> },
     { id: 'tools', label: t.settings.tabs.tools, icon: <Wrench size={15} /> },
     { id: 'about', label: t.settings.tabs.about, icon: <Info size={15} /> }
@@ -136,6 +138,7 @@ export function SettingsModal(): React.JSX.Element {
         </div>
 
         <div className="scroll-y min-w-0 flex-1 p-5">
+          {tab === 'connected' && <ConnectedServices />}
           {tab === 'browsers' && (
             <div className="space-y-5">
               <Group title={fa ? 'اتصال افزونه به باران' : 'Connect the browser extension'} hint={fa ? 'ابتدا افزونه را نصب کن؛ سپس با این دکمه ارتباط آن با برنامه را فعال کن. دسترسی مدیر ویندوز لازم نیست.' : 'Install the extension first, then connect it here. No administrator access is needed.'}>
@@ -155,6 +158,7 @@ export function SettingsModal(): React.JSX.Element {
                 <p className="text-[12px] leading-7 text-muted">{fa ? 'لینک دانلودهای جدید HTTP و HTTPS برای بررسی به لینک‌گیر باران می‌رود. اگر برنامه در دسترس نباشد، مرورگر دانلود را ادامه می‌دهد. دانلودهای خصوصی، blob و دانلودهای افزونه‌های دیگر منتقل نمی‌شوند. سایت‌هایی که به ورود یا درخواست POST نیاز دارند ممکن است در مرورگر بهتر کار کنند؛ در این موارد گزینه را خاموش کن.' : 'New HTTP(S) downloads are staged for review in Link Grabber. If Baran is unavailable, your browser continues downloading. Private downloads, blob URLs and downloads started by other extensions are excluded. Login-dependent or POST downloads may require leaving handoff off.'}</p>
               </Group>
               <Group title={fa ? 'نصب سادهٔ افزونه' : 'Simple extension installation'} hint={fa ? 'نسخهٔ فروشگاهی هنوز منتشر نشده است.' : 'Store listings are not published yet.'}>
+                <button type="button" className="btn btn-primary mb-3" onClick={() => void window.pulse.openExternal('https://github.com/mehdiporbaba/Baran-Download-Manager/releases/download/firefox-v1.0.1/Baran-Firefox-Extension-1.0.1-signed.xpi')}><Download size={14} />{fa ? 'دانلود افزونهٔ فایرفاکس با امضای موزیلا' : 'Download Mozilla-signed Firefox extension'}</button>
                 <p className="text-[12px] leading-7 text-muted">{fa ? 'فایرفاکس به فایل XPI امضاشده توسط Mozilla نیاز دارد. نصب عمومی Chrome و Edge از فروشگاه رسمی انجام می‌شود. اتصال باران به معنی غیرفعال‌کردن افزونه‌های IDM یا FDM نیست؛ اگر تداخل دارند، افزونهٔ دانلودمنیجر دیگر را خودت خاموش کن.' : 'Firefox requires a Mozilla-signed XPI. Public Chrome/Edge installation uses their stores. Connecting Baran does not disable IDM or FDM extensions; turn the other integration off if they conflict.'}</p>
               </Group>
             </div>
