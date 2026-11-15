@@ -1,0 +1,11 @@
+{
+  "schema":1,
+  "tag":"firefox-v1.0.1",
+  "title":{"en":"Baran Firefox Extension `1.0.1` — Mozilla signed","fa":"افزونهٔ فایرفاکس باران، نسخهٔ `1.0.1` با امضای موزیلا"},
+  "blocks":[
+    {"id":"package","type":"paragraph","en":"Mozilla-signed Firefox extension 1.0.1 for Baran Download Manager. Install the signed XPI in ordinary Firefox (142+) with signature protection enabled. Then open Baran Settings → Browser integration → Firefox → Connect browser.","fa":"افزونهٔ فایرفاکس نسخهٔ ۱٫۰٫۱ برای باران دانلود منیجر، با امضای موزیلا. فایل امضاشدهٔ `XPI` را در فایرفاکس معمولی نسخهٔ ۱۴۲ یا بالاتر نصب کنید و بررسی امضای افزونه‌ها را فعال نگه دارید. سپس در باران، مسیر «تنظیمات ← اتصال مرورگرها ← Firefox ← فعال‌کردن اتصال» را باز کنید."},
+    {"id":"distribution","type":"paragraph","en":"No Developer Mode or signature bypass is required. This is a self-distributed signed extension, not a public AMO store listing. Browser download handoff is optional in the extension popup.","fa":"حالت توسعه‌دهنده یا دورزدن بررسی امضا لازم نیست. این یک افزونهٔ امضاشده با توزیع مستقیم است و صفحهٔ عمومی در فروشگاه افزونه‌های موزیلا ندارد. واگذاری دانلودهای مرورگر به باران، گزینه‌ای اختیاری در پنجرهٔ خود افزونه است."},
+    {"id":"unsigned","type":"paragraph","en":"Use the signed XPI rather than the older unsigned development package.","fa":"از فایل افزونهٔ امضاشده استفاده کنید؛ بستهٔ قدیمی و بدون امضای مخصوص توسعه را نصب نکنید."},
+    {"id":"provenance","type":"paragraph","en":"See [Firefox signing details](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md) for provenance and update limitations.","fa":"برای منبع فایل و محدودیت‌های به‌روزرسانی، [جزئیات امضای فایرفاکس](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md) را ببینید."}
+  ]
+}

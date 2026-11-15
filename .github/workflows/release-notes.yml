@@ -1,0 +1,47 @@
+name: Synchronize bilingual release descriptions
+on:
+  push:
+    branches: [main, codex/release-notes]
+    paths:
+      - 'docs/releases/**'
+      - 'docs/RELEASE-*.md'
+      - 'scripts/release-notes.cjs'
+      - '.github/workflows/release-notes.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: bilingual-release-description-sync
+  cancel-in-progress: false
+jobs:
+  descriptions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node scripts/release-notes.cjs --check
+      - run: node --test tests/release-notes.test.cjs
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { tags, loadReleaseNotes } = require('./scripts/release-notes.cjs');
+            const notes = tags().map(tag => ({tag, body: loadReleaseNotes(tag)}));
+            const releases = await github.paginate(github.rest.repos.listReleases, {...context.repo, per_page: 100});
+            let latestId = null;
+            try { latestId = (await github.rest.repos.getLatestRelease(context.repo)).data.id; }
+            catch (error) { if (error.status !== 404) throw error; }
+            const identity = release => JSON.stringify({tag: release.tag_name, commit: release.target_commitish, draft: release.draft, prerelease: release.prerelease, published: release.published_at, assets: release.assets.map(a => ({id: a.id, name: a.name, size: a.size, state: a.state, digest: a.digest}))});
+            for (const note of notes) {
+              const release = releases.find(item => item.tag_name === note.tag);
+              if (!release) { core.notice(`${note.tag}: not published yet; no release created`); continue; }
+              if (release.body !== note.body) {
+                const before = identity(release);
+                await github.rest.repos.updateRelease({...context.repo, release_id: release.id, body: note.body, make_latest: release.id === latestId ? 'true' : 'false'});
+                const after = (await github.rest.repos.getRelease({...context.repo, release_id: release.id})).data;
+                if (after.body !== note.body || identity(after) !== before) throw Error(`${note.tag}: description verification failed`);
+              }
+              core.notice(`Verified complete English/Persian description: ${note.tag}`);
+            }
+            if (latestId !== null && (await github.rest.repos.getLatestRelease(context.repo)).data.id !== latestId) throw Error('Latest-release selection changed unexpectedly');

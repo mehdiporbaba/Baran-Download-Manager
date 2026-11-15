@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - run: node scripts/release-notes.cjs --check
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
@@ -81,7 +82,8 @@ jobs:
             const releases = await github.paginate(github.rest.repos.listReleases, {...repo, per_page: 100});
             let release = releases.find(item => item.tag_name === tag);
             if (release && !release.draft) throw new Error('Version 2.1.0-beta.2 is already published; never replace published assets');
-            const body = fs.readFileSync('docs/RELEASE-2.1.0-beta.2.md', 'utf8');
+            const { loadReleaseNotes } = require('./scripts/release-notes.cjs');
+            const body = loadReleaseNotes(tag);
             if (!release) release = (await github.rest.repos.createRelease({...repo, tag_name: tag, target_commitish: context.sha, name: 'Baran Download Manager 2.1.0-beta.2 — Native Windows', body, draft: true, prerelease: true})).data;
             for (const name of fs.readdirSync('artifacts')) {
               const old = release.assets.find(asset => asset.name === name);

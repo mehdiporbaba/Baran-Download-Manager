@@ -33,7 +33,8 @@ jobs:
             const root = 'browser-extension/signed/';
             const metadata = JSON.parse(fs.readFileSync(root + 'release.json', 'utf8'));
             const tag = 'firefox-v1.0.1';
-            const body = 'Mozilla-signed Firefox extension 1.0.1 for Baran Download Manager. Install the signed XPI in ordinary Firefox (142+) with signature protection enabled. Then open Baran Settings → Browser integration → Firefox → Connect browser. No Developer Mode or signature bypass is required. This is a self-distributed signed extension, not a public AMO store listing. Browser download handoff is optional in the extension popup.\n\nافزونهٔ امضاشده توسط موزیلا؛ فایل signed.xpi را در فایرفاکس نصب کن، سپس اتصال فایرفاکس را در تنظیمات باران فعال کن. نسخهٔ بدون امضا را استفاده نکن.\n\nSee docs/FIREFOX-SIGNING.md for provenance and update limitations.';
+            const { loadReleaseNotes } = require('./scripts/release-notes.cjs');
+            const body = loadReleaseNotes(tag);
             const releases = await github.paginate(github.rest.repos.listReleases, {...context.repo, per_page: 100});
             let release = releases.find(item => item.tag_name === tag);
             if (release && !release.draft) { core.notice('Signed Firefox release is already published'); return; }
