@@ -23,11 +23,15 @@ $destination = [IO.Path]::GetFullPath((Join-Path $repository 'dist/native'))
 $expected = [IO.Path]::GetFullPath((Join-Path $repository 'dist/native'))
 if ($destination -ne $expected -or -not $destination.StartsWith([IO.Path]::GetFullPath((Join-Path $repository 'dist')) + [IO.Path]::DirectorySeparatorChar)) { throw 'Invalid build directory' }
 if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
-New-Item -ItemType Directory -Force -Path $destination, "$destination/bin", "$destination/native-host", "$destination/licenses" | Out-Null
+New-Item -ItemType Directory -Force -Path $destination, "$destination/bin", "$destination/native-host", "$destination/licenses", "$destination/extensions" | Out-Null
+Copy-Item -LiteralPath (Join-Path $repository 'browser-extension/signed/Baran-Firefox-Extension-1.0.1-signed.xpi') -Destination "$destination/extensions"
 Copy-Item -LiteralPath (Join-Path $repository 'out/renderer') -Destination (Join-Path $destination 'ui') -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'bridge.js'), (Join-Path $repository 'resources/icon.ico') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'mobile.html') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'runtime-components.json') -Destination $destination
+$inventory = Get-Content -LiteralPath (Join-Path $destination 'runtime-components.json') -Raw | ConvertFrom-Json
+$inventory.version = $version
+$inventory | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $destination 'runtime-components.json') -Encoding UTF8
 Copy-Item -LiteralPath (Join-Path $webview 'lib/net462/Microsoft.Web.WebView2.Core.dll'), (Join-Path $webview 'lib/net462/Microsoft.Web.WebView2.WinForms.dll'), (Join-Path $webview 'runtimes/win-x64/native/WebView2Loader.dll'), (Join-Path $html 'lib/Net45/HtmlAgilityPack.dll') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $aria 'aria2-1.37.0-win-64bit-build1/aria2c.exe') -Destination "$destination/bin"
 Copy-Item -LiteralPath (Join-Path $repository 'LICENSE') -Destination "$destination/licenses/Baran-GPL.txt"

@@ -15,6 +15,14 @@ class ConnectedFixture {
   static void Assert(bool value, string message) { if (!value) throw new Exception(message); }
   static int Main(string[] args) { try { Run(args[0]).GetAwaiter().GetResult(); return 0; } catch (Exception error) { Console.Error.WriteLine(error); return 1; } }
   static async Task Run(string root) {
+    // The fixture assembly is copied into an isolated directory; test the real bundled artifact explicitly.
+    string packageRoot = Environment.GetEnvironmentVariable("BARAN_PACKAGE_TEST_ROOT");
+    string package = BrowserInstallation.Package(packageRoot);
+    Assert(BrowserInstallation.Arguments(package).StartsWith("-new-tab \"file:///"), "Open the signed local package in Firefox");
+    string corruptRoot = Path.Combine(root, "corrupt-package"); Directory.CreateDirectory(Path.Combine(corruptRoot, "extensions"));
+    File.WriteAllText(Path.Combine(corruptRoot, "extensions", BrowserInstallation.FileName), "tampered");
+    bool corruptRejected = false; try { BrowserInstallation.Package(corruptRoot); } catch { corruptRejected = true; } Assert(corruptRejected, "Reject changed XPI before opening Firefox");
+    Console.WriteLine("PASS browser installation: bundled Mozilla-signed XPI digest, local-file launch arguments and tamper rejection");
     var store = new StateStore(root); var vault = new UserSecrets(root); string token = "native-fixture-secret-123";
     vault.Write(token); Assert(vault.Read() == token, "DPAPI round trip");
     Assert(!Encoding.UTF8.GetString(File.ReadAllBytes(Path.Combine(root, "connected-secrets.bin"))).Contains(token), "Token must be encrypted");

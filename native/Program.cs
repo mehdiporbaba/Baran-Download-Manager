@@ -154,6 +154,12 @@ namespace Baran {
               if (dialog.ShowDialog(this) == DialogResult.OK) value = dialog.FileName;
             } break;
             case "registerBrowserHost": RegisterBrowser(first, args.Length > 1 ? Convert.ToString(args[1]) : ""); break;
+            case "installFirefoxExtension": {
+              if (testing) throw new Exception("Browser installation is disabled for isolated test profiles");
+              string package = BrowserInstallation.Package(root), firefox = BrowserInstallation.FindFirefox();
+              RegisterBrowser("firefox", ""); BrowserInstallation.Open(firefox, package);
+              value = J.Obj("opened", true); break;
+            }
             default: throw new Exception("Unsupported desktop action: " + method);
           }
           result.SetResult(value);

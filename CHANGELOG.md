@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0-beta.2
+
+- Bundle the pinned Mozilla-signed XPI and add Install & connect Firefox, using installed Firefox directly and registering its native host. Firefox retains its final permission prompt. Keep Repair connection for existing installations.
+- Add package tamper/launch-argument tests, current-version runtime inventory stamping, and clean Chrome store submission packaging/documentation. Chrome publication still requires an owner account, registration fee and Google review.
+
 ## 2.1.0-beta.1
 
 - Mozilla-signed Firefox 1.0.1 package and a direct installation link; repeatable owner-controlled signing workflow.

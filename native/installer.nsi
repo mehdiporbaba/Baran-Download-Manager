@@ -48,6 +48,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\ui"
   RMDir /r "$INSTDIR\bin"
   RMDir /r "$INSTDIR\native-host"
+  RMDir /r "$INSTDIR\extensions"
   RMDir /r "$INSTDIR\licenses"
   RMDir "$INSTDIR"
 SectionEnd
