@@ -65,18 +65,25 @@ function headers(token: string, accept = 'application/vnd.github+json'): Record<
   const result: Record<string, string> = {
     Accept: accept,
     'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'Pulse-Download-Manager'
+    'User-Agent': 'Baran-Download-Manager'
   }
   if (token) result.Authorization = `Bearer ${token}`
   return result
 }
 
-async function ghFetch<T>(url: string, token: string): Promise<T> {
-  const res = await fetch(url, {
+async function ghFetch<T>(url: string, token: string, attempt = 0): Promise<T> {
+  let res: Response
+  try { res = await fetch(url, {
     headers: headers(token),
     signal: AbortSignal.timeout(25_000),
     redirect: 'follow'
-  })
+  }) } catch (error) {
+    if (attempt < 2) {
+      await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)))
+      return ghFetch<T>(url, token, attempt + 1)
+    }
+    throw new Error(`Could not reach GitHub: ${(error as Error).message || 'network error'}`)
+  }
   if (!res.ok) {
     let message = ''
     try {

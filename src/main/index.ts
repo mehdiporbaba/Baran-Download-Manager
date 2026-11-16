@@ -22,6 +22,10 @@ let tray: Tray | null = null
 let stopLinkServices: (() => void) | undefined
 let browserBridge: Awaited<ReturnType<typeof startBrowserBridge>>
 
+electronApp.setAppUserModelId('io.github.mehdiporbaba.baran')
+electronApp.setName('Baran Download Manager')
+electronApp.setPath('userData', join(electronApp.getPath('appData'), 'Baran'))
+
 const gotLock = electronApp.requestSingleInstanceLock()
 if (!gotLock) {
   electronApp.quit()
@@ -145,7 +149,6 @@ function createTray(): void {
     {
       label: 'Quit',
       click: () => {
-        quitting = true
         electronApp.quit()
       }
     }
@@ -166,9 +169,6 @@ function createTray(): void {
 
 async function bootstrap(): Promise<void> {
   await electronApp.whenReady()
-  electronApp.setAppUserModelId('io.github.mehdiporbaba.baran')
-  electronApp.setName('Baran Download Manager')
-  electronApp.setPath('userData', join(electronApp.getPath('appData'), 'Baran'))
   Menu.setApplicationMenu(null)
 
   store = new Store()

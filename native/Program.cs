@@ -173,6 +173,7 @@ namespace Baran {
       else if (!System.Text.RegularExpressions.Regex.IsMatch(extension ?? "", "^[a-p]{32}$")) throw new Exception("Enter the extension's ID");
       string folder = Path.Combine(core.Store.Root, "native-host"); Directory.CreateDirectory(folder);
       string host = Path.Combine(folder, "BaranNativeHost.exe"); File.Copy(Path.Combine(root, "native-host", "BaranNativeHost.exe"), host, true);
+      File.WriteAllText(Path.Combine(folder, "baran-app-path.txt"), Application.ExecutablePath, new UTF8Encoding(false));
       var configuration = J.Obj("name", "com.baran.downloadmanager", "description", "Baran browser bridge", "path", host, "type", "stdio");
       configuration[browser == "firefox" ? "allowed_extensions" : "allowed_origins"] = new [] { browser == "firefox" ? extension : "chrome-extension://" + extension + "/" };
       string manifest = Path.Combine(folder, "com.baran.downloadmanager." + browser + ".json"); File.WriteAllText(manifest, J.Encode(configuration), new UTF8Encoding(false));

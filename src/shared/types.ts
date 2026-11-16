@@ -327,6 +327,7 @@ export type MainEvent =
   | { type: 'settings'; settings: Settings }
 
 export interface PulseAPI {
+  browserReady?(): Promise<void>
   installFirefoxExtension?(): Promise<{ opened: boolean }>
   /** Native-only, explicitly scoped connected-service actions. */
   connected?(action: string, input?: unknown): Promise<unknown>

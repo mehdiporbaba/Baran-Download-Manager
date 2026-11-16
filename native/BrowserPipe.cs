@@ -34,15 +34,23 @@ namespace Baran {
                   int length = BitConverter.ToInt32(await Read(server, 4, timeout.Token).ConfigureAwait(false), 0);
                   if (length < 1 || length > 256 * 1024) throw new Exception("Browser message exceeds 256 KB");
                   var request = J.Decode(Encoding.UTF8.GetString(await Read(server, length, timeout.Token).ConfigureAwait(false)));
-                  if (J.Str(request, "action") != "import") throw new Exception("Unsupported browser command");
+                  string action = J.Str(request, "action");
+                  if (action == "ping") result = J.Obj("ok", true, "version", core.Version, "downloadPrompt", true);
+                  else {
+                  if (action != "import") throw new Exception("Unsupported browser command");
                   var values = J.List(J.Get(request, "urls"));
                   foreach (object value in values) if (!(value is string)) throw new Exception("Invalid URL list");
+                  bool download = J.Str(request, "intent") == "download";
+                  if (download && values.Length != 1) throw new Exception("A download request must contain exactly one URL");
+                  if (download) J.Url(Convert.ToString(values[0]));
                   int count = core.Inbox.Add(Array.ConvertAll(values, Convert.ToString), "browser");
                   result = J.Obj("ok", true, "count", count);
+                  if (download) { result = J.Obj("ok", true, "count", count, "downloadPrompt", true); core.BrowserDownloadRequested(Convert.ToString(values[0])); }
+                  else core.BrowserImported();
+                  }
                 } catch (Exception error) { result = J.Obj("ok", false, "error", error.Message); }
                 byte[] body = Encoding.UTF8.GetBytes(J.Encode(result)); byte[] header = BitConverter.GetBytes(body.Length);
                 await server.WriteAsync(header, 0, 4, timeout.Token).ConfigureAwait(false); await server.WriteAsync(body, 0, body.Length, timeout.Token).ConfigureAwait(false);
-                if (J.Bool(result, "ok")) core.BrowserImported();
               }
             }
           }

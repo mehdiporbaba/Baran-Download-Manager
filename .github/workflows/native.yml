@@ -2,7 +2,7 @@ name: Native Windows build
 
 on:
   push:
-    branches: [main, codex/native-webview2, codex/connected-downloads, codex/browser-install-onboarding, codex/release-v2.1.0-beta.2]
+    branches: [main, codex/native-webview2, codex/connected-downloads, codex/browser-install-onboarding, codex/release-v2.1.0-beta.2, codex/firefox-and-upstream-fixes]
   pull_request:
   workflow_dispatch:
 
@@ -35,13 +35,13 @@ jobs:
           ./scripts/package-extension.ps1
           Copy-Item browser-extension/signed/Baran-Firefox-Extension-1.0.1-signed.xpi dist/
           node scripts/prepare-chrome-store.cjs
-          Compress-Archive -Path dist/chrome-store-submission/* -DestinationPath dist/Baran-Chrome-Store-Submission-1.0.1.zip -Force
+          Compress-Archive -Path dist/chrome-store-submission/* -DestinationPath dist/Baran-Chrome-Store-Submission-1.0.2.zip -Force
       - name: Verify runtime and create checksums
         shell: pwsh
         run: |
           if (Test-Path dist/native/resources/app.asar) { throw 'Electron archive must not be in native runtime' }
           if (Test-Path dist/native/node.exe) { throw 'Node must not be in native runtime' }
-          $names = @('Baran-Download-Manager-Native-Setup-2.1.0-beta.2-x64.exe', 'Baran-Download-Manager-Native-Portable-2.1.0-beta.2-x64.zip', 'Baran-Browser-Extension-1.0.1.zip', 'Baran-Firefox-Extension-1.0.1-signed.xpi', 'Baran-Chrome-Store-Submission-1.0.1.zip')
+          $names = @('Baran-Download-Manager-Native-Setup-2.1.0-beta.2-x64.exe', 'Baran-Download-Manager-Native-Portable-2.1.0-beta.2-x64.zip', 'Baran-Browser-Extension-1.0.2.zip', 'Baran-Firefox-Extension-1.0.1-signed.xpi', 'Baran-Chrome-Store-Submission-1.0.2.zip')
           $lines = foreach ($name in $names) {
             $file = Get-Item -LiteralPath "dist/$name"
             if ($file.Length -eq 0) { throw "Empty file: $name" }
@@ -55,9 +55,9 @@ jobs:
           path: |
             dist/Baran-Download-Manager-Native-Setup-2.1.0-beta.2-x64.exe
             dist/Baran-Download-Manager-Native-Portable-2.1.0-beta.2-x64.zip
-            dist/Baran-Browser-Extension-1.0.1.zip
+            dist/Baran-Browser-Extension-1.0.2.zip
             dist/Baran-Firefox-Extension-1.0.1-signed.xpi
-            dist/Baran-Chrome-Store-Submission-1.0.1.zip
+            dist/Baran-Chrome-Store-Submission-1.0.2.zip
             dist/SHA256SUMS-Native-2.1.0-beta.2.txt
           if-no-files-found: error
 

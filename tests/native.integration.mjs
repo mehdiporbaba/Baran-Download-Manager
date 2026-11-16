@@ -84,12 +84,13 @@ await writeFile(`${partialPath}.pulse-meta`, JSON.stringify(meta))
 const state = { version: 1, settings: { downloadDir: downloads, launchAtStartup: false, notifyOnComplete: false, maxConcurrent: 2 }, tasks: [{ id: 'legacy', kind: 'http', url: `${origin}/expired`, headers: { 'X-Baran-Test': 'keep' }, name: 'legacy.bin', fileName: 'legacy.bin', filePath: partialPath, dir: downloads, size: payload.length, downloaded: 98304, resumable: true, status: 'paused', createdAt: Date.now(), updatedAt: Date.now(), order: 1 }] }
 await writeFile(join(profile, 'pulse-state.json'), JSON.stringify(state))
 const child = spawn(resolve('dist/native/Baran Download Manager.exe'), ['--test-driver', '--profile', profile], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, BARAN_NATIVE_TEST_PIPE: nativePipeName } })
-let tracker, seeder
-let serial = 0; const pending = new Map(); const tasks = new Map(); const errors = []
+let tracker, seeder, occupiedPeerPort
+let serial = 0; const pending = new Map(); const tasks = new Map(); const errors = []; const browserPrompts = []
 child.stderr.on('data', value => errors.push(value.toString()))
 createInterface({ input: child.stdout }).on('line', line => {
   let value; try { value = JSON.parse(line) } catch { errors.push(line); return }
   if (value.event?.task) tasks.set(value.event.task.id, value.event.task)
+  if (value.event?.type === 'open-add') browserPrompts.push(value.event.url)
   const request = pending.get(value.id); if (!request) return
   pending.delete(value.id); clearTimeout(request.timeout)
   if (value.error) request.reject(new Error(value.error)); else request.resolve(value.result)
@@ -120,15 +121,29 @@ try {
   const hostPath = join(profile, 'NativeHostTest.exe')
   const hostBuild = spawnSync(`${process.env.WINDIR}\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe`, ['/nologo', '/target:exe', '/define:TEST', `/out:${hostPath}`, resolve('browser-extension/native-host/NativeHost.cs')], { encoding: 'utf8' })
   assert.equal(hostBuild.status, 0, hostBuild.stdout + hostBuild.stderr)
+  async function sendBrowser(message) {
   const host = spawn(hostPath, [], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, BARAN_NATIVE_TEST_PIPE: nativePipeName } })
   const hostBytes = []; host.stdout.on('data', bytes => hostBytes.push(bytes))
   const hostDone = new Promise(done => host.once('exit', done))
-  const nativeMessage = Buffer.from(JSON.stringify({ action: 'import', urls: ['https://example.com/native-host-test.zip'] }))
+  const nativeMessage = Buffer.from(JSON.stringify(message))
   const nativeHeader = Buffer.alloc(4); nativeHeader.writeUInt32LE(nativeMessage.length); host.stdin.end(Buffer.concat([nativeHeader, nativeMessage]))
   assert.equal(await hostDone, 0)
   const reply = Buffer.concat(hostBytes); assert.equal(reply.readUInt32LE(), reply.length - 4)
-  assert.deepEqual(JSON.parse(reply.subarray(4).toString()), { ok: true, count: 1 })
+  return JSON.parse(reply.subarray(4).toString())
+  }
+  const ping = await sendBrowser({ action: 'ping' }); assert.equal(ping.ok, true); assert.equal(ping.downloadPrompt, true)
+  assert.deepEqual(await sendBrowser({ action: 'import', urls: ['https://example.com/native-host-test.zip'] }), { ok: true, count: 1 })
+  assert.equal(browserPrompts.length, 0, 'collecting links must not open a download prompt')
   assert.ok((await invoke('linksList')).some(link => link.url === 'https://example.com/native-host-test.zip'))
+  const captureUrl = 'https://example.com/captured.zip'
+  assert.deepEqual(await sendBrowser({ action: 'import', intent: 'download', urls: [captureUrl] }), { ok: true, count: 1, downloadPrompt: true })
+  assert.ok(JSON.parse(await readFile(join(profile, 'baran-inbox.json'), 'utf8')).links.some(link => link.url === captureUrl))
+  assert.equal(browserPrompts.length, 0, 'a cold-start prompt must wait for renderer readiness')
+  await invoke('browserReady'); assert.deepEqual(browserPrompts, [captureUrl])
+  await sendBrowser({ action: 'import', intent: 'download', urls: [captureUrl] })
+  await invoke('snapshot'); assert.deepEqual(browserPrompts, [captureUrl, captureUrl])
+  assert.equal((await sendBrowser({ action: 'import', intent: 'download', urls: [] })).ok, false)
+  console.log('PASS native: capture persists before acknowledgement, waits for renderer readiness, and opens New download even for an existing inbox URL')
   console.log('PASS native: compiled browser host forwards a framed request to the native engine and receives a durable inbox acknowledgement')
   await invoke('resumeTask', 'legacy'); await waitTask('legacy', 'error')
   assert.deepEqual(await readFile(`${partialPath}.pulse-part`), partial)
@@ -189,9 +204,13 @@ try {
   console.log('PASS native: HTTP proxy and SOCKS5h tunnel receive traffic, rate limit delays bytes, pause drains writers and resume preserves exact data')
   const video = await invoke('probeYoutube', 'https://www.youtube.com/watch?v=local-native-fixture')
   assert.equal(video.title, 'Native media fixture'); assert.ok(video.formats.some(format => format.id === '22'))
+  for (const name of ['baran-sign-in-test', 'baran-private-test', 'baran-age-test']) {
+    await assert.rejects(invoke('probeYoutube', `https://www.youtube.com/watch?v=${name}`), /Settings . Tools/)
+  }
   const mediaTask = await invoke('addDownload', { kind: 'youtube', url: 'https://www.youtube.com/watch?v=local-native-fixture', fileName: 'media-fixture.mp4', youtube: { selector: '22' } })
   const mediaDone = await waitTask(mediaTask.id)
   assert.equal(await readFile(mediaDone.filePath, 'utf8'), 'Baran native media fixture')
+  assert.equal(mediaDone.size, (await stat(mediaDone.filePath)).size, 'final file size must override inaccurate CLI progress')
   assert.equal(await invoke('instagramCollect', 'https://www.instagram.com/p/native-fixture/'), 2)
   const instagram = (await invoke('linksList')).filter(link => link.source.includes('instagram.com'))
   assert.equal(instagram.length, 2); assert.ok(instagram.some(link => link.fileName.endsWith('.mp4')))
@@ -207,12 +226,14 @@ try {
     seeder.once('error', reject)
     seeder.seed(Buffer.from(payload), { name: 'private-test.bin', private: true, announce: [announce] }, done)
   })
-  await invoke('updateSettings', { torrentDownloadLimit: 0, torrentUploadLimit: 0, seedAfterComplete: false })
+  occupiedPeerPort = createTcpServer(socket => socket.destroy())
+  await new Promise(done => occupiedPeerPort.listen(0, '0.0.0.0', done))
+  await invoke('updateSettings', { torrentPort: occupiedPeerPort.address().port, torrentDownloadLimit: 0, torrentUploadLimit: 0, seedAfterComplete: false })
   const torrentTask = await invoke('addTorrent', { data: Buffer.from(torrent.torrentFile).toString('base64'), name: 'private-test', dir: downloads })
   const torrentDone = await waitTask(torrentTask.id, 'completed', 30000)
   assert.deepEqual(await readFile(torrentDone.filePath), payload)
   assert.ok(torrentDone.torrent.files.length > 0)
-  console.log('PASS native: bundled aria2 downloads a private torrent from a local tracker and seeder with exact final file contents')
+  console.log('PASS native: with the configured peer port occupied, bundled aria2 downloads a private torrent with exact final file contents')
   const remoteSeed = await new Promise(done => seeder.seed(Buffer.from(payload), { name: 'remote-test.bin', private: true, announce: [announce] }, done))
   remoteTorrentMetadata = Buffer.from(remoteSeed.torrentFile)
   await invoke('updateSettings', { proxyMode: 'manual', proxy: `http://127.0.0.1:${proxy.address().port}` })
@@ -230,6 +251,7 @@ try {
   for (const socket of socksSockets) socket.destroy(); await new Promise(done => socks.close(done))
   if (seeder) await new Promise(done => seeder.destroy(done))
   if (tracker) await new Promise(done => tracker.close(done))
+  if (occupiedPeerPort) await new Promise(done => occupiedPeerPort.close(done))
   assert.equal(code, 0, errors.join('\n'))
 }
 const restart = spawnSync(resolve('dist/native/Baran Download Manager.exe'), ['--test-driver', '--profile', profile], {

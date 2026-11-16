@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 // Chrome starts this small process. It forwards one bounded JSON message to the app.
 public static class NativeHost {
@@ -38,7 +39,19 @@ public static class NativeHost {
             pipeName = Environment.GetEnvironmentVariable("BARAN_NATIVE_TEST_PIPE") ?? pipeName;
             #endif
             using (var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut)) {
-                pipe.Connect(3000);
+                try { pipe.Connect(750); }
+                catch (TimeoutException) {
+                    #if !TEST
+                    string configuration = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "baran-app-path.txt");
+                    if (!File.Exists(configuration) || new FileInfo(configuration).Length > 8192) throw;
+                    string application = File.ReadAllText(configuration, Encoding.UTF8).Trim();
+                    if (!Path.IsPathRooted(application) || !Path.GetFileName(application).Equals("Baran Download Manager.exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(application)) throw new IOException("Re-register Baran from Browser integration settings.");
+                    Process.Start(new ProcessStartInfo(application, "--browser-import") { UseShellExecute = false, CreateNoWindow = true });
+                    pipe.Connect(7000);
+                    #else
+                    throw;
+                    #endif
+                }
                 WriteFrame(pipe, request);
                 WriteFrame(output, ReadFrame(pipe));
             }

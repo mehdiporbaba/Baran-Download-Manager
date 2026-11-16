@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -109,6 +110,25 @@ namespace Baran {
           "size", Math.Max(0, size), "resumable", status == 206, "contentType", response.ContentType,
           "etag", response.Headers["ETag"], "lastModified", response.Headers["Last-Modified"],
           "headers", J.Obj("content-type", response.ContentType));
+      }
+    }
+    public async Task<string> GithubText(string url, object headers) {
+      for (int attempt = 0; ; attempt++) {
+        try {
+          using (var timeout = new CancellationTokenSource(30000))
+          using (var response = await Open(url, Headers(headers), timeout.Token).ConfigureAwait(false))
+          using (timeout.Token.Register(response.Close)) {
+            int status = (int)response.StatusCode;
+            if ((status == 403 || status == 429) && response.Headers["X-RateLimit-Remaining"] == "0") throw new Exception("GitHub API rate limit reached. Add a personal access token in Settings > Tools, or wait for the limit to reset.");
+            if (status == 404) throw new Exception("Repository not found or not accessible to this account.");
+            if (status < 200 || status >= 300) throw new Exception("GitHub API HTTP " + status);
+            return Encoding.UTF8.GetString(await Read(response.GetResponseStream(), 8 * 1024 * 1024, timeout.Token).ConfigureAwait(false));
+          }
+        } catch (WebException error) {
+          // Retry transport failures only, preserving HTTP and security errors.
+          if (attempt >= 2 || error.Status == WebExceptionStatus.TrustFailure || error.Status == WebExceptionStatus.SecureChannelFailure) throw new Exception("Could not reach GitHub. Check your connection or proxy.");
+        }
+        await Task.Delay(400 * (attempt + 1)).ConfigureAwait(false);
       }
     }
     public async Task<string> Text(string url, int maximum, object headers = null, CancellationToken token = default(CancellationToken)) {

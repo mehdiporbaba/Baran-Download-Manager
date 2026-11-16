@@ -233,10 +233,18 @@ namespace Baran {
       return J.Obj("tasks", records.Values.Select(row => row.Data).ToArray(), "settings", Store.Settings, "stats", Stats(), "system", J.Obj("platform", "win32", "version", Environment.OSVersion.VersionString, "appVersion", Version, "freeDisk", free, "downloadDir", directory, "defaultDir", directory, "runtime", J.Obj("electron", "", "chrome", Runtime, "node", ""), "maximized", false, "autoStartSupported", true));
     } }
     public void BrowserImported() { Emit(J.Obj("type", "navigate", "view", "links")); if (RevealBrowserImport != null) RevealBrowserImport(); Toast("info", "Browser links received. Review them in Link Grabber."); }
+    bool browserReady; string pendingBrowserUrl;
+    public void BrowserDownloadRequested(string url) {
+      lock (gate) { if (browserReady) Emit(J.Obj("type", "open-add", "url", url)); else pendingBrowserUrl = url; }
+      if (RevealBrowserImport != null) RevealBrowserImport();
+    }
     public async Task<object> Invoke(string method, object[] args) {
       Func<int, object> arg = index => index < args.Length ? args[index] : null;
       Func<int, string> str = index => Convert.ToString(arg(index)) ?? "";
       switch (method) {
+        case "browserReady": {
+          lock (gate) { browserReady = true; if (pendingBrowserUrl != null) { Emit(J.Obj("type", "open-add", "url", pendingBrowserUrl)); pendingBrowserUrl = null; } } return null;
+        }
         case "connected": return await Connected(str(0), arg(1)).ConfigureAwait(false);
         case "snapshot": return Snapshot();
         case "addDownload": return Add(arg(0));
@@ -285,10 +293,10 @@ namespace Baran {
       string url;
       if (method == "githubSearch") url = "https://api.github.com/search/repositories?q=" + Uri.EscapeDataString(query) + "&per_page=30&page=" + Math.Max(1, page == null ? 1 : Convert.ToInt32(page));
       else { if (!System.Text.RegularExpressions.Regex.IsMatch(query, "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")) throw new Exception("Invalid repository name"); url = "https://api.github.com/repos/" + query; }
-      var response = J.Decode(await Network.Text(url, 8 * 1024 * 1024, headers).ConfigureAwait(false));
+      var response = J.Decode(await Network.GithubText(url, headers).ConfigureAwait(false));
       if (method == "githubSearch") return J.Obj("total", J.Num(response, "total_count"), "items", J.List(J.Get(response, "items")).Select(MapRepo).ToArray());
       var result = MapRepo(response);
-      var releases = J.List(J.Decode(await Network.Text(url + "/releases?per_page=30", 8 * 1024 * 1024, headers).ConfigureAwait(false)));
+      var releases = J.List(J.Decode(await Network.GithubText(url + "/releases?per_page=30", headers).ConfigureAwait(false)));
       result["releases"] = releases.Where(release => !J.Bool(release, "draft")).Select(release => J.Obj("id", J.Get(release, "id"), "tagName", J.Str(release, "tag_name"), "name", J.Str(release, "name", J.Str(release, "tag_name")), "publishedAt", J.Get(release, "published_at"), "prerelease", J.Bool(release, "prerelease"), "draft", false, "htmlUrl", J.Get(release, "html_url"), "zipUrl", "https://github.com/" + query + "/archive/refs/tags/" + Uri.EscapeDataString(J.Str(release, "tag_name")) + ".zip", "tarballUrl", J.Get(release, "tarball_url"), "assets", J.List(J.Get(release, "assets")).Select(asset => J.Obj("id", J.Get(asset, "id"), "name", J.Str(asset, "name"), "size", J.Num(asset, "size"), "contentType", J.Str(asset, "content_type"), "downloadCount", J.Num(asset, "download_count"), "url", J.Str(asset, "browser_download_url"), "apiUrl", J.Str(asset, "url"))).ToArray())).ToArray();
       return result;
     }

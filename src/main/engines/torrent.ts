@@ -38,14 +38,59 @@ export class TorrentEngine {
         const mod: any = await import('webtorrent')
         const Ctor = mod?.default?.WebTorrent || mod?.default || mod?.WebTorrent || mod
         const settings = this.host.settings()
-        const client = new Ctor({
-          maxConns: 80,
-          torrentPort: settings.torrentPort || 51413,
-          dht: true,
-          tracker: true,
-          utp: false,
-          webSeeds: true
-        })
+        const desiredPort = settings.torrentPort || 0
+
+        const create = (port: number): any =>
+          new Ctor({
+            maxConns: 80,
+            torrentPort: port,
+            dht: true,
+            tracker: true,
+            utp: false,
+            webSeeds: true
+          })
+
+        const waitForListening = (client: any): Promise<Error | null> =>
+          new Promise((resolve) => {
+            let settled = false
+            const timeout = setTimeout(() => onError(new Error('Torrent listener startup timed out')), 10000)
+            const onListening = (): void => {
+              if (settled) return
+              settled = true
+              cleanup()
+              resolve(null)
+            }
+            const onError = (err: Error): void => {
+              if (settled) return
+              settled = true
+              cleanup()
+              resolve(err)
+            }
+            const cleanup = (): void => {
+              clearTimeout(timeout)
+              client.off('listening', onListening)
+              client.off('error', onError)
+            }
+            client.once('listening', onListening)
+            client.once('error', onError)
+          })
+
+        let client = create(desiredPort)
+        const listenError = await waitForListening(client)
+
+        // The configured port may be taken by another torrent client (or blocked
+        // by the OS). Fall back to an OS-assigned port so downloads still work.
+        if (listenError) {
+          console.warn('[torrent] could not listen on port', desiredPort, '-', listenError.message)
+          client.destroy(() => undefined)
+          client = create(0)
+          const retryError = await waitForListening(client)
+          if (retryError) {
+            client.destroy(() => undefined)
+            throw retryError
+          }
+        }
+
         client.on('error', (err: Error) => {
           this.lastError = err?.message || String(err)
           console.error('[torrent] client error:', this.lastError)

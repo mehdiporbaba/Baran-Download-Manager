@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join, resolve as resolvePath } from 'node:path'
 import { app } from 'electron'
 import type { Settings, YoutubeFormatOption, YoutubeProbe, YoutubeMeta } from '@shared/types'
 import type { EngineHost, TaskHandle } from './http'
@@ -170,13 +170,19 @@ export class YoutubeEngine {
       process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
     ].filter(Boolean)
     for (const candidate of candidates) {
-      if (candidate.includes('\\') || candidate.includes('/')) {
+      let path: string
+      if (isAbsolute(candidate) || candidate.includes('\\') || candidate.includes('/')) {
         if (!existsSync(candidate)) continue
+        path = resolvePath(candidate)
+      } else {
+        const found = await runCapture(process.platform === 'win32' ? 'where.exe' : 'which', [candidate], 6000)
+        path = found.code === 0 ? found.stdout.split(/\r?\n/).map(line => line.trim()).find(Boolean) || '' : ''
+        if (!path) continue
       }
-      const res = await runCapture(candidate, ['-version'], 10_000)
+      const res = await runCapture(path, ['-version'], 10_000)
       if (res.code === 0 && /ffmpeg version/i.test(res.stdout + res.stderr)) {
-        this.ffmpegCache = candidate
-        return candidate
+        this.ffmpegCache = path
+        return path
       }
     }
     this.ffmpegCache = null
@@ -601,11 +607,13 @@ export class YoutubeEngine {
         }
         if (code === 0) {
           const found = await this.findOutput(task.dir, task.youtube?.videoId || '', startedAt)
+          let finalSize = lastSize
+          if (found) { try { finalSize = (await fs.stat(found)).size } catch { /* retain progress size */ } }
           finish(() => {
             handle.patch({
               status: 'completed',
-              downloaded: lastSize,
-              size: lastSize,
+              downloaded: finalSize,
+              size: finalSize,
               completedAt: Date.now(),
               speed: 0,
               eta: 0,

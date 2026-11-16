@@ -25,10 +25,13 @@ namespace Baran {
         if (closed) throw new ObjectDisposedException("Torrent engine");
         if (!File.Exists(executable)) throw new Exception("The bundled torrent engine is missing");
         var reserve = new TcpListener(IPAddress.Loopback, 0); reserve.Start(); port = ((IPEndPoint)reserve.LocalEndpoint).Port; reserve.Stop();
+        // aria2 tries the requested port first, then a dynamic-range fallback.
+        // Apply to both TCP peers and UDP DHT/trackers when another client owns it.
+        string peerPorts = J.Num(store.Settings, "torrentPort", 51413) + ",49152-65535";
         var args = new List<string> { "--enable-rpc=true", "--rpc-listen-all=false", "--rpc-allow-origin-all=false", "--rpc-max-request-size=48M", "--rpc-listen-port=" + port,
           "--rpc-secret=" + secret, "--enable-color=false", "--console-log-level=error", "--summary-interval=0", "--disable-ipv6=false",
           "--continue=true", "--allow-overwrite=false", "--auto-file-renaming=false", "--check-integrity=true", "--follow-torrent=true",
-          "--listen-port=" + J.Num(store.Settings, "torrentPort", 51413), "--dht-listen-port=" + J.Num(store.Settings, "torrentPort", 51413),
+          "--listen-port=" + peerPorts, "--dht-listen-port=" + peerPorts,
           "--max-overall-download-limit=" + J.Num(store.Settings, "torrentDownloadLimit"), "--max-overall-upload-limit=" + J.Num(store.Settings, "torrentUploadLimit") };
         if (testing) args.AddRange(new [] { "--enable-dht=false", "--enable-dht6=false", "--enable-peer-exchange=false", "--bt-enable-lpd=false" });
         process = Process.Start(new ProcessStartInfo(executable, String.Join(" ", args.Select(J.Quote))) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = store.Root, RedirectStandardOutput = true, RedirectStandardError = true });

@@ -241,6 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
         setSystem(snap.system)
         setMaximized(Boolean(snap.system.maximized))
         setReady(true)
+        void window.pulse.browserReady?.().catch(() => {})
       })
       .catch((err: Error) => {
         if (cancelled) return

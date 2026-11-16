@@ -8,7 +8,7 @@ api.runtime.onInstalled.addListener(async () => {
     api.contextMenus.create({ id: 'pulse-media', title: 'Collect visible media with Baran', contexts: ['page', 'image', 'video', 'audio'], documentUrlPatterns: ['http://*/*', 'https://*/*'] })
 })
 
-async function send(urls) {
+async function transfer(urls, intent = 'collect') {
   const valid = [...new Set(urls)].filter(value => {
     try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && value.length <= 8192 }
     catch { return false }
@@ -16,9 +16,18 @@ async function send(urls) {
   if (valid.length > 2000) throw new Error('Select fewer than 2000 links.')
   if (!valid.length) throw new Error('No HTTP or HTTPS links were found.')
   if (new TextEncoder().encode(JSON.stringify({ action: 'import', urls: valid })).length > 256 * 1024) throw new Error('Too many links for one transfer. Select fewer links.')
-  const result = await api.runtime.sendNativeMessage(HOST, { action: 'import', urls: valid })
+  const request = { action: 'import', urls: valid }
+  if (intent === 'download') request.intent = 'download'
+  const result = await api.runtime.sendNativeMessage(HOST, request)
   if (!result?.ok) throw new Error(result?.error || 'Open Baran and try again.')
-  return result.count
+  if (intent === 'download' && !result.downloadPrompt) throw new Error('Update Baran desktop to a version that supports browser download prompts.')
+  return result
+}
+async function send(urls) { return (await transfer(urls)).count }
+async function captureStatus(ok, message) {
+  await api.storage.local.set({ lastCapture: { ok, message, at: Date.now() } }).catch(() => {})
+  await api.action.setBadgeText({ text: ok ? 'OK' : '!' }).catch(() => {})
+  await api.action.setTitle({ title: message }).catch(() => {})
 }
 
 async function collect(tabId, mediaOnly = false) {
@@ -52,6 +61,10 @@ api.contextMenus.onClicked.addListener((info, tab) => {
 })
 
 api.runtime.onMessage.addListener((message, _sender, respond) => {
+  if (message?.action === 'connection') {
+    api.runtime.sendNativeMessage(HOST, { action: 'ping' }).then(result => respond(result)).catch(error => respond({ ok: false, error: error.message }))
+    return true
+  }
   if (!['collect', 'media'].includes(message?.action)) return false
   api.tabs.query({ active: true, currentWindow: true }).then(tabs => {
     if (!tabs[0]?.id) throw new Error('Open a web page first.')
@@ -77,14 +90,12 @@ async function captureDownload(item) {
     paused = true
     const [current] = await api.downloads.search({ id: item.id })
     if (!current || current.state !== 'in_progress' || !current.paused) return
-    await send([url.href])
+    await transfer([url.href], 'download')
     await api.downloads.cancel(item.id)
     paused = false
-    await api.action.setBadgeText({ text: 'OK' })
-    await api.action.setTitle({ title: 'Download sent to Baran. Review it in Link Grabber.' })
+    await captureStatus(true, 'Download received by Baran. Confirm its New download window.')
   } catch (error) {
-    await api.action.setBadgeText({ text: '!' }).catch(() => {})
-    await api.action.setTitle({ title: `Browser download kept: ${error.message}` }).catch(() => {})
+    await captureStatus(false, `Browser download kept: ${error.message}. If another download manager is active, disable its Firefox integration.`)
   } finally {
     if (paused) await api.downloads.resume(item.id).catch(() => {})
   }
@@ -96,3 +107,29 @@ function registerCaptureListener() {
 }
 registerCaptureListener()
 api.permissions.onAdded.addListener(registerCaptureListener)
+
+// Firefox can offer explicit attachment responses before the browser's download
+// event. This is opt-in and limited to GET navigations with an attachment header.
+// Other extensions can still cancel the same request; this is not a priority lock.
+async function captureAttachment(details) {
+  if (details.incognito || details.tabId < 0 || details.method !== 'GET' || details.statusCode !== 200 || !['main_frame', 'sub_frame'].includes(details.type)) return {}
+  if (/^(moz|chrome)-extension:/i.test(details.originUrl || details.initiator || '')) return {}
+  const disposition = (details.responseHeaders || []).find(header => header.name.toLowerCase() === 'content-disposition')?.value || ''
+  if (!/^attachment(?:\s*;|\s*$)/i.test(disposition)) return {}
+  const setting = await api.storage.local.get('captureDownloads')
+  if (!setting.captureDownloads || !await api.permissions.contains({permissions: ['webRequest', 'webRequestBlocking'], origins: ['http://*/*', 'https://*/*']})) return {}
+  try {
+    await transfer([details.url], 'download')
+    await captureStatus(true, 'Attachment received by Baran. Confirm its New download window.')
+    return { cancel: true }
+  } catch (error) {
+    await captureStatus(false, `Browser download kept: ${error.message}`)
+    return {}
+  }
+}
+function registerAttachmentListener() {
+  if (!globalThis.browser || !api.webRequest?.onHeadersReceived) return
+  try { if (!api.webRequest.onHeadersReceived.hasListener(captureAttachment)) api.webRequest.onHeadersReceived.addListener(captureAttachment, {urls: ['http://*/*', 'https://*/*'], types: ['main_frame', 'sub_frame']}, ['blocking', 'responseHeaders']) } catch { /* Optional permissions are granted during setup. */ }
+}
+registerAttachmentListener()
+api.permissions.onAdded.addListener(registerAttachmentListener)

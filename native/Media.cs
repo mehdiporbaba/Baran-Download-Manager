@@ -16,13 +16,19 @@ namespace Baran {
     public Media(StateStore state, NativeNetwork net, string directory) { store = state; network = net; root = directory; }
     public string Binary(string name) {
       string custom = name == "yt-dlp" ? J.Str(store.Settings, "ytDlpPath") : name == "ffmpeg" ? J.Str(store.Settings, "ffmpegPath") : "";
-      if (File.Exists(custom)) return custom;
+      if (File.Exists(custom)) return Path.GetFullPath(custom);
       foreach (string directory in new [] { Path.Combine(store.Root, "bin"), Path.Combine(root, "bin") }.Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'))) {
-        try { string file = Path.Combine(directory.Trim('"'), name + ".exe"); if (File.Exists(file)) return file; } catch { }
+        try { string file = Path.Combine(directory.Trim('"'), name + ".exe"); if (File.Exists(file)) return Path.GetFullPath(file); } catch { }
       }
       return "";
     }
     public Dictionary<string, object> Status(string name) { string file = Binary(name); return J.Obj("available", file.Length > 0, "path", file); }
+    static string FriendlyError(string text) {
+      if (System.Text.RegularExpressions.Regex.IsMatch(text, "sign in to confirm|not a bot", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return "YouTube requested a sign-in check. Select your authorized browser session or cookies.txt in Settings → Tools, then retry.";
+      if (System.Text.RegularExpressions.Regex.IsMatch(text, "private video|members[- ]only|join this channel", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return "This video is private or members-only. Select cookies from an account with access in Settings → Tools.";
+      if (System.Text.RegularExpressions.Regex.IsMatch(text, "age[- ]restricted|confirm your age", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return "This video is age-restricted. Select cookies from an authorized signed-in account in Settings → Tools.";
+      return String.IsNullOrWhiteSpace(text) ? "The media tool failed without an error message. Update it in Settings → Tools and retry." : text;
+    }
     List<string> Common(string url, bool gallery) {
       if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("Media tools are blocked while VPN HTTP binding is enabled; their DNS cannot yet be confined to the selected interface");
       var args = new List<string> { gallery ? "--config-ignore" : "--ignore-config", "--no-colors", "--proxy", store.Proxy(url) };
@@ -53,7 +59,7 @@ namespace Baran {
         using (limit.Token.Register(() => { try { if (!process.HasExited) { using (var kill = Process.Start(new ProcessStartInfo("taskkill.exe", "/pid " + process.Id + " /T /F") { UseShellExecute = false, CreateNoWindow = true })) { } } } catch { try { process.Kill(); } catch { } } })) {
           int code = await exited.Task.ConfigureAwait(false); process.WaitForExit();
           limit.Token.ThrowIfCancellationRequested();
-          if (code != 0) throw new Exception(String.Join(" ", stderr.ToString().Trim().Split('\n').Reverse().Take(3).Reverse()));
+          if (code != 0) throw new Exception(FriendlyError(String.Join(" ", stderr.ToString().Trim().Split('\n').Reverse().Take(3).Reverse())));
           return stdout.ToString();
         }
       }

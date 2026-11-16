@@ -51,6 +51,25 @@ class ConnectedFixture {
       store.Settings["vpnInterfaceId"] = "missing-interface";
       rejected = false; try { await network.Probe("http://127.0.0.1:9/blocked"); } catch { rejected = true; } Assert(rejected, "Disconnected VPN must fail closed before opening a request");
       store.Settings["vpnInterfaceId"] = "";
+      var github = new TcpListener(IPAddress.Loopback, 0); github.Start();
+      string githubUrl = "http://127.0.0.1:" + ((IPEndPoint)github.LocalEndpoint).Port + "/repo";
+      int calls = 0;
+      var githubServer = Task.Run(async () => {
+        foreach (string response in new [] { "", "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}", "HTTP/1.1 403 Forbidden\r\nX-RateLimit-Remaining: 0\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n" }) {
+          using (var client = await github.AcceptTcpClientAsync()) {
+            calls++; var stream = client.GetStream(); var header = new StringBuilder(); byte[] one = new byte[1];
+            while (!header.ToString().EndsWith("\r\n\r\n")) { if (await stream.ReadAsync(one, 0, 1) == 0) break; header.Append((char)one[0]); }
+            if (response.Length > 0) { byte[] bytes = Encoding.UTF8.GetBytes(response); await stream.WriteAsync(bytes, 0, bytes.Length); }
+          }
+        }
+      });
+      try {
+        Assert(await network.GithubText(githubUrl, null) == "{}", "Retry dropped GitHub transport");
+        bool limited = false; try { await network.GithubText(githubUrl, null); } catch (Exception error) { limited = error.Message.Contains("rate limit"); } Assert(limited, "Explain GitHub rate limit without retry");
+        bool missing = false; try { await network.GithubText(githubUrl, null); } catch (Exception error) { missing = error.Message.Contains("not found"); } Assert(missing, "Explain inaccessible repository without retry");
+        await githubServer; Assert(calls == 4, "Bounded retries and no HTTP status retries");
+      } finally { github.Stop(); }
+      Console.WriteLine("PASS upstream: GitHub transport retry, rate-limit guidance and inaccessible repository errors against local HTTP fixtures");
       var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); int port = ((IPEndPoint)listener.LocalEndpoint).Port;
       var handle = Task.Run(async () => {
         using (var client = await listener.AcceptTcpClientAsync()) {

@@ -65,6 +65,8 @@ The extension can collect HTTP(S) media URLs already present in a page you can a
 
 ## Scope & current limits
 
+Upstream fixes are tracked in the bilingual [Pulse v1.0.16 review](docs/UPSTREAM-REVIEW-v1.0.16.md), with separate findings for the native and retained Electron engines and explicit test limits.
+
 - A scanner can discover **linked files**, not hidden files that the server never lists. Traversal stays within the seed origin and containing directory. Remote subfolder recreation is not included in 1.0.
 - The native app persists the link review inbox, download tasks and scheduled times. Keep Baran running; the scheduler does not yet wake a sleeping or shut-down computer.
 - Web proxy settings do not tunnel torrent peer or DHT traffic. Use an operating-system VPN when all torrent traffic must be routed. Authenticated proxy URLs are not supported in 1.0.
@@ -168,6 +170,8 @@ The native target is Windows x64. The retained Electron implementation has expli
 <p>افزونه می‌تواند نشانی‌های رسانهٔ <span dir="ltr">HTTP(S)</span> را که از قبل در صفحهٔ قابل دسترس شما وجود دارند جمع‌آوری کند. این قابلیت به معنی تضمین دسترسی به همهٔ پخش‌کننده‌های ویدیو نیست: اشیای <span dir="ltr"><code>blob:</code></span>، جریان‌های رمزگذاری‌شده، نشانی‌های دارای انقضا و دانلودهای مبتنی بر درخواست <span dir="ltr">POST</span> ممکن است به نوع دیگری از اتصال نیاز داشته باشند. باران مجوزهای حساب یا حفاظت <span dir="ltr">DRM</span> را دور نمی‌زند.</p>
 
 <h3>دامنهٔ امکانات و محدودیت‌های فعلی</h3>
+
+<p>اصلاحات بالادستی در <a href="docs/UPSTREAM-REVIEW-v1.0.16.md">بررسی دوزبانهٔ Pulse نسخهٔ ۱.۰.۱۶</a> ثبت شده‌اند؛ یافته‌های موتور بومی و موتور باقی‌ماندهٔ <span dir="ltr">Electron</span> جدا مشخص شده و محدودیت آزمایش‌ها صریحاً آمده است.</p>
 
 <ul>
 <li>اسکنر می‌تواند <strong>فایل‌های لینک‌شده</strong> را پیدا کند؛ نه فایل‌های پنهانی که سرور هرگز فهرست نمی‌کند. پیمایش در همان مبدأ نشانی اولیه و پوشهٔ حاوی آن باقی می‌ماند. بازسازی زیرپوشه‌های مبدأ در نسخهٔ ۱٫۰ وجود ندارد.</li>
