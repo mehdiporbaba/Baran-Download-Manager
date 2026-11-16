@@ -7,8 +7,8 @@ using Microsoft.Win32;
 
 namespace Baran {
   public static class BrowserInstallation {
-    public const string FileName = "Baran-Firefox-Extension-1.0.1-signed.xpi";
-    public const string Sha256 = "908de928372ff98ca24f021907b175ceeb686e269db2b605b793d8676dbbc0c8";
+    public const string FileName = "Baran-Firefox-Extension-1.0.2-signed.xpi";
+    public const string Sha256 = "884b395779a9af2a90b12eb2ce81b54c275c45c664c4d5be7af18359bb897120";
     public static string Package(string root) {
       string path = Path.Combine(root, "extensions", FileName);
       if (!File.Exists(path)) throw new Exception("The bundled signed Firefox extension is missing. Reinstall the current Baran package.");

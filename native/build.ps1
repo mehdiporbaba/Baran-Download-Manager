@@ -24,7 +24,7 @@ $expected = [IO.Path]::GetFullPath((Join-Path $repository 'dist/native'))
 if ($destination -ne $expected -or -not $destination.StartsWith([IO.Path]::GetFullPath((Join-Path $repository 'dist')) + [IO.Path]::DirectorySeparatorChar)) { throw 'Invalid build directory' }
 if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $destination, "$destination/bin", "$destination/native-host", "$destination/licenses", "$destination/extensions" | Out-Null
-Copy-Item -LiteralPath (Join-Path $repository 'browser-extension/signed/Baran-Firefox-Extension-1.0.1-signed.xpi') -Destination "$destination/extensions"
+Copy-Item -LiteralPath (Join-Path $repository 'browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi') -Destination "$destination/extensions"
 Copy-Item -LiteralPath (Join-Path $repository 'out/renderer') -Destination (Join-Path $destination 'ui') -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'bridge.js'), (Join-Path $repository 'resources/icon.ico') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'mobile.html') -Destination $destination

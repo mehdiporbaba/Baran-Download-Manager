@@ -67,7 +67,7 @@ The extension can collect HTTP(S) media URLs already present in a page you can a
 
 Upstream fixes are tracked in the bilingual [Pulse v1.0.16 review](docs/UPSTREAM-REVIEW-v1.0.16.md), with separate findings for the native and retained Electron engines and explicit test limits.
 
-Current maintenance state, verification and pending work are recorded in [project memory](MEMORY.md); the reusable [Baran maintenance skill](.agents/skills/baran-maintenance/SKILL.md) accompanies the source. Source-only browser/Pulse fixes are tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1); Firefox 1.0.2 still awaits Mozilla signing and no new desktop release is implied.
+Current maintenance state, verification and pending work are recorded in [project memory](MEMORY.md); the reusable [Baran maintenance skill](.agents/skills/baran-maintenance/SKILL.md) accompanies the source. Browser/Pulse fixes are tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1). Mozilla approved Firefox 1.0.2 on 2026-11-16; its [signed XPI](browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi) is preserved and selected for source builds. A new desktop/GitHub extension release and installed-browser acceptance are still pending.
 
 - A scanner can discover **linked files**, not hidden files that the server never lists. Traversal stays within the seed origin and containing directory. Remote subfolder recreation is not included in 1.0.
 - The native app persists the link review inbox, download tasks and scheduled times. Stable 2.0.0 requires Baran running. The 2.1 prereleases add optional Windows wake tasks, subject to OS/hardware/power-state support; they do not power on a shut-down computer.
@@ -175,7 +175,7 @@ The native target is Windows x64. The retained Electron implementation has expli
 
 <p>اصلاحات بالادستی در <a href="docs/UPSTREAM-REVIEW-v1.0.16.md">بررسی دوزبانهٔ Pulse نسخهٔ ۱.۰.۱۶</a> ثبت شده‌اند؛ یافته‌های موتور بومی و موتور باقی‌ماندهٔ <span dir="ltr">Electron</span> جدا مشخص شده و محدودیت آزمایش‌ها صریحاً آمده است.</p>
 
-<p>وضعیت فعلی نگه‌داری، بررسی‌ها و کارهای باقی‌مانده در <a href="MEMORY.md">حافظهٔ پروژه</a> ثبت شده‌اند؛ <a href=".agents/skills/baran-maintenance/SKILL.md">اسکیل قابل‌استفادهٔ مجدد نگه‌داری باران</a> نیز همراه سورس است. اصلاحات مرورگر و Pulse که فعلاً فقط در سورس هستند، در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1">درخواست تغییر پیش‌نویس شمارهٔ ۱</a> دنبال می‌شوند؛ فایرفاکس نسخهٔ <span dir="ltr">1.0.2</span> همچنان منتظر امضای موزیلاست و این ثبت سورس به معنای انتشار نسخهٔ جدید دسکتاپ نیست.</p>
+<p>وضعیت فعلی نگه‌داری، بررسی‌ها و کارهای باقی‌مانده در <a href="MEMORY.md">حافظهٔ پروژه</a> ثبت شده‌اند؛ <a href=".agents/skills/baran-maintenance/SKILL.md">اسکیل قابل‌استفادهٔ مجدد نگه‌داری باران</a> نیز همراه سورس است. اصلاحات مرورگر و Pulse در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1">درخواست تغییر پیش‌نویس شمارهٔ ۱</a> دنبال می‌شوند. موزیلا فایرفاکس نسخهٔ <span dir="ltr">1.0.2</span> را در ۲۰۲۶/۱۱/۱۶ تأیید کرد؛ <a href="browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi">فایل XPI امضاشدهٔ آن</a> نگه‌داری و برای ساخت از سورس انتخاب شده است. انتشار جدید دسکتاپ/افزونه در گیت‌هاب و پذیرش عملی در مرورگر نصب‌شده همچنان باقی مانده‌اند.</p>
 
 <ul>
 <li>اسکنر می‌تواند <strong>فایل‌های لینک‌شده</strong> را پیدا کند؛ نه فایل‌های پنهانی که سرور هرگز فهرست نمی‌کند. پیمایش در همان مبدأ نشانی اولیه و پوشهٔ حاوی آن باقی می‌ماند. بازسازی زیرپوشه‌های مبدأ در نسخهٔ ۱٫۰ وجود ندارد.</li>
