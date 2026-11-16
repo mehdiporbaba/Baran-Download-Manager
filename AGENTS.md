@@ -1,5 +1,11 @@
 # Repository instructions
 
+## Project continuity
+
+- Read `MEMORY.md` when resuming Baran implementation, browser integration, upstream review or release work; verify its changing branch/release status against GitHub before relying on it.
+- Use `.agents/skills/baran-maintenance/SKILL.md` for Baran maintenance and handoff workflows. It records repository-specific invariants, not permission to publish or change user/browser settings.
+- Update `MEMORY.md` after meaningful implementation, validation, release or blocking-handoff changes. Separate released behavior, tested source and pending acceptance/signing; link supporting documentation instead of storing credentials or duplicating long logs.
+
 ## Permanent bilingual documentation and release policy
 
 - README and every GitHub Release must contain a complete Persian translation of the English content, including all changes, installation steps, validation, limitations and links. Do not replace the Persian text with a short summary.

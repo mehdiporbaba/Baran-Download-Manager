@@ -67,11 +67,13 @@ The extension can collect HTTP(S) media URLs already present in a page you can a
 
 Upstream fixes are tracked in the bilingual [Pulse v1.0.16 review](docs/UPSTREAM-REVIEW-v1.0.16.md), with separate findings for the native and retained Electron engines and explicit test limits.
 
+Current maintenance state, verification and pending work are recorded in [project memory](MEMORY.md); the reusable [Baran maintenance skill](.agents/skills/baran-maintenance/SKILL.md) accompanies the source. Source-only browser/Pulse fixes are tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1); Firefox 1.0.2 still awaits Mozilla signing and no new desktop release is implied.
+
 - A scanner can discover **linked files**, not hidden files that the server never lists. Traversal stays within the seed origin and containing directory. Remote subfolder recreation is not included in 1.0.
-- The native app persists the link review inbox, download tasks and scheduled times. Keep Baran running; the scheduler does not yet wake a sleeping or shut-down computer.
+- The native app persists the link review inbox, download tasks and scheduled times. Stable 2.0.0 requires Baran running. The 2.1 prereleases add optional Windows wake tasks, subject to OS/hardware/power-state support; they do not power on a shut-down computer.
 - Web proxy settings do not tunnel torrent peer or DHT traffic. Use an operating-system VPN when all torrent traffic must be routed. Authenticated proxy URLs are not supported in 1.0.
 - Instagram extraction depends on gallery-dl, Instagram availability and your access. Stories/private content may require an authorized session. CDN URLs can expire and need re-extraction.
-- The extension is shipped unpacked, not published in browser stores. Native Messaging setup in 1.0 targets Windows; Linux source builds do not yet include that host.
+- Firefox 1.0.1 has a Mozilla-signed, self-distributed XPI. Chrome/Edge still use a development ZIP and await store publication. Native Messaging integration targets Windows; Linux source builds do not yet include that host.
 - The native package contains no WebTorrent/Node modules. Inherited npm findings remain in the legacy source/build environment; native dependencies have their own update needs. This is not a claim of a clean vulnerability audit. See [validation notes](docs/VALIDATION.md) and the [runtime inventory](native/runtime-components.json).
 
 ## Build from source
@@ -173,12 +175,14 @@ The native target is Windows x64. The retained Electron implementation has expli
 
 <p>اصلاحات بالادستی در <a href="docs/UPSTREAM-REVIEW-v1.0.16.md">بررسی دوزبانهٔ Pulse نسخهٔ ۱.۰.۱۶</a> ثبت شده‌اند؛ یافته‌های موتور بومی و موتور باقی‌ماندهٔ <span dir="ltr">Electron</span> جدا مشخص شده و محدودیت آزمایش‌ها صریحاً آمده است.</p>
 
+<p>وضعیت فعلی نگه‌داری، بررسی‌ها و کارهای باقی‌مانده در <a href="MEMORY.md">حافظهٔ پروژه</a> ثبت شده‌اند؛ <a href=".agents/skills/baran-maintenance/SKILL.md">اسکیل قابل‌استفادهٔ مجدد نگه‌داری باران</a> نیز همراه سورس است. اصلاحات مرورگر و Pulse که فعلاً فقط در سورس هستند، در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1">درخواست تغییر پیش‌نویس شمارهٔ ۱</a> دنبال می‌شوند؛ فایرفاکس نسخهٔ <span dir="ltr">1.0.2</span> همچنان منتظر امضای موزیلاست و این ثبت سورس به معنای انتشار نسخهٔ جدید دسکتاپ نیست.</p>
+
 <ul>
 <li>اسکنر می‌تواند <strong>فایل‌های لینک‌شده</strong> را پیدا کند؛ نه فایل‌های پنهانی که سرور هرگز فهرست نمی‌کند. پیمایش در همان مبدأ نشانی اولیه و پوشهٔ حاوی آن باقی می‌ماند. بازسازی زیرپوشه‌های مبدأ در نسخهٔ ۱٫۰ وجود ندارد.</li>
-<li>نسخهٔ بومی، صندوق لینک‌های آمادهٔ بررسی، وظایف دانلود و زمان‌های برنامه‌ریزی‌شده را ذخیره می‌کند. باران را در حال اجرا نگه دارید؛ زمان‌بند هنوز رایانهٔ خوابیده یا خاموش را بیدار نمی‌کند.</li>
+<li>نسخهٔ بومی، صندوق لینک‌های آمادهٔ بررسی، وظایف دانلود و زمان‌های برنامه‌ریزی‌شده را ذخیره می‌کند. نسخهٔ پایدار <span dir="ltr">2.0.0</span> به درحال‌اجرا بودن باران نیاز دارد. پیش‌انتشارهای <span dir="ltr">2.1</span> وظیفهٔ اختیاری بیدارکردن ویندوز را اضافه می‌کنند که به پشتیبانی سیستم‌عامل، سخت‌افزار و وضعیت برق بستگی دارد؛ رایانهٔ خاموش را روشن نمی‌کنند.</li>
 <li>تنظیمات پراکسی وب، ترافیک همتایان تورنت یا <span dir="ltr">DHT</span> را از تونل عبور نمی‌دهد. اگر باید تمام ترافیک تورنت از مسیر مشخصی عبور کند، از <span dir="ltr">VPN</span> سیستم‌عامل استفاده کنید. نشانی‌های پراکسی دارای اطلاعات احراز هویت در نسخهٔ ۱٫۰ پشتیبانی نمی‌شوند.</li>
 <li>استخراج اینستاگرام به <span dir="ltr">gallery-dl</span>، در دسترس بودن اینستاگرام و سطح دسترسی شما بستگی دارد. استوری‌ها و محتوای خصوصی ممکن است به نشست مجاز نیاز داشته باشند. نشانی‌های <span dir="ltr">CDN</span> ممکن است منقضی شوند و نیاز به استخراج دوباره داشته باشند.</li>
-<li>افزونه به‌صورت استخراج‌شده ارائه می‌شود و در فروشگاه‌های مرورگر منتشر نشده است. راه‌اندازی <span dir="ltr">Native Messaging</span> در نسخهٔ ۱٫۰ برای ویندوز است؛ ساخت‌های سورس لینوکس هنوز این میزبان را ندارند.</li>
+<li>فایرفاکس نسخهٔ <span dir="ltr">1.0.1</span> فایل <span dir="ltr">XPI</span> با امضای موزیلا و توزیع مستقیم دارد. افزونهٔ <span dir="ltr">Chrome/Edge</span> همچنان با فایل <span dir="ltr">ZIP</span> توسعه ارائه می‌شود و منتظر انتشار در فروشگاه است. اتصال <span dir="ltr">Native Messaging</span> برای ویندوز است؛ ساخت‌های سورس لینوکس هنوز این میزبان را ندارند.</li>
 <li>بستهٔ بومی شامل ماژول‌های <span dir="ltr">WebTorrent/Node</span> نیست. یافته‌های امنیتی به‌ارث‌رسیدهٔ <span dir="ltr">npm</span> همچنان در سورس و محیط ساخت نسخهٔ قدیمی وجود دارند؛ وابستگی‌های بومی نیز به‌روزرسانی‌های خاص خود را لازم دارند. این موضوع به معنی اعلام پاک‌بودن کامل ممیزی آسیب‌پذیری‌ها نیست. <a href="docs/VALIDATION.md">یادداشت‌های اعتبارسنجی</a> و <a href="native/runtime-components.json">فهرست اجزای محیط اجرا</a> را ببینید.</li>
 </ul>
 

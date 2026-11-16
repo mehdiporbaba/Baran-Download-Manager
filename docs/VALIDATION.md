@@ -1,5 +1,20 @@
 # Validation
 
+## Current source verification — 2026-11-16
+
+Implementation commit `b09c85b95d6f5909a27b92510eb58594c50265ac` on `codex/firefox-and-upstream-fixes` is tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1). GitHub Native Windows build, Windows/Linux source validation and Gitleaks completed successfully. Local checks passed: 20 unit tests, typecheck, native integration, connected-services integration, retained Electron network regressions and 5 release-policy tests. [Project memory](../MEMORY.md) records the continuation state; [upstream review](UPSTREAM-REVIEW-v1.0.16.md) maps fixes and test limitations.
+
+New regression evidence includes a completed local private torrent with its configured TCP port occupied, exact output bytes despite inaccurate media progress, actionable sign-in/private/age errors, durable browser capture before renderer readiness, and local GitHub connection-drop/rate-limit/404 fixtures. Real installed-Firefox conflict/cold-start acceptance, live media accounts, real FFmpeg merging and UDP/DHT collision remain outside this evidence. Passing Gitleaks does not constitute a complete vulnerability audit.
+
+Firefox 1.0.1 is genuinely Mozilla-signed and published; prepared 1.0.2 source is lint-clean but unsigned and awaiting Mozilla submission/signing. These checks do not publish a new desktop release. The historical sections below describe their named versions, not the current signing state.
+
+<div dir="rtl" lang="fa" align="right">
+<h2>بررسی سورس فعلی — ۲۰۲۶/۱۱/۱۶</h2>
+<p>کامیت پیاده‌سازی <span dir="ltr">b09c85b95d6f5909a27b92510eb58594c50265ac</span> در شاخهٔ <span dir="ltr">codex/firefox-and-upstream-fixes</span> در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1">درخواست تغییر پیش‌نویس شمارهٔ ۱</a> دنبال می‌شود. ساخت بومی ویندوز، بررسی سورس در ویندوز/لینوکس و Gitleaks در گیت‌هاب موفق شدند. بررسی‌های محلی موفق شامل ۲۰ تست واحد، بررسی نوع‌ها، یکپارچه‌سازی بومی، خدمات متصل، رگرسیون شبکهٔ Electron باقی‌مانده و ۵ تست سیاست انتشار هستند. <a href="../MEMORY.md">حافظهٔ پروژه</a> وضعیت ادامهٔ کار و <a href="UPSTREAM-REVIEW-v1.0.16.md">بررسی بالادستی</a> تطبیق اصلاحات و محدودیت آزمایش‌ها را ثبت می‌کنند.</p>
+<p>شواهد جدید رگرسیون شامل تکمیل تورنت خصوصی محلی هنگام اشغال پورت TCP تنظیم‌شده، برابری دقیق بایت‌های خروجی با وجود گزارش پیشرفت نادرست رسانه، راهنمای خطاهای ورود/خصوصی/سن، ذخیرهٔ پایدار دریافت مرورگر پیش از آماده‌شدن رابط و شبیه‌سازی قطع اتصال/اتمام سهمیه/۴۰۴ گیت‌هاب در سرور محلی است. پذیرش عملی تداخل افزونه‌ها و شروع سرد در فایرفاکس نصب‌شده، حساب‌های زندهٔ رسانه، ادغام واقعی FFmpeg و تداخل UDP/DHT در این شواهد پوشش داده نشده‌اند. موفقیت Gitleaks به معنی ممیزی کامل آسیب‌پذیری‌ها نیست.</p>
+<p>فایرفاکس نسخهٔ <span dir="ltr">1.0.1</span> واقعاً امضای موزیلا دارد و منتشر شده است؛ سورس آمادهٔ <span dir="ltr">1.0.2</span> بدون خطای lint است ولی امضا ندارد و منتظر ارسال/امضای موزیلاست. این بررسی‌ها نسخهٔ جدید دسکتاپ منتشر نمی‌کنند. بخش‌های تاریخی پایین، نسخهٔ نام‌بردهٔ خود را توضیح می‌دهند و وضعیت فعلی امضا نیستند.</p>
+</div>
+
 ## Native 2.0.0 checks
 
 - Native C# application and NSIS Setup compile on Windows; the Portable ZIP contains roughly 8 MB of app files and no Electron/Node/WebTorrent runtime. Exact final package sizes and hashes are recorded with release assets.
