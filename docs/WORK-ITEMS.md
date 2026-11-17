@@ -8,7 +8,7 @@ Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication wit
 - **P1 — Review MDM features and all issue records.** Preserve a pinned source snapshot and a complete issue catalogue; distinguish applicable bugs, existing safeguards, runtime-specific failures and unimplemented features. Do not claim every report reproduced or all features merged.
 - **P1 — Per-file controls and integrity.** Independent HTTP speed cap, global cap coexistence, fast pause during stalled body reads, and optional expected SHA-256. Failed integrity must keep partial data without publishing a completed file.
 - **Implemented advanced source:** four Debrid providers with DPAPI and durable pending jobs, verified optional tool installation, proxy-routed media HTTP on the selected IPv4 interface, and installer browser-host refresh. See [advanced services](ADVANCED-SERVICES.md). Full torrent confinement, native Linux/macOS and Chrome store publication are explicitly deferred by the owner.
-- **P1 — Compatibility release.** Completed: v2.1.0 is stable/latest, all six assets uploaded, source CI passed and the published bilingual body matches its source. Final documentation/main synchronization follows; beta.2 assets remain unchanged.
+- **P1 — Compatibility release.** Completed: v2.1.0 is stable/latest, all six assets uploaded, source CI passed and the published bilingual body matches its source. Main includes the release and current setup documentation; beta.2 assets remain unchanged.
 
 <div dir="rtl" lang="fa" align="right">
 <h1>کارهای فعال باران</h1>
@@ -20,6 +20,6 @@ Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication wit
 <li><strong>اولویت یک — پنجرهٔ مستقل پیشرفت با ظاهر باران.</strong> زبانه‌های وضعیت/سرعت/پایان دانلود، نقشهٔ بخش‌ها و ردیف‌های اتصال، چیدمان واکنش‌گرا و فارسی راست‌چین. بستن یا پنهان‌کردن دانلود را ادامه می‌دهد؛ توقف، دادهٔ ناقص را نگه می‌دارد؛ بازکردن دوباره همان وظیفه نباید موتور تکراری بسازد. پنجرهٔ واقعی و مختصات مانیتورهای دیگر/منفی بررسی شوند.</li>
 <li><strong>اولویت یک — بررسی امکانات MDM و تمام رکوردهای گزارش.</strong> سورس با کامیت ثابت و فهرست کامل گزارش‌ها ثبت شود؛ خطاهای مرتبط، حفاظت‌های موجود، مشکلات خاص موتور دیگر و امکانات پیاده‌نشده تفکیک شوند. بازتولید تمام گزارش‌ها یا ادغام همهٔ امکانات ادعا نشود.</li>
 <li><strong>اولویت یک — کنترل هر فایل و صحت محتوا.</strong> سقف مستقل سرعت HTTP در کنار سقف سراسری، توقف سریع هنگام گیرکردن دریافت بدنه و SHA-256 مورد انتظار اختیاری. شکست بررسی صحت باید دادهٔ ناقص را حفظ کند و فایل تکمیل‌شده تحویل ندهد.</li>
-<li><strong>اولویت یک — نسخهٔ سازگار.</strong> تکمیل شد: v2.1.0 پایدار/آخرین است؛ هر شش فایل بارگذاری، CI سورس موفق و متن دوزبانه با منبع برابر است. هماهنگی نهایی مستندات/main دنبال می‌شود؛ فایل بتا ۲ تغییر نکرده است.</li>
+<li><strong>اولویت یک — نسخهٔ سازگار.</strong> تکمیل شد: v2.1.0 پایدار/آخرین است؛ هر شش فایل بارگذاری، CI سورس موفق و متن دوزبانه با منبع برابر است. main شامل انتشار و راهنمای فعلی راه‌اندازی است؛ فایل بتا ۲ تغییر نکرده است.</li>
 </ul>
 </div>
