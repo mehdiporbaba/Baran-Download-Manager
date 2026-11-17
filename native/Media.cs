@@ -22,7 +22,14 @@ namespace Baran {
       }
       return "";
     }
-    public Dictionary<string, object> Status(string name) { string file = Binary(name); return J.Obj("available", file.Length > 0, "path", file); }
+    public Dictionary<string, object> Status(string name) {
+      string file = Binary(name), version = "";
+      if (file.Length > 0 && Path.GetDirectoryName(file).Equals(Path.Combine(store.Root, "bin"), StringComparison.OrdinalIgnoreCase)) {
+        string stamp = Path.Combine(store.Root, "bin", name + ".source.json");
+        try { if (File.Exists(stamp)) version = J.Str(J.Decode(File.ReadAllText(stamp)), "version"); } catch { }
+      }
+      return J.Obj("available", file.Length > 0, "path", file, "version", version);
+    }
     static string FriendlyError(string text) {
       if (System.Text.RegularExpressions.Regex.IsMatch(text, "sign in to confirm|not a bot", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return "YouTube requested a sign-in check. Select your authorized browser session or cookies.txt in Settings → Tools, then retry.";
       if (System.Text.RegularExpressions.Regex.IsMatch(text, "private video|members[- ]only|join this channel", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return "This video is private or members-only. Select cookies from an account with access in Settings → Tools.";
@@ -30,8 +37,10 @@ namespace Baran {
       return String.IsNullOrWhiteSpace(text) ? "The media tool failed without an error message. Update it in Settings → Tools and retry." : text;
     }
     List<string> Common(string url, bool gallery) {
-      if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("Media tools are blocked while VPN HTTP binding is enabled; their DNS cannot yet be confined to the selected interface");
-      var args = new List<string> { gallery ? "--config-ignore" : "--ignore-config", "--no-colors", "--proxy", store.Proxy(url) };
+      var args = new List<string> { gallery ? "--config-ignore" : "--ignore-config", "--no-colors", "--proxy", network.MediaProxy(url) };
+      // Keep network fetching inside yt-dlp's proxy-aware downloader. FFmpeg is
+      // reserved for local merging; arbitrary external downloaders are not used.
+      if (network.Vpn.Enabled && !gallery) args.AddRange(new [] { "--downloader", "native", "--hls-prefer-native" });
       string cookies = J.Str(store.Settings, "cookiesFile"), browser = J.Str(store.Settings, "cookiesBrowser");
       if (!String.IsNullOrEmpty(cookies) && File.Exists(cookies)) args.AddRange(new [] { "--cookies", cookies });
       else if (!String.IsNullOrEmpty(browser)) args.AddRange(new [] { "--cookies-from-browser", browser + (gallery ? "/instagram.com" : "") });
@@ -43,24 +52,31 @@ namespace Baran {
       return args;
     }
     public async Task<string> Run(string file, IEnumerable<string> args, int timeout, CancellationToken token, Action<string> line = null) {
-      lock (routing) { if (J.Str(store.Settings, "vpnInterfaceId").Length > 0) throw new Exception("External media tools are blocked while VPN HTTP binding is enabled"); running++; }
+      lock (routing) { network.Vpn.Ensure(); running++; }
       try {
       if (String.IsNullOrEmpty(file)) throw new Exception("Install the required media tool in Settings first");
       var info = new ProcessStartInfo(file, String.Join(" ", args.Select(J.Quote))) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
       using (var process = new Process { StartInfo = info })
       using (var limit = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+        bool bound = network.Vpn.Enabled;
+        using (var monitor = new Timer(_ => { if (bound) try { network.Vpn.Ensure(); } catch { try { limit.Cancel(); } catch (ObjectDisposedException) { } } }, null, 250, 250)) {
         var stdout = new StringBuilder(); var stderr = new StringBuilder();
         if (timeout > 0) limit.CancelAfter(timeout);
         var exited = new TaskCompletionSource<int>();
         process.EnableRaisingEvents = true; process.Exited += (sender, e) => exited.TrySetResult(process.ExitCode);
         process.OutputDataReceived += (sender, e) => { if (e.Data == null) return; lock (stdout) { if (stdout.Length > 16 * 1024 * 1024) { limit.Cancel(); return; } stdout.AppendLine(e.Data); } if (line != null) line(e.Data); };
-        process.ErrorDataReceived += (sender, e) => { if (e.Data == null) return; lock (stderr) { if (stderr.Length < 128 * 1024) stderr.AppendLine(e.Data); } };
+        process.ErrorDataReceived += (sender, e) => {
+          if (e.Data == null) return;
+          if (line != null && (e.Data.StartsWith("BARAN_PROGRESS:") || e.Data.StartsWith("BARAN_POSTPROCESS:"))) { line(e.Data); return; }
+          lock (stderr) { if (stderr.Length > 128 * 1024) stderr.Remove(0, stderr.Length - 64 * 1024); stderr.AppendLine(e.Data); }
+        };
         process.Start(); process.BeginOutputReadLine(); process.BeginErrorReadLine();
         using (limit.Token.Register(() => { try { if (!process.HasExited) { using (var kill = Process.Start(new ProcessStartInfo("taskkill.exe", "/pid " + process.Id + " /T /F") { UseShellExecute = false, CreateNoWindow = true })) { } } } catch { try { process.Kill(); } catch { } } })) {
           int code = await exited.Task.ConfigureAwait(false); process.WaitForExit();
           limit.Token.ThrowIfCancellationRequested();
           if (code != 0) throw new Exception(FriendlyError(String.Join(" ", stderr.ToString().Trim().Split('\n').Reverse().Take(3).Reverse())));
           return stdout.ToString();
+        }
         }
       }
       } finally { lock (routing) running--; }
@@ -87,9 +103,10 @@ namespace Baran {
     public async Task Download(DownloadRecord task, CancellationToken token, Action<DownloadRecord, Dictionary<string, object>> patch) {
       var data = task.Data; string url = J.Str(data, "url"); var meta = J.Get(data, "youtube");
       var args = Common(url, false); string ffmpeg = Binary("ffmpeg");
-      args.AddRange(new [] { "--newline", "--continue", "--no-overwrites", "--no-playlist", "--progress-template", "download:BARAN_PROGRESS:%(progress.downloaded_bytes)s|%(progress.total_bytes,progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s", "--print", "after_move:BARAN_FILE:%(filepath)s", "-P", J.Str(data, "dir"), "-o", J.SafeName(Path.GetFileNameWithoutExtension(J.Str(data, "fileName"))) + ".%(ext)s" });
+      args.AddRange(new [] { "--newline", "--progress", "--continue", "--no-overwrites", "--no-playlist", "--progress-template", "download:BARAN_PROGRESS:%(progress.downloaded_bytes)s|%(progress.total_bytes,progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s", "--progress-template", "postprocess:BARAN_POSTPROCESS:%(progress.status)s", "--print", "after_move:BARAN_FILE:%(filepath)s", "-P", J.Str(data, "dir"), "-o", J.SafeName(Path.GetFileNameWithoutExtension(J.Str(data, "fileName"))) + ".%(ext)s" });
       if (ffmpeg.Length > 0) args.AddRange(new [] { "--ffmpeg-location", ffmpeg });
       string selector = J.Str(meta, "selector", J.Str(meta, "formatId", J.Bool(meta, "audioOnly") ? "bestaudio/best" : "bv*+ba/b")); args.AddRange(new [] { "-f", selector });
+      if (ffmpeg.Length == 0 && (selector.Contains("+") || (J.Bool(meta, "audioOnly") && J.Str(meta, "audioFormat") == "mp3") || J.Bool(meta, "embedThumbnail"))) throw new Exception("FFmpeg is required for this format or postprocessing. Select it in Settings > Tools, or choose a combined video/audio format.");
       if (J.Bool(meta, "audioOnly") && J.Str(meta, "audioFormat") == "mp3") args.AddRange(new [] { "-x", "--audio-format", "mp3" });
       if (J.Bool(meta, "subtitles")) args.AddRange(new [] { "--write-subs", "--write-auto-subs" });
       if (J.Bool(meta, "embedThumbnail")) args.AddRange(new [] { "--write-thumbnail", "--embed-thumbnail" });
@@ -98,9 +115,10 @@ namespace Baran {
       patch(task, J.Obj("status", "downloading")); string resultPath = "";
       await Run(Binary("yt-dlp"), args, 0, token, line => {
         if (line.StartsWith("BARAN_FILE:")) resultPath = line.Substring(11).Trim();
+        if (line.StartsWith("BARAN_POSTPROCESS:")) patch(task, J.Obj("status", "verifying", "speed", 0, "eta", 0, "connections", 0));
         if (line.StartsWith("BARAN_PROGRESS:")) {
           string[] values = line.Substring(15).Split('|');
-          var update = new Dictionary<string, object>(); var keys = new [] { "downloaded", "size", "speed", "eta" };
+          var update = J.Obj("status", "downloading"); var keys = new [] { "downloaded", "size", "speed", "eta" };
           for (int i = 0; i < Math.Min(4, values.Length); i++) { double value; if (Double.TryParse(values[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out value)) update[keys[i]] = (long)value; }
           patch(task, update);
         }
@@ -126,31 +144,6 @@ namespace Baran {
       if (assets.Count == 0) throw new Exception("No accessible Instagram media was returned. Update gallery-dl or select your authorized browser session in Settings.");
       return assets;
     }
-    public async Task Install(bool gallery) {
-      string repository = gallery ? "mikf/gallery-dl" : "yt-dlp/yt-dlp", name = gallery ? "gallery-dl.exe" : "yt-dlp.exe";
-      var release = J.Decode(await network.Text("https://api.github.com/repos/" + repository + "/releases/latest", 2 * 1024 * 1024).ConfigureAwait(false));
-      object asset = J.List(J.Get(release, "assets")).FirstOrDefault(a => J.Str(a, "name") == name);
-      string url = J.Str(asset, "browser_download_url");
-      if (!url.StartsWith("https://github.com/" + repository + "/releases/")) throw new Exception("The official tool executable was not found");
-      string directory = Path.Combine(store.Root, "bin"); Directory.CreateDirectory(directory);
-      string target = Path.Combine(directory, name), temporary = target + ".download";
-      using (var cancel = new CancellationTokenSource(180000))
-      using (var response = await network.Open(url, null, cancel.Token).ConfigureAwait(false))
-      using (cancel.Token.Register(response.Close)) {
-        if ((int)response.StatusCode != 200) throw new Exception("Tool download failed: HTTP " + (int)response.StatusCode);
-        using (var output = File.Create(temporary)) {
-          var bytes = new byte[65536]; long total = 0; int count;
-          while ((count = await response.GetResponseStream().ReadAsync(bytes, 0, bytes.Length, cancel.Token).ConfigureAwait(false)) > 0) {
-            total += count; if (total > 200 * 1024 * 1024) throw new Exception("Tool download exceeds 200 MB");
-            await output.WriteAsync(bytes, 0, count, cancel.Token).ConfigureAwait(false);
-          }
-        }
-      }
-      string expected = J.Str(asset, "digest");
-      if (expected.StartsWith("sha256:")) using (var hash = SHA256.Create()) using (var stream = File.OpenRead(temporary)) {
-        if (BitConverter.ToString(hash.ComputeHash(stream)).Replace("-", "").ToLowerInvariant() != expected.Substring(7)) { File.Delete(temporary); throw new Exception("Tool checksum did not match"); }
-      }
-      if (File.Exists(target)) File.Replace(temporary, target, null); else File.Move(temporary, target);
-    }
+    public Task Install(bool gallery) { return ToolInstaller.Install(gallery ? "gallery-dl" : "yt-dlp", store, network); }
   }
 }

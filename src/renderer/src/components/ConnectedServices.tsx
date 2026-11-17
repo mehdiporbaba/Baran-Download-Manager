@@ -3,6 +3,7 @@ import { useApp } from '../state'
 
 interface Status {
   debridConfigured: boolean
+  providers: Array<{ id: string; configured: boolean; pending: { id: string } | null }>
   mobile: { running: boolean; url: string; token: string; addresses: string[] }
   interfaces: Array<{ id: string; name: string; up: boolean; addresses: string[] }>
   vpnInterfaceId: string
@@ -21,6 +22,8 @@ export function ConnectedServices(): React.JSX.Element {
   const [address, setAddress] = useState('')
   const [vpn, setVpn] = useState('')
   const [account, setAccount] = useState('')
+  const [provider, setProvider] = useState('real-debrid')
+  const providers = { 'real-debrid': ['Real-Debrid', 'https://real-debrid.com/apitoken'], alldebrid: ['AllDebrid', 'https://alldebrid.com/apikeys/'], premiumize: ['Premiumize', 'https://www.premiumize.me/account'], torbox: ['TorBox', 'https://torbox.app/settings'] } as const
   const api = window.pulse.connected
   async function refresh(): Promise<void> {
     if (!api) return
@@ -38,21 +41,26 @@ export function ConnectedServices(): React.JSX.Element {
   if (!status) return <p>{fa ? 'در حال دریافت وضعیت…' : 'Loading services…'}</p>
   const box = 'space-y-3 rounded-xl border border-line bg-panel/50 p-4'
   const input = 'field w-full min-w-0 px-3 py-2 text-[12px]'
+  const selected = status.providers?.find(item => item.id === provider)
+  const configured = selected?.configured ?? (provider === 'real-debrid' && status.debridConfigured)
+  const providerInfo = providers[provider as keyof typeof providers]
   return <div className="space-y-5 text-[12px] leading-7">
     <p className="text-muted">{fa ? 'دکمه‌های این صفحه تغییرات را همان لحظه اعمال می‌کنند.' : 'Buttons on this page apply changes immediately.'}</p>
     <section className={box}>
-      <h3 className="font-semibold text-ink">Real-Debrid</h3>
-      <p className="text-muted">{fa ? 'توکن حساب خودت را ذخیره کن؛ لینک تولیدشده برای بررسی وارد لینک‌گیر می‌شود. ارسال هر لینک به Real-Debrid ممکن است سهمیهٔ حساب را مصرف کند.' : 'Use your own account token. Generated links go to Link Grabber for review. Each generation sends the link to Real-Debrid and may consume account traffic.'}</p>
-      <button className="text-brand underline" type="button" onClick={() => void window.pulse.openExternal('https://real-debrid.com/apitoken')}>{fa ? 'دریافت توکن از حساب Real-Debrid' : 'Get your Real-Debrid token'}</button>
-      <input aria-label="Real-Debrid token" className={input} type="password" autoComplete="off" dir="ltr" placeholder={status.debridConfigured ? '•••••••• — connected' : 'API token'} value={token} onChange={event => setToken(event.target.value)} />
+      <h3 className="font-semibold text-ink">Debrid</h3>
+      <label className="block">{fa ? 'سرویس حساب' : 'Account provider'}<select className={input} disabled={busy} value={provider} onChange={event => { setProvider(event.target.value); setToken(''); setAccount(''); setLink('') }}>{Object.entries(providers).map(([id, info]) => <option key={id} value={id}>{info[0]}</option>)}</select></label>
+      <p className="text-muted">{fa ? 'توکن حساب خودت را ذخیره کن؛ فایل‌های تولیدشده برای انتخاب وارد لینک‌گیر می‌شوند. تولید لینک، نشانی را به سرویس انتخابی می‌فرستد و ممکن است سهمیه مصرف کند. باران خرید یا اشتراک ایجاد نمی‌کند.' : 'Use your own account token. Resolved files go to Link Grabber for selection. Generating sends the source URL to the selected provider and may consume account quota. Baran does not purchase a subscription.'}</p>
+      <button className="text-brand underline" type="button" onClick={() => void window.pulse.openExternal(providerInfo[1])}>{fa ? `دریافت توکن از حساب ${providerInfo[0]}` : `Get your ${providerInfo[0]} token`}</button>
+      <label className="block">{fa ? 'توکن API' : 'API token'}<input aria-label={`${providerInfo[0]} token`} className={input} type="password" autoComplete="off" dir="ltr" placeholder={configured ? '••••••••' : ''} value={token} onChange={event => setToken(event.target.value)} /></label>
       <div className="flex flex-wrap gap-2">
-        <button className="btn btn-primary" disabled={busy || !token.trim()} onClick={() => void run(async () => { await api('debridSave', { token }); setToken('') })}>{fa ? 'ذخیرهٔ توکن' : 'Save token'}</button>
-        <button className="btn btn-ghost" disabled={busy || !status.debridConfigured} onClick={() => void run(async () => { const user = await api('debridAccount') as { username: string; type: string }; setAccount(`${user.username} · ${user.type}`) })}>{fa ? 'آزمایش حساب' : 'Test account'}</button>
-        <button className="btn btn-ghost" disabled={busy || !status.debridConfigured} onClick={() => void run(async () => { await api('debridSave', { token: '' }); setAccount('') })}>{fa ? 'حذف توکن' : 'Remove token'}</button>
+        <button className="btn btn-primary" disabled={busy || !token.trim()} onClick={() => void run(async () => { await api('debridSave', { provider, token }); setToken('') })}>{fa ? 'ذخیرهٔ توکن' : 'Save token'}</button>
+        <button className="btn btn-ghost" disabled={busy || !configured} onClick={() => void run(async () => { const user = await api('debridAccount', { provider }) as { username: string; type: string }; setAccount(`${user.username} · ${user.type}`) })}>{fa ? 'آزمایش حساب' : 'Test account'}</button>
+        <button className="btn btn-ghost" disabled={busy || !configured} onClick={() => void run(async () => { await api('debridSave', { provider, token: '' }); setToken(''); setAccount('') })}>{fa ? 'حذف توکن' : 'Remove token'}</button>
       </div>
       {account && <p>{account}</p>}
-      <input className={input} aria-label="Real-Debrid source link" dir="ltr" type="url" value={link} placeholder="https://host.example/file" onChange={event => setLink(event.target.value)} />
-      <button className="btn btn-primary" disabled={busy || !status.debridConfigured || !link.trim()} onClick={() => void run(async () => { await api('debridCollect', { url: link }); setLink(''); pushToast('success', fa ? 'لینک به لینک‌گیر اضافه شد.' : 'Link added to Link Grabber.') })}>{fa ? 'تولید لینک و افزودن به لینک‌گیر' : 'Generate link into Link Grabber'}</button>
+      <label className="block">{fa ? 'لینک مبدأ' : 'Source URL'}<input className={input} dir="ltr" type="url" value={link} placeholder="https://host.example/file" onChange={event => setLink(event.target.value)} /></label>
+      <button className="btn btn-primary" disabled={busy || !configured || !link.trim() || Boolean(selected?.pending)} onClick={() => void run(async () => { const result = await api('debridCollect', { provider, url: link }) as { pending: boolean; added: number }; setLink(''); pushToast('success', result.pending ? (fa ? 'در سرویس در حال آماده‌سازی است؛ دکمهٔ بررسی را بزن.' : 'Provider is preparing the file; use Check pending job.') : (fa ? `${result.added} فایل به لینک‌گیر اضافه شد.` : `${result.added} files added to Link Grabber.`)) })}>{busy ? (fa ? 'در حال پردازش…' : 'Working…') : (fa ? 'تولید لینک و افزودن به لینک‌گیر' : 'Generate links into Link Grabber')}</button>
+      {selected?.pending && <div role="status" className="space-y-2"><p>{fa ? 'یک درخواست در سرویس در حال آماده‌سازی است؛ با بستن برنامه از بین نمی‌رود.' : 'A provider job is pending; it is retained when Baran closes.'}</p><button className="btn btn-ghost" disabled={busy} onClick={() => void run(async () => { const result = await api('debridCollect', { provider, checkPending: true }) as { pending: boolean; added: number }; pushToast('info', result.pending ? (fa ? 'هنوز آماده نیست.' : 'Still preparing.') : (fa ? `${result.added} فایل اضافه شد.` : `${result.added} files added.`)) })}>{fa ? 'بررسی درخواست آماده‌سازی' : 'Check pending job'}</button><button className="btn btn-ghost" disabled={busy} onClick={() => void run(async () => { await api('debridForget', { provider }) })}>{fa ? 'حذف پیگیری محلی' : 'Forget local tracking'}</button><p className="text-faint">{fa ? 'حذف پیگیری فقط رکورد باران را پاک می‌کند؛ کار سرویس ابری ادامه دارد و حذف نمی‌شود.' : 'Forgetting removes only Baran’s tracking record; the cloud job continues and is not deleted.'}</p></div>}
       <p className="text-faint">{fa ? 'توکن با رمزگذاری حساب ویندوز ذخیره می‌شود؛ در خروجی صف یا صفحهٔ موبایل نمایش داده نمی‌شود.' : 'The token is encrypted for your Windows account; queue snapshots and mobile control never contain it.'}</p>
     </section>
     <section className={box}>
@@ -72,8 +80,8 @@ export function ConnectedServices(): React.JSX.Element {
       {status.wakeError && <p role="alert" className="text-warn">{status.wakeError}</p>}
     </section>
     <section className={box}>
-      <h3 className="font-semibold">{fa ? 'اتصال HTTP به اینترفیس VPN — آزمایشی' : 'HTTP VPN interface binding — experimental'}</h3>
-      <p className="text-muted">{fa ? 'HTTP و DNS آن فقط از IPv4 اینترفیس انتخابی عبور می‌کنند و با قطع آن مسیر جایگزین ندارند. برای جلوگیری از خروج ترافیک، تورنت و ابزارهای رسانه در این حالت مسدود می‌شوند. این قابلیت Kill-switch کل سیستم نیست. تغییر مسیر، دانلودهای جاری را متوقف و حالت پراکسی را مستقیم می‌کند.' : 'HTTP and its DNS use only the selected IPv4 interface, with no fallback on disconnect. Torrents and external media tools are blocked in this mode. This is not a system-wide kill switch. Changing the binding pauses transfers and selects Direct proxy mode.'}</p>
+      <h3 className="font-semibold">{fa ? 'اتصال HTTP و رسانه به اینترفیس VPN — آزمایشی' : 'HTTP and media VPN binding — experimental'}</h3>
+      <p className="text-muted">{fa ? 'HTTP و DNS آن فقط از IPv4 اینترفیس انتخابی عبور می‌کنند و با قطع آن مسیر جایگزین ندارند. دریافت HTTP رسانه از پراکسی محلیِ متصل به همین اینترفیس انجام می‌شود؛ yt-dlp از دریافت‌کنندهٔ داخلی استفاده می‌کند و FFmpeg برای پردازش فایل محلی است. تورنت در این حالت همچنان مسدود است، چون aria2 پراکسی امن برای همهٔ همتاها ندارد. این قابلیت Kill-switch کل سیستم نیست. تغییر مسیر، دانلودهای جاری را متوقف و حالت پراکسی را مستقیم می‌کند.' : 'HTTP and its DNS use the selected IPv4 interface without fallback. Media HTTP requests use a local proxy bound to that interface; yt-dlp uses its native downloader and FFmpeg processes local files. Torrents remain blocked because aria2 cannot proxy every peer safely. This is not a system-wide kill switch. Changing the binding pauses transfers and selects Direct proxy mode.'}</p>
       <select className={input} aria-label="VPN interface" value={vpn} onChange={event => setVpn(event.target.value)}><option value="">{fa ? 'بدون اتصال اجباری' : 'No interface binding'}</option>{status.interfaces.map(nic => <option key={nic.id} value={nic.id}>{nic.name} · {nic.up ? nic.addresses.join(', ') : 'offline'}</option>)}</select>
       <button className="btn btn-primary" disabled={busy || vpn === status.vpnInterfaceId} onClick={() => void run(async () => { await api('vpn', { id: vpn }) })}>{fa ? 'اعمال مسیر اتصال' : 'Apply interface binding'}</button>
     </section>

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace Baran {
       if (args.Contains("--remove-wake-task")) { try { new WakeScheduler(Path.Combine(root, "Baran Download Manager.exe"), false).Sync(false, 0); return 0; } catch { return 1; } }
       int profileAt = Array.IndexOf(args, "--profile");
       string profile = profileAt >= 0 && args.Length > profileAt + 1 ? Path.GetFullPath(args[profileAt + 1]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Baran");
+      if (args.Contains("--repair-browser-hosts")) { try { BrowserRegistration.RepairInstalled(root, profile, Application.ExecutablePath); return 0; } catch { return 1; } }
       if (args.Contains("--test-driver")) return Driver(profile, root).GetAwaiter().GetResult();
       try {
         bool owner; using (var mutex = new Mutex(true, "Local\\BaranNative-" + Environment.UserName, out owner)) {
@@ -54,6 +56,9 @@ namespace Baran {
     }
   }
   sealed class Shell : Form {
+    readonly Dictionary<string, ProgressWindow> progressWindows = new Dictionary<string, ProgressWindow>();
+    readonly HashSet<string> progressShown = new HashSet<string>();
+    CoreWebView2Environment webEnvironment;
     readonly WebView2 web = new WebView2(); readonly string root; readonly bool testing;
     readonly Core core; readonly NotifyIcon tray = new NotifyIcon(); readonly System.Windows.Forms.Timer clipboardTimer = new System.Windows.Forms.Timer();
     BrowserPipe browserPipe; bool quitting, stopping; string lastClipboard = "";
@@ -70,7 +75,9 @@ namespace Baran {
       web.Dock = DockStyle.Fill; Controls.Add(web);
       core = new Core(profile, root, Post, testing); core.Ui = Ui; core.RevealBrowserImport = () => { if (!IsDisposed) BeginInvoke(new Action(Reveal)); };
       tray.Icon = Icon; tray.Text = "Baran Download Manager"; tray.Visible = true;
-      var menu = new ContextMenuStrip(); menu.Items.Add("Open Baran", null, (s, e) => Reveal()); menu.Items.Add("Quit", null, (s, e) => { quitting = true; Close(); }); tray.ContextMenuStrip = menu;
+      var menu = new ContextMenuStrip(); menu.Items.Add("Open Baran", null, (s, e) => Reveal());
+      menu.Items.Add("Downloads in progress", null, (s, e) => { foreach (string id in core.ActiveTaskIds()) { try { OpenProgress(id); } catch (Exception error) { core.Toast("error", "Download window could not open: " + error.Message); } } });
+      menu.Items.Add("Quit", null, (s, e) => { quitting = true; Close(); }); tray.ContextMenuStrip = menu;
       tray.DoubleClick += (s, e) => Reveal();
       Shown += async (s, e) => { try { await Initialize(); } catch (Exception error) { MessageBox.Show(this, "WebView2 could not start. Install Microsoft's Evergreen WebView2 Runtime, then reopen Baran.\n\n" + error.Message, Text); quitting = true; Close(); } };
       Resize += (s, e) => { if (WindowState == FormWindowState.Minimized && J.Bool(core.Store.Settings, "minimizeToTray")) Hide(); Post(J.Obj("type", "window:state", "maximized", WindowState == FormWindowState.Maximized)); };
@@ -78,6 +85,7 @@ namespace Baran {
         if (!quitting && J.Bool(core.Store.Settings, "minimizeToTray")) { e.Cancel = true; Hide(); return; }
         if (!stopping) {
           e.Cancel = true; stopping = true; Hide(); clipboardTimer.Stop(); if (browserPipe != null) browserPipe.Dispose();
+          foreach (var progress in progressWindows.Values.ToArray()) progress.Close();
           try { await core.Stop(); } catch (Exception error) { File.AppendAllText(Path.Combine(profile, "shutdown-error.log"), error.ToString()); }
           tray.Visible = false; tray.Dispose(); web.Dispose(); BeginInvoke(new Action(Close));
         }
@@ -91,6 +99,7 @@ namespace Baran {
     async Task Initialize() {
       // Use the installed Evergreen runtime, never a bundled Chromium directory.
       var environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(core.Store.Root, "webview2"), null);
+      webEnvironment = environment;
       await web.EnsureCoreWebView2Async(environment);
       core.Runtime = environment.BrowserVersionString;
       web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
@@ -119,11 +128,28 @@ namespace Baran {
     void Post(object value) {
       if (IsDisposed || !IsHandleCreated) return; string json = J.Encode(J.Obj("event", value));
       BeginInvoke(new Action(() => {
+        if (IsDisposed || stopping) return;
+        foreach (var progress in progressWindows.Values.ToArray()) progress.Post(value);
+        if (!testing && webEnvironment != null && J.Bool(core.Store.Settings, "showProgressWindow", true) && J.Str(value, "type") == "task:update") {
+          var task = J.Get(value, "task"); string id = J.Str(task, "id");
+          if (new [] { "connecting", "downloading" }.Contains(J.Str(task, "status")) && !progressShown.Contains(id)) {
+            try { OpenProgress(id); } catch (Exception error) { progressShown.Add(id); core.Toast("error", "Download window could not open: " + error.Message); }
+          }
+        }
         if (web.CoreWebView2 != null && !web.IsDisposed) web.CoreWebView2.PostWebMessageAsJson(json);
         if (!testing && J.Bool(core.Store.Settings, "notifyOnComplete") && J.Str(value, "type") == "toast" && J.Str(value, "level") == "success" && J.Str(value, "message").StartsWith("Completed:")) tray.ShowBalloonTip(5000, "Baran Download Manager", J.Str(value, "message"), ToolTipIcon.Info);
       }));
     }
     static void External(string url) { try { J.Url(url); Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { } }
+    void OpenProgress(string id) {
+      core.Find(id);
+      ProgressWindow progress;
+      if (progressWindows.TryGetValue(id, out progress) && !progress.IsDisposed) { progress.Reveal(); return; }
+      if (webEnvironment == null) throw new Exception("Wait for the main window to finish loading");
+      progress = new ProgressWindow(core, root, webEnvironment, id, Icon, Screen.FromControl(this).WorkingArea);
+      progressWindows[id] = progress; progressShown.Add(id);
+      progress.FormClosed += (s, e) => progressWindows.Remove(id); progress.Show();
+    }
     void ApplySettings() {
       if (testing) return;
       using (var key = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run")) {
@@ -137,9 +163,10 @@ namespace Baran {
         try {
           object value = null; string first = args.Length > 0 ? Convert.ToString(args[0]) : "";
           switch (method) {
+            case "openProgressWindow": OpenProgress(first); break;
             case "dragWindow": ReleaseCapture(); SendMessage(Handle, 0xA1, new IntPtr(2), IntPtr.Zero); break;
             case "applySettings": ApplySettings(); break;
-            case "windowControl": if (first == "close") Close(); else if (first == "minimize") WindowState = FormWindowState.Minimized; else if (first == "maximize") WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; break;
+            case "windowControl": if (first == "close") Close(); else if (first == "hide") Hide(); else if (first == "minimize") WindowState = FormWindowState.Minimized; else if (first == "maximize") WindowState = WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; break;
             case "openExternal": External(first); break;
             case "readClipboard": value = Clipboard.ContainsText() ? Clipboard.GetText() : ""; break;
             case "revealDir": if (Directory.Exists(first)) Process.Start(new ProcessStartInfo(first) { UseShellExecute = true }); break;
@@ -154,6 +181,11 @@ namespace Baran {
               if (dialog.ShowDialog(this) == DialogResult.OK) value = dialog.FileName;
             } break;
             case "registerBrowserHost": RegisterBrowser(first, args.Length > 1 ? Convert.ToString(args[1]) : ""); break;
+            case "openChromiumExtensionFolder": {
+              string folder = Path.Combine(root, "extensions", "chromium");
+              if (!Directory.Exists(folder)) throw new Exception("Bundled Chromium extension is missing; reinstall Baran");
+              Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true }); break;
+            }
             case "installFirefoxExtension": {
               if (testing) throw new Exception("Browser installation is disabled for isolated test profiles");
               string package = BrowserInstallation.Package(root), firefox = BrowserInstallation.FindFirefox();
@@ -167,19 +199,7 @@ namespace Baran {
       }));
       return result.Task;
     }
-    void RegisterBrowser(string browser, string extension) {
-      if (!new [] { "chrome", "edge", "firefox" }.Contains(browser)) throw new Exception("Unknown browser");
-      if (browser == "firefox") extension = "baran-download-manager@mehdiporbaba";
-      else if (!System.Text.RegularExpressions.Regex.IsMatch(extension ?? "", "^[a-p]{32}$")) throw new Exception("Enter the extension's ID");
-      string folder = Path.Combine(core.Store.Root, "native-host"); Directory.CreateDirectory(folder);
-      string host = Path.Combine(folder, "BaranNativeHost.exe"); File.Copy(Path.Combine(root, "native-host", "BaranNativeHost.exe"), host, true);
-      File.WriteAllText(Path.Combine(folder, "baran-app-path.txt"), Application.ExecutablePath, new UTF8Encoding(false));
-      var configuration = J.Obj("name", "com.baran.downloadmanager", "description", "Baran browser bridge", "path", host, "type", "stdio");
-      configuration[browser == "firefox" ? "allowed_extensions" : "allowed_origins"] = new [] { browser == "firefox" ? extension : "chrome-extension://" + extension + "/" };
-      string manifest = Path.Combine(folder, "com.baran.downloadmanager." + browser + ".json"); File.WriteAllText(manifest, J.Encode(configuration), new UTF8Encoding(false));
-      string vendor = browser == "firefox" ? "Mozilla" : browser == "edge" ? "Microsoft\\Edge" : "Google\\Chrome";
-      using (var key = Registry.CurrentUser.CreateSubKey("Software\\" + vendor + "\\NativeMessagingHosts\\com.baran.downloadmanager")) key.SetValue("", manifest);
-    }
+    void RegisterBrowser(string browser, string extension) { BrowserRegistration.Register(root, core.Store.Root, Application.ExecutablePath, browser, extension); }
     protected override void WndProc(ref Message message) {
       const int HitTest = 0x84; base.WndProc(ref message);
       if (message.Msg != HitTest || WindowState == FormWindowState.Maximized) return;

@@ -15,6 +15,14 @@ class ConnectedFixture {
   static void Assert(bool value, string message) { if (!value) throw new Exception(message); }
   static int Main(string[] args) { try { Run(args[0]).GetAwaiter().GetResult(); return 0; } catch (Exception error) { Console.Error.WriteLine(error); return 1; } }
   static async Task Run(string root) {
+    foreach (var area in new [] { new System.Drawing.Rectangle(-1920,0,1920,1080), new System.Drawing.Rectangle(1600,-900,1280,900), new System.Drawing.Rectangle(0,0,480,320) }) {
+      var bounds=ProgressPlacement.Fit(area); Assert(area.Contains(bounds), "Progress window stays inside the originating display work area");
+    }
+    Assert(ProgressAccess.Allows("own", "pauseTask", new object[]{"own"}), "Own task controls allowed");
+    Assert(!ProgressAccess.Allows("own", "pauseTask", new object[]{"other"}), "Foreign task blocked");
+    Assert(!ProgressAccess.Allows("own", "removeTask", new object[]{"own", true}), "Deleting files is not a progress-window command");
+    Assert(!ProgressAccess.Allows("own", "updateSettings", new object[]{"own"}), "Global settings blocked");
+    Console.WriteLine("PASS progress window: negative/small display placement and scoped task-control policy");
     // The fixture assembly is copied into an isolated directory; test the real bundled artifact explicitly.
     string packageRoot = Environment.GetEnvironmentVariable("BARAN_PACKAGE_TEST_ROOT");
     string package = BrowserInstallation.Package(packageRoot);

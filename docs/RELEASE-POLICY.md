@@ -4,6 +4,8 @@ Every GitHub Release must contain the **complete** English description and its c
 
 ## Authoring
 
+README uses the same complete-pair validator and RTL renderer, with source in `docs/readme.json`. Run `node scripts/readme.cjs --write`, then `node scripts/readme.cjs`; its version tag must match package.json. CI and documentation-policy tests enforce synchronization. This does not replace semantic review of both translations.
+
 1. Add `docs/releases/<tag>.json`, using schema 1. Provide a bilingual title and ordered blocks (`paragraph`, `heading`, `bullet`). Every block has a unique stable `id` and both `en` and `fa` text. Translate each block fully, rather than collecting English changes into one short Persian summary.
 2. Inline Markdown supports bold, code/file names and HTTPS links. Preserve English backtick-delimited tokens and destinations in the Persian pair. Put technical names/file names inside backticks when their direction matters. Do not handwrite RTL markup; the shared renderer owns GitHub-compatible HTML.
 3. Run `node scripts/release-notes.cjs --write`, then `node scripts/release-notes.cjs --check` and `node --test tests/release-notes.test.cjs`.
@@ -18,6 +20,8 @@ The native Windows, legacy Windows and Firefox publishers all call `loadReleaseN
 **Synchronize bilingual release descriptions** runs when sources, generated notes or the renderer change on main; it can also be run manually. It updates only the body of existing matching releases, verifies the result and preserves tags, target commits, attached assets/digests, publication timestamps and draft/prerelease flags. It does not create missing releases or change latest-release selection. New binaries continue through their normal tested publishing pipeline.
 
 ## فارسی
+
+README از همان بررسی جفت‌ترجمهٔ کامل و تولیدکنندهٔ RTL استفاده می‌کند؛ منبع آن `docs/readme.json` است. ابتدا `node scripts/readme.cjs --write` و سپس `node scripts/readme.cjs` را اجرا کنید؛ تگ نسخه باید با package.json یکسان باشد. CI و تست سیاست مستندات، هماهنگی را کنترل می‌کنند. این بررسی جای بازبینی معنایی هر دو ترجمه را نمی‌گیرد.
 
 توضیحات هر انتشار باید ترجمهٔ کامل انگلیسی و فارسی داشته باشد: تک‌تک تغییرات، نصب، آزمون‌ها، محدودیت‌ها، لینک‌ها و مجوز. متن هر بخش در فایل مشترک و به‌صورت جفت انگلیسی/فارسی نوشته می‌شود. فارسیِ خلاصه جایگزین ترجمهٔ کامل نیست. قالب راست‌چین و جهت نام‌های فنی را ابزار مشترک تولید می‌کند.
 

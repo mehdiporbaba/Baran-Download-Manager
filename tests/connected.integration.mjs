@@ -8,7 +8,7 @@ const directory = resolve('.tools/connected-integration', `${Date.now()}-${proce
 await mkdir(directory, { recursive: true })
 const root = resolve('dist/native'), binary = join(root, 'Baran Download Manager.exe')
 const fixture = join(directory, 'ConnectedFixture.exe')
-const build = spawnSync(`${process.env.WINDIR}\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe`, ['/nologo', '/r:Microsoft.CSharp.dll', '/r:System.Xml.Linq.dll', '/r:System.Core.dll', '/r:System.Security.dll', `/r:${binary}`, `/out:${fixture}`, resolve('tests/ConnectedFixture.cs')], { encoding: 'utf8' })
+const build = spawnSync(`${process.env.WINDIR}\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe`, ['/nologo', '/r:Microsoft.CSharp.dll', '/r:System.Drawing.dll', '/r:System.Xml.Linq.dll', '/r:System.Core.dll', '/r:System.Security.dll', `/r:${binary}`, `/out:${fixture}`, resolve('tests/ConnectedFixture.cs')], { encoding: 'utf8' })
 assert.equal(build.status, 0, build.stdout + build.stderr)
 await copyFile(binary, join(directory, 'Baran Download Manager.exe'))
 const compiled = spawnSync(fixture, [join(directory, 'fixture-profile')], { encoding: 'utf8', timeout: 20000, env: { ...process.env, BARAN_PACKAGE_TEST_ROOT: root } })

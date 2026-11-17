@@ -25,6 +25,10 @@ if ($destination -ne $expected -or -not $destination.StartsWith([IO.Path]::GetFu
 if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $destination, "$destination/bin", "$destination/native-host", "$destination/licenses", "$destination/extensions" | Out-Null
 Copy-Item -LiteralPath (Join-Path $repository 'browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi') -Destination "$destination/extensions"
+New-Item -ItemType Directory -Force -Path "$destination/extensions/chromium" | Out-Null
+foreach ($file in @('manifest.json', 'background.js', 'popup.js', 'popup.html', 'icon128.png')) {
+    Copy-Item -LiteralPath (Join-Path $repository "browser-extension/$file") -Destination "$destination/extensions/chromium"
+}
 Copy-Item -LiteralPath (Join-Path $repository 'out/renderer') -Destination (Join-Path $destination 'ui') -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'bridge.js'), (Join-Path $repository 'resources/icon.ico') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'mobile.html') -Destination $destination
@@ -45,7 +49,7 @@ foreach ($folder in @($webview, $html)) {
 }
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
 $sources = Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.cs' -File | ForEach-Object FullName
-& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/win32icon:$(Join-Path $repository 'resources/icon.ico')" "/out:$destination/Baran Download Manager.exe" /r:System.Web.Extensions.dll /r:System.Core.dll /r:System.Security.dll /r:Microsoft.CSharp.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll "/r:$destination/HtmlAgilityPack.dll" "/r:$destination/Microsoft.Web.WebView2.Core.dll" "/r:$destination/Microsoft.Web.WebView2.WinForms.dll" $sources
+& $compiler /nologo /target:winexe /platform:x64 /optimize+ "/win32icon:$(Join-Path $repository 'resources/icon.ico')" "/out:$destination/Baran Download Manager.exe" /r:System.Web.Extensions.dll /r:System.Core.dll /r:System.Security.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:Microsoft.CSharp.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll "/r:$destination/HtmlAgilityPack.dll" "/r:$destination/Microsoft.Web.WebView2.Core.dll" "/r:$destination/Microsoft.Web.WebView2.WinForms.dll" $sources
 if ($LASTEXITCODE -ne 0) { throw 'Native application compilation failed' }
 & $compiler /nologo /target:exe "/out:$destination/native-host/BaranNativeHost.exe" (Join-Path $repository 'browser-extension/native-host/NativeHost.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Native messaging host compilation failed' }

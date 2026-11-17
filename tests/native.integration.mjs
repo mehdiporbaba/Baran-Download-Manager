@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { createServer, get } from 'node:http'
 import { spawn, spawnSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
@@ -17,11 +18,21 @@ const compiled = spawnSync(`${process.env.WINDIR}\\Microsoft.NET\\Framework64\\v
 assert.equal(compiled.status, 0, compiled.stdout + compiled.stderr)
 await writeFile(join(fixtureDirectory, 'gallery-dl.exe'), await readFile(mediaFixture))
 const payload = Buffer.alloc(256 * 1024)
+const multiPayload = Buffer.alloc(2 * 1024 * 1024, 91)
 for (let i = 0; i < payload.length; i++) payload[i] = (i * 31 + i % 251) % 256
 const requests = []
 let remoteTorrentMetadata
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost'); requests.push({ path: url.pathname, range: req.headers.range, ifRange: req.headers['if-range'] })
+  if (url.pathname==='/html-disguised.zip' || url.pathname==='/allowed.html') { const html='<html><body>Authorized page fixture</body></html>';res.writeHead(200,{'Content-Type':'text/html','Content-Length':Buffer.byteLength(html)});res.end(html);return }
+  if (url.pathname === '/stall-body') {
+    const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '')
+    const start = range ? +range[1] : 0, end = range ? +range[2] : payload.length-1
+    res.writeHead(range ? 206 : 200, { ETag: '"stall-test"', 'Content-Range': `bytes ${start}-${end}/${payload.length}`, 'Content-Length': end-start+1, 'Content-Type': 'application/octet-stream' })
+    if (start === 0 && end === 0) res.end(payload.subarray(0,1))
+    else { res.flushHeaders(); res.write(payload.subarray(start,start+1)) }
+    return
+  }
   if (url.pathname === '/expired') { res.writeHead(403); res.end(); return }
   if (url.pathname === '/fresh' && req.headers['x-baran-test'] !== 'keep') { res.writeHead(401); res.end(); return }
   if (url.pathname === '/metadata.torrent' && remoteTorrentMetadata) { res.writeHead(200, { 'Content-Type': 'application/x-bittorrent', 'Content-Length': remoteTorrentMetadata.length }); res.end(remoteTorrentMetadata); return }
@@ -34,7 +45,7 @@ const server = createServer((req, res) => {
   if (url.pathname === '/folder/nested/') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<a href="../">cycle</a><a href="second.pdf">second</a>'); return }
   if (url.pathname.startsWith('/outside/')) { res.writeHead(500); res.end(); return }
   if (url.pathname === '/folder/redirect/') { res.writeHead(302, { Location: '/outside/' }); res.end(); return }
-  const body = url.pathname === '/lying' ? Buffer.alloc(payload.length, 1) : payload
+  const body = url.pathname === '/multi-limit' ? multiPayload : url.pathname === '/lying' ? Buffer.alloc(payload.length, 1) : payload
   const etag = url.pathname === '/different' ? '"different"' : '"baran-native-test"'
   const match = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '')
   let start = 0, end = body.length - 1
@@ -83,13 +94,14 @@ const meta = { version: 1, finalUrl: `${origin}/expired`, size: payload.length, 
 await writeFile(`${partialPath}.pulse-meta`, JSON.stringify(meta))
 const state = { version: 1, settings: { downloadDir: downloads, launchAtStartup: false, notifyOnComplete: false, maxConcurrent: 2 }, tasks: [{ id: 'legacy', kind: 'http', url: `${origin}/expired`, headers: { 'X-Baran-Test': 'keep' }, name: 'legacy.bin', fileName: 'legacy.bin', filePath: partialPath, dir: downloads, size: payload.length, downloaded: 98304, resumable: true, status: 'paused', createdAt: Date.now(), updatedAt: Date.now(), order: 1 }] }
 await writeFile(join(profile, 'pulse-state.json'), JSON.stringify(state))
-const child = spawn(resolve('dist/native/Baran Download Manager.exe'), ['--test-driver', '--profile', profile], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, BARAN_NATIVE_TEST_PIPE: nativePipeName } })
+const fixtureEnvironment = Object.fromEntries(Object.entries(process.env).filter(([key])=>key.toLowerCase()!=='path'))
+const child = spawn(resolve('dist/native/Baran Download Manager.exe'), ['--test-driver', '--profile', profile], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...fixtureEnvironment, PATH: `${fixtureDirectory};${process.env.WINDIR}\\System32`, BARAN_NATIVE_TEST_PIPE: nativePipeName } })
 let tracker, seeder, occupiedPeerPort
-let serial = 0; const pending = new Map(); const tasks = new Map(); const errors = []; const browserPrompts = []
+let serial = 0; const pending = new Map(); const tasks = new Map(); const phases = new Map(); const errors = []; const browserPrompts = []
 child.stderr.on('data', value => errors.push(value.toString()))
 createInterface({ input: child.stdout }).on('line', line => {
   let value; try { value = JSON.parse(line) } catch { errors.push(line); return }
-  if (value.event?.task) tasks.set(value.event.task.id, value.event.task)
+  if (value.event?.task) { tasks.set(value.event.task.id, value.event.task); const seen=phases.get(value.event.task.id)||new Set(); seen.add(value.event.task.status); phases.set(value.event.task.id,seen) }
   if (value.event?.type === 'open-add') browserPrompts.push(value.event.url)
   const request = pending.get(value.id); if (!request) return
   pending.delete(value.id); clearTimeout(request.timeout)
@@ -132,6 +144,7 @@ try {
   return JSON.parse(reply.subarray(4).toString())
   }
   const ping = await sendBrowser({ action: 'ping' }); assert.equal(ping.ok, true); assert.equal(ping.downloadPrompt, true)
+  assert.equal(ping.version, JSON.parse(await readFile('package.json', 'utf8')).version, 'browser handshake must identify the packaged desktop version')
   assert.deepEqual(await sendBrowser({ action: 'import', urls: ['https://example.com/native-host-test.zip'] }), { ok: true, count: 1 })
   assert.equal(browserPrompts.length, 0, 'collecting links must not open a download prompt')
   assert.ok((await invoke('linksList')).some(link => link.url === 'https://example.com/native-host-test.zip'))
@@ -177,6 +190,17 @@ try {
   const plain = await invoke('addDownload', { url: `${origin}/no-range`, kind: 'http', fileName: 'plain.bin' })
   const plainDone = await waitTask(plain.id); assert.deepEqual(await readFile(plainDone.filePath), payload)
   console.log('PASS native: servers without Range complete via a single stream')
+  const pageAsFile=await invoke('addDownload',{url:`${origin}/html-disguised.zip`,kind:'http',fileName:'archive.zip'})
+  assert.match((await waitTask(pageAsFile.id,'error')).error,/HTML page/)
+  const page=await invoke('addDownload',{url:`${origin}/allowed.html`,kind:'http',fileName:'page.html'})
+  assert.match(await readFile((await waitTask(page.id)).filePath,'utf8'),/Authorized page fixture/)
+  await writeFile(join(downloads,'occupied.bin'),'keep existing file')
+  const collision=await invoke('addDownload',{url:`${origin}/collision`,kind:'http',fileName:'occupied.bin',dir:downloads})
+  const renamed=await waitTask(collision.id); assert.notEqual(renamed.filePath,join(downloads,'occupied.bin'))
+  assert.equal(await readFile(join(downloads,'occupied.bin'),'utf8'),'keep existing file'); assert.deepEqual(await readFile(renamed.filePath),payload)
+  const freshName=await invoke('addDownload',{url:`${origin}/fresh-name`,kind:'http',fileName:'unchanged.bin',dir:downloads})
+  assert.equal((await waitTask(freshName.id)).fileName,'unchanged.bin')
+  console.log('PASS MDM regressions #701/#597/#1143: HTML is not saved as an archive; explicit HTML is allowed; collisions preserve old files and unchanged destinations keep their name')
   const unknown = await invoke('addDownload', { url: `${origin}/unknown`, kind: 'http', fileName: 'unknown.bin' })
   const unknownDone = await waitTask(unknown.id); assert.deepEqual(await readFile(unknownDone.filePath), payload)
   await invoke('updateSettings', { proxyMode: 'manual', proxy: `http://127.0.0.1:${proxy.address().port}` })
@@ -202,6 +226,53 @@ try {
   await invoke('resumeTask', paused.id)
   const resumed = await waitTask(paused.id); assert.deepEqual(await readFile(resumed.filePath), payload)
   console.log('PASS native: HTTP proxy and SOCKS5h tunnel receive traffic, rate limit delays bytes, pause drains writers and resume preserves exact data')
+  const stalled = await invoke('addDownload', { url: `${origin}/stall-body`, kind: 'http', fileName: 'stall.bin', connections: 1 })
+  await waitTask(stalled.id, 'downloading'); await new Promise(done => setTimeout(done, 200))
+  const pauseStart = Date.now(); await invoke('pauseTask',stalled.id)
+  assert.ok(Date.now()-pauseStart < 2000, 'stalled body cancellation must not wait for the socket timeout')
+  assert.ok((await stat(`${(await invoke('snapshot')).tasks.find(t=>t.id===stalled.id).filePath}.pulse-part`)).isFile())
+  console.log('PASS MDM regression #1328: pause aborts a stalled response promptly and retains partial data')
+  await assert.rejects(invoke('addDownload', { url: `${origin}/hash`, kind: 'http', expectedSha256: 'bad' }), /SHA-256/)
+  const digest = createHash('sha256').update(payload).digest('hex')
+  const verified = await invoke('addDownload', { url: `${origin}/hash-good`, kind: 'http', fileName: 'hash-good.bin', expectedSha256: digest })
+  const verifiedDone = await waitTask(verified.id); assert.equal(verifiedDone.checksum,digest)
+  const mismatch = await invoke('addDownload', { url: `${origin}/hash-bad`, kind: 'http', fileName: 'hash-bad.bin', expectedSha256: '0'.repeat(64) })
+  const failedHash = await waitTask(mismatch.id,'error'); assert.match(failedHash.error,/SHA-256 mismatch/)
+  await assert.rejects(stat(failedHash.filePath), { code: 'ENOENT' }); assert.deepEqual(await readFile(`${failedHash.filePath}.pulse-part`),payload)
+  await invoke('pauseTask',mismatch.id); await invoke('setTaskChecksum',mismatch.id,digest); await invoke('resumeTask',mismatch.id)
+  assert.equal((await waitTask(mismatch.id)).checksum,digest)
+  console.log('PASS native integrity: valid digest completes, mismatch preserves unpublished partial data, corrected expected digest reuses verified bytes')
+  const limited = await invoke('addDownload', { url: `${origin}/per-file-limit`, kind: 'http', fileName:'limited.bin', connections:1, speedLimit:32768 })
+  const fastStart=Date.now(); const fast = await invoke('addDownload',{url:`${origin}/uncapped`,kind:'http',fileName:'uncapped.bin',connections:1})
+  await waitTask(fast.id); assert.ok(Date.now()-fastStart < 3000,'one limited task must not block an unlimited task')
+  assert.notEqual((await invoke('snapshot')).tasks.find(t=>t.id===limited.id).status,'completed')
+  await assert.rejects(invoke('setTaskSpeedLimit',limited.id,-1))
+  const wakeLimit=Date.now(); await invoke('setTaskSpeedLimit',limited.id,0); await invoke('setTaskCloseOnComplete',limited.id,true)
+  const unlimited=await waitTask(limited.id); assert.deepEqual(await readFile(unlimited.filePath),payload); assert.equal(unlimited.closeProgressOnComplete,true)
+  assert.ok(Date.now()-wakeLimit < 2000,'removing a limit wakes the active transfer without pause/resume')
+  const rateWait=await invoke('addDownload',{url:`${origin}/rate-wait`,kind:'http',fileName:'rate-wait.bin',connections:1,speedLimit:1024})
+  await waitTask(rateWait.id,'downloading'); const limitPause=Date.now(); await invoke('pauseTask',rateWait.id)
+  assert.ok(Date.now()-limitPause < 2000,'rate waiting must remain cancelable')
+  await invoke('updateSettings',{showProgressWindow:false})
+  assert.equal(JSON.parse(await readFile(join(profile,'pulse-state.json'),'utf8')).settings.showProgressWindow,false)
+  console.log('PASS MDM regression #621: per-file cap is independent, removing it wakes the live transfer, rate waits cancel promptly, and window preferences persist')
+  const multi=await invoke('addDownload',{url:`${origin}/multi-limit`,kind:'http',fileName:'multi-limit.bin',connections:8,speedLimit:65536})
+  await waitTask(multi.id,'downloading'); await new Promise(done=>setTimeout(done,200)); await invoke('pauseTask',multi.id)
+  await invoke('resumeTask',multi.id)
+  const resumeDeadline=Date.now()+3000; let resumedBytes=0
+  while(Date.now()<resumeDeadline) { resumedBytes=(await invoke('snapshot')).tasks.find(t=>t.id===multi.id).downloaded; if(resumedBytes>0)break; await new Promise(done=>setTimeout(done,50)) }
+  assert.ok(resumedBytes>0,'a resumed segmented task must discard throttle reservations from its canceled run')
+  await invoke('setTaskSpeedLimit',multi.id,0); const multiDone=await waitTask(multi.id)
+  assert.deepEqual(await readFile(multiDone.filePath),multiPayload)
+  console.log('PASS native: segmented resume discards canceled throttle debt and completes with exact bytes')
+  await invoke('updateSettings',{globalSpeedLimit:65536})
+  const globalMulti=await invoke('addDownload',{url:`${origin}/multi-limit`,kind:'http',fileName:'global-multi.bin',connections:8})
+  await waitTask(globalMulti.id,'downloading'); await new Promise(done=>setTimeout(done,200)); await invoke('pauseTask',globalMulti.id); await invoke('resumeTask',globalMulti.id)
+  const globalDeadline=Date.now()+3000; let globalBytes=0
+  while(Date.now()<globalDeadline) { globalBytes=(await invoke('snapshot')).tasks.find(t=>t.id===globalMulti.id).downloaded; if(globalBytes>0)break; await new Promise(done=>setTimeout(done,50)) }
+  assert.ok(globalBytes>0,'global cap must not retain canceled segment reservations either')
+  await invoke('updateSettings',{globalSpeedLimit:0}); assert.deepEqual(await readFile((await waitTask(globalMulti.id)).filePath),multiPayload)
+  console.log('PASS native: global throttling also resumes without canceled-worker debt')
   const video = await invoke('probeYoutube', 'https://www.youtube.com/watch?v=local-native-fixture')
   assert.equal(video.title, 'Native media fixture'); assert.ok(video.formats.some(format => format.id === '22'))
   for (const name of ['baran-sign-in-test', 'baran-private-test', 'baran-age-test']) {
@@ -209,8 +280,11 @@ try {
   }
   const mediaTask = await invoke('addDownload', { kind: 'youtube', url: 'https://www.youtube.com/watch?v=local-native-fixture', fileName: 'media-fixture.mp4', youtube: { selector: '22' } })
   const mediaDone = await waitTask(mediaTask.id)
+  assert.ok(phases.get(mediaTask.id).has('verifying'), 'postprocessing reported on stderr must reach the progress window')
   assert.equal(await readFile(mediaDone.filePath, 'utf8'), 'Baran native media fixture')
   assert.equal(mediaDone.size, (await stat(mediaDone.filePath)).size, 'final file size must override inaccurate CLI progress')
+  const needsFfmpeg=await invoke('addDownload',{kind:'youtube',url:'https://www.youtube.com/watch?v=local-native-fixture',fileName:'separate-tracks.mp4',youtube:{selector:'137+bestaudio/best'}})
+  assert.match((await waitTask(needsFfmpeg.id,'error')).error,/FFmpeg is required/)
   assert.equal(await invoke('instagramCollect', 'https://www.instagram.com/p/native-fixture/'), 2)
   const instagram = (await invoke('linksList')).filter(link => link.source.includes('instagram.com'))
   assert.equal(instagram.length, 2); assert.ok(instagram.some(link => link.fileName.endsWith('.mp4')))

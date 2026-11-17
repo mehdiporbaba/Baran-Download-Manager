@@ -5,5 +5,5 @@ using System.Reflection;
 [assembly: AssemblyDescription("Native Windows download manager using WebView2")]
 [assembly: AssemblyVersion("2.1.0.0")]
 [assembly: AssemblyFileVersion("2.1.0.0")]
-[assembly: AssemblyInformationalVersion("2.1.0-beta.2")]
+[assembly: AssemblyInformationalVersion("2.1.0")]
 [assembly: AssemblyCopyright("Copyright 2026 Mehdi Porbaba; original Pulse contributors credited in source and licenses")]

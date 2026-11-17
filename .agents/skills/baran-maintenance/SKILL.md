@@ -31,4 +31,16 @@ Use a new version and matching paired notes for a new desktop publication. Never
 
 ## Handoff
 
+README is generated from `docs/readme.json` using `node scripts/readme.cjs --write`; run it without `--write` to validate synchronization. Update its tag with the desktop version. Never hand-edit only one generated language. Optional media tool sources can migrate: verify maintainer documentation and actual release assets, require SHA-256 and bounded fixed-name extraction. Debrid tokens stay in separate DPAPI vaults; pending provider IDs are durable and cleared only after the Inbox accepts results. See `docs/ADVANCED-SERVICES.md` for provider/routing boundaries.
+
 Update root `MEMORY.md` with released versus source-only changes, branch/PR/implementation commit, verification evidence, blockers, and the concrete next action. Link detailed docs instead of copying logs. Keep stable procedure here and changing state in memory. Never store tokens, cookies, private account details or browser profiles. Synchronize the requested repository and verify its resulting commit/branch; do not silently merge or publish just to record progress.
+
+## Per-download windows and reference reviews
+
+Progress windows must share the existing native core and WebView2 environment rather than create a second engine/profile. Keep commands scoped to their task, safe work-area placement, and the invariant that closing/hiding never pauses or deletes a download. Opening an existing task must not create a duplicate transfer. Keep Baran visuals when borrowing workflow ideas.
+
+For per-file caps, test a live limit change and segmented pause/resume; canceled throttle reservations must not delay a fresh run. For expected SHA-256, publish the final path only after verification and preserve partial data on mismatch. Media progress can arrive on stderr; distinguish postprocessing from completed output and require FFmpeg when merging is necessary.
+
+Read docs/MDM-INTEGRATION-REVIEW.md for the pinned MDM comparison and docs/WORK-ITEMS.md for unresolved acceptance. A complete issue catalogue is not proof that every report is reproduced or fixed in Baran. Do not import runtime-specific Rust/egui fixes blindly. When a user says a competing manager was removed, investigate registration, version and actual handoff instead of repeating the conflict explanation.
+
+Visual/browser acceptance must use an authorized surface. If a preview origin is declined, stop that attempt, record the gap and clean up the isolated test service; do not switch surfaces to bypass the denial.

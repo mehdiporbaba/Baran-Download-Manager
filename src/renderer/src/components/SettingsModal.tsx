@@ -38,6 +38,7 @@ export function SettingsModal(): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('general')
   const [draft, setDraft] = useState<Partial<Settings>>({})
   const [installing, setInstalling] = useState(false)
+  const [managedTool, setManagedTool] = useState('')
   const [customLimit, setCustomLimit] = useState('')
   const [browser, setBrowser] = useState<'firefox' | 'chrome' | 'edge'>('firefox')
   const [extensionId, setExtensionId] = useState('')
@@ -151,6 +152,7 @@ export function SettingsModal(): React.JSX.Element {
                     void window.pulse.installFirefoxExtension!().then(() => pushToast('info', fa ? 'فایل امضاشده با فایرفاکس باز شد؛ برای تکمیل نصب، Add را در مرورگر تأیید کن.' : 'The signed package was opened in Firefox. Confirm Add in the browser to finish installation.')).catch(error => pushToast('error', error.message)).finally(() => setConnectingBrowser(false))
                   }}>{connectingBrowser ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}{fa ? 'نصب و اتصال Firefox' : 'Install & connect Firefox'}</button>}
                   {browser !== 'firefox' && <input className="field min-w-0 flex-1 px-3 py-2" dir="ltr" aria-label="Extension ID" placeholder="Extension ID" value={extensionId} onChange={e => setExtensionId(e.target.value.trim())} />}
+                  {browser !== 'firefox' && window.pulse.connected && <button type="button" className="btn btn-ghost" onClick={() => void window.pulse.connected!('openChromiumExtensionFolder').catch(error => pushToast('error', error.message))}>{fa ? 'بازکردن پوشهٔ آمادهٔ افزونه' : 'Open prepared extension folder'}</button>}
                   <button type="button" className="btn btn-primary" disabled={connectingBrowser || system?.platform !== 'win32' || (browser !== 'firefox' && !/^[a-p]{32}$/.test(extensionId))} onClick={() => {
                     setConnectingBrowser(true)
                     void window.pulse.registerBrowserHost(browser, extensionId).then(() => pushToast('success', fa ? 'ارتباط مرورگر ثبت شد؛ افزونه را باز کن و یک لینک بفرست.' : 'Browser bridge registered. Send a link from the extension.')).catch(error => pushToast('error', error.message)).finally(() => setConnectingBrowser(false))
@@ -211,6 +213,7 @@ export function SettingsModal(): React.JSX.Element {
               </div>
 
               <div className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
+                {window.pulse.openProgressWindow && <ToggleRow title={fa ? 'پنجرهٔ مستقل هنگام شروع دانلود' : 'Open a window when a download starts'} hint={fa ? 'بستن پنجره دانلود را متوقف نمی‌کند؛ با دوبارکلیک روی ردیف دانلود دوباره باز می‌شود.' : 'Closing it keeps the download running. Double-click a download row to reopen it.'} checked={merged.showProgressWindow !== false} onChange={value => set('showProgressWindow', value)} />}
                 <ToggleRow title={fa ? 'منو همیشه باز بماند' : 'Keep navigation menu open'} hint={fa ? 'در حالت خاموش، منو با آیکون سه‌خط باز می‌شود و پس از ۱۵ ثانیه حضور نداشتن نشانگر یا فوکوس در آن بسته می‌شود.' : 'Otherwise, open it with the menu icon; it closes after 15 seconds without the pointer or keyboard focus inside.'} checked={merged.sidebarAlwaysOpen} onChange={value => set('sidebarAlwaysOpen', value)} />
                 <ToggleRow
                   title={t.settings.general.autoResume}
@@ -441,6 +444,15 @@ export function SettingsModal(): React.JSX.Element {
 
           {tab === 'tools' ? (
             <div className="space-y-3">
+              {window.pulse.connected && <section className="space-y-3 rounded-xl border border-line bg-panel/50 p-4">
+                <h3 className="text-sm font-semibold">{fa ? 'نصب و به‌روزرسانی ابزارهای رسانه' : 'Install and update media tools'}</h3>
+                <p className="text-xs leading-6 text-muted">{fa ? 'ابزارها فقط با انتخاب شما از مخزن سازنده دانلود و با SHA-256 بررسی می‌شوند؛ داخل نصاب سبک باران نیستند. FFmpeg از ساخت BtbN معرفی‌شده در سایت FFmpeg و gallery-dl از ساخت شبانهٔ رسمی gdl-org دریافت می‌شود. مسیر سفارشیِ تنظیم‌شده همچنان اولویت دارد.' : 'Tools are downloaded on request from their maintainers and checked against SHA-256; they are separate from Baran’s small installer. FFmpeg uses the BtbN build linked by FFmpeg; gallery-dl uses official gdl-org nightly builds. A configured custom path still takes priority.'}</p>
+                <div className="flex flex-wrap gap-2">{['yt-dlp','gallery-dl','ffmpeg','deno'].map(name => <button key={name} type="button" className="btn btn-ghost" disabled={Boolean(managedTool) || installing} onClick={() => {
+                  setManagedTool(name)
+                  void window.pulse.connected!('installTool', { name }).then(async () => { await refreshTools(); pushToast('success', fa ? `${name} نصب و بررسی شد.` : `${name} installed and verified.`) }).catch(error => pushToast('error', error.message)).finally(() => setManagedTool(''))
+                }}>{managedTool === name && <Loader2 size={14} className="animate-spin"/>}{name}</button>)}</div>
+                {managedTool && <p role="status" className="text-xs text-brand">{fa ? `در حال دریافت و بررسی ${managedTool}؛ پنجره را باز نگه دارید…` : `Downloading and verifying ${managedTool}; keep this window open…`}</p>}
+              </section>}
               <ToolCard
                 title={t.settings.tools.ytdlp}
                 desc={t.settings.tools.ytdlpDesc}

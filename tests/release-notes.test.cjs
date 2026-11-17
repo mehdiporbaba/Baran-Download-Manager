@@ -2,8 +2,16 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
+const { execFileSync } = require('node:child_process')
 const { validate, render, read, tags, loadReleaseNotes } = require('../scripts/release-notes.cjs')
 const fixture = () => ({schema: 1, tag: 'v3.0.0', title: {en: 'Baran `3.0.0`', fa: 'باران `3.0.0`'}, blocks: [{id: 'change', type: 'bullet', en: 'Use `Setup.exe` and [guide](https://example.com/guide).', fa: 'از `Setup.exe` و [راهنما](https://example.com/guide) استفاده کنید.'}]})
+test('README uses complete checked translation pairs and matches the desktop version', () => {
+  const readme = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../docs/readme.json'), 'utf8'))
+  const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'))
+  validate(readme)
+  assert.equal(readme.tag, 'v' + pkg.version)
+  execFileSync(process.execPath, [path.resolve(__dirname, '../scripts/readme.cjs')])
+})
 test('missing, placeholder, duplicate and summary-only Persian blocks stop publication', () => {
   for (const change of [value => { delete value.blocks[0].fa }, value => { value.blocks[0].fa = 'English only' }, value => { value.blocks.push({...value.blocks[0]}) }, value => { value.blocks[0].en = 'This release adds many download features and contains important installation instructions plus validation details and known limitations that every user should read before updating their desktop application.'; value.blocks[0].fa = 'خلاصهٔ نسخه' }]) {
     const value = fixture(); change(value); assert.throws(() => validate(value))

@@ -9,6 +9,7 @@
 ## Permanent bilingual documentation and release policy
 
 - README and every GitHub Release must contain a complete Persian translation of the English content, including all changes, installation steps, validation, limitations and links. Do not replace the Persian text with a short summary.
+- README source is `docs/readme.json`; run `node scripts/readme.cjs --write` then `node scripts/readme.cjs`. Keep its version tag synchronized with package.json. Do not hand-edit only one language in the generated README.
 - Release descriptions are authored only in `docs/releases/<tag>.json` as ordered English/Persian block pairs. Every heading, paragraph and bullet needs both languages. Preserve code/file names and link destinations in both languages.
 - Run `node scripts/release-notes.cjs --write` after changing paired notes, then `node scripts/release-notes.cjs --check`. Generated `docs/RELEASE-*.md` files must stay synchronized; do not hand-edit a separate body in a publishing workflow.
 - All publishing workflows must call `loadReleaseNotes(tag)` before creating/publishing a release. A new desktop version needs a matching bilingual source document before publication.

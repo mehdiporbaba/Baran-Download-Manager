@@ -1,15 +1,50 @@
 {
   "application": "Baran Download Manager",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "platform": "Windows x64",
-  "sharedPrerequisites": ["Microsoft .NET Framework 4.6.2 or later (4.8 recommended)", "Microsoft Edge WebView2 Evergreen Runtime"],
-  "bundled": [
-    {"name": "Microsoft.Web.WebView2 SDK assemblies and loader", "version": "1.0.4314.35", "source": "https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.4314.35"},
-    {"name": "HtmlAgilityPack", "version": "1.13.1", "license": "MIT", "source": "https://www.nuget.org/packages/HtmlAgilityPack/1.13.1"},
-    {"name": "aria2 Windows x64 official binary", "version": "1.37.0", "license": "GPL-2.0-or-later", "source": "https://github.com/aria2/aria2/releases/tag/release-1.37.0"},
-    {"name": "React and React DOM", "version": "19.3.1", "license": "MIT"},
-    {"name": "Lucide React icons", "version": "1.72.0", "license": "ISC"}
+  "sharedPrerequisites": [
+    "Microsoft .NET Framework 4.6.2 or later (4.8 recommended)",
+    "Microsoft Edge WebView2 Evergreen Runtime"
   ],
-  "notBundled": ["Electron", "Node.js", "WebTorrent", "Chromium fixed runtime", "yt-dlp", "gallery-dl", "ffmpeg"],
+  "bundled": [
+    {
+      "name": "Microsoft.Web.WebView2 SDK assemblies and loader",
+      "version": "1.0.4314.35",
+      "source": "https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.4314.35"
+    },
+    {
+      "name": "HtmlAgilityPack",
+      "version": "1.13.1",
+      "license": "MIT",
+      "source": "https://www.nuget.org/packages/HtmlAgilityPack/1.13.1"
+    },
+    {
+      "name": "aria2 Windows x64 official binary",
+      "version": "1.37.0",
+      "license": "GPL-2.0-or-later",
+      "source": "https://github.com/aria2/aria2/releases/tag/release-1.37.0"
+    },
+    {
+      "name": "React and React DOM",
+      "version": "19.3.1",
+      "license": "MIT"
+    },
+    {
+      "name": "Lucide React icons",
+      "version": "1.72.0",
+      "license": "ISC"
+    }
+  ],
+  "notBundled": [
+    "Electron",
+    "Node.js",
+    "WebTorrent",
+    "Chromium fixed runtime",
+    "yt-dlp",
+    "gallery-dl",
+    "ffmpeg",
+    "Deno",
+    "ffprobe"
+  ],
   "securityNote": "This inventory is not a clean vulnerability audit. Native upstream libraries and optional media tools need their own update monitoring. Legacy Electron/npm dependencies remain in the source and build/test environment."
 }

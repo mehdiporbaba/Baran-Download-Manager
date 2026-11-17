@@ -37,6 +37,7 @@ export interface Settings {
   proxyMode: 'direct' | 'system' | 'manual'
   minimizeToTray: boolean
   sidebarAlwaysOpen: boolean
+  showProgressWindow?: boolean
   language: Language
   theme: Theme
   clipboardWatch: boolean
@@ -169,6 +170,9 @@ export interface DownloadTask {
   youtube?: YoutubeMeta
   torrent?: TorrentMeta
   checksum?: string
+  expectedSha256?: string
+  speedLimit?: number
+  closeProgressOnComplete?: boolean
   order: number
 }
 
@@ -202,6 +206,8 @@ export interface ProbeResult {
 }
 
 export interface AddDownloadInput {
+  expectedSha256?: string
+  speedLimit?: number
   startAt?: number
   url: string
   kind?: 'auto' | 'http' | 'youtube'
@@ -327,6 +333,10 @@ export type MainEvent =
   | { type: 'settings'; settings: Settings }
 
 export interface PulseAPI {
+  openProgressWindow?(id: string): Promise<void>
+  setTaskSpeedLimit?(id: string, bytesPerSecond: number): Promise<void>
+  setTaskChecksum?(id: string, sha256: string): Promise<void>
+  setTaskCloseOnComplete?(id: string, enabled: boolean): Promise<void>
   browserReady?(): Promise<void>
   installFirefoxExtension?(): Promise<{ opened: boolean }>
   /** Native-only, explicitly scoped connected-service actions. */
@@ -367,7 +377,7 @@ export interface PulseAPI {
   githubRepo(fullName: string): Promise<GithubRepoDetails>
   openExternal(url: string): Promise<void>
   revealDir(dir: string): Promise<void>
-  windowControl(action: 'minimize' | 'maximize' | 'close'): Promise<void>
+  windowControl(action: 'minimize' | 'maximize' | 'close' | 'hide'): Promise<void>
   readClipboard(): Promise<string>
   subscribe(cb: (event: MainEvent) => void): () => void
 }

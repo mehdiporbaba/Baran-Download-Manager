@@ -16,9 +16,22 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
+Function .onInit
+  ReadEnvStr $1 "USERNAME"
+  checkRunning:
+  System::Call 'kernel32::OpenMutexW(i 0x100000, i 0, w "Local\BaranNative-$1") p.r0'
+  StrCmp $0 0 ready
+  System::Call 'kernel32::CloseHandle(p r0)'
+  MessageBox MB_RETRYCANCEL|MB_ICONINFORMATION "Baran is running. Finish or pause active downloads, choose Quit from the Baran tray menu, then click Retry. Setup will not stop your transfers." IDRETRY checkRunning
+  Abort
+  ready:
+FunctionEnd
 Section "Baran Download Manager"
   SetOutPath "$INSTDIR"
   File /r "${APP_SOURCE}\*"
+  ExecWait '"$INSTDIR\Baran Download Manager.exe" --repair-browser-hosts' $0
+  StrCmp $0 0 +2
+  MessageBox MB_OK|MB_ICONINFORMATION "Browser connection could not be refreshed. Open Baran Settings > Browser integration and choose Repair connection."
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\Baran Download Manager"
   CreateShortcut "$SMPROGRAMS\Baran Download Manager\Baran Download Manager.lnk" "$INSTDIR\Baran Download Manager.exe"

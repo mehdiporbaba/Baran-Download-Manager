@@ -13,8 +13,7 @@ namespace Baran {
     public readonly Media Media;
     public readonly Torrents Torrent;
     public readonly MobileControl Mobile;
-    readonly UserSecrets secrets;
-    readonly RealDebrid debrid;
+    readonly DebridProviders debrid;
     readonly WakeScheduler wake;
     readonly bool testing;
     readonly HttpDownload http;
@@ -28,11 +27,11 @@ namespace Baran {
     bool dirty; long saved; int ticking; bool closed;
     public Func<string, object[], Task<object>> Ui;
     public Action RevealBrowserImport;
-    public string Runtime = "WebView2", Version = "2.1.0-beta.2";
+    public string Runtime = "WebView2", Version = "2.1.0";
     public Core(string profile, string root, Action<object> notify, bool testing = false) {
       this.testing = testing;
       emit = notify; Store = new StateStore(profile); Network = new NativeNetwork(Store);
-      secrets = new UserSecrets(profile); debrid = new RealDebrid(secrets, Network);
+      debrid = new DebridProviders(profile, Network);
       wake = new WakeScheduler(Path.Combine(root, "Baran Download Manager.exe"), testing);
       Mobile = new MobileControl(this, root);
       Inbox = new Links(Network, () => Emit(J.Obj("type", "links:changed")), profile);
@@ -52,6 +51,7 @@ namespace Baran {
     void Emit(object value) { if (!closed) emit(value); }
     public void Toast(string level, string message) { Emit(J.Obj("type", "toast", "level", level, "message", message)); }
     public DownloadRecord Find(string id) { lock (gate) { DownloadRecord value; if (!records.TryGetValue(id, out value)) throw new Exception("Download no longer exists"); return value; } }
+    public string[] ActiveTaskIds() { lock (gate) return records.Values.Where(row => new [] { "connecting", "downloading", "verifying" }.Contains(J.Str(row.Data, "status"))).Select(row => J.Str(row.Data, "id")).ToArray(); }
     public void Patch(DownloadRecord record, Dictionary<string, object> values) {
       Dictionary<string, object> data;
       lock (gate) { data = new Dictionary<string, object>(record.Data); foreach (var item in values) data[item.Key] = item.Value; data["updatedAt"] = J.Now(); record.Data = data; dirty = true; }
@@ -71,6 +71,11 @@ namespace Baran {
       long value = Convert.ToInt64(raw); if (value <= 0 || value > 8640000000000000L) throw new Exception("Invalid scheduled start time"); return value;
     }
     static bool MediaUrl(string url) { var value = new Uri(url); return new [] { "youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com", "vimeo.com", "www.vimeo.com" }.Contains(value.Host); }
+    static string ExpectedHash(object input) {
+      string hash = J.Str(input, "expectedSha256").Trim().ToLowerInvariant();
+      if (hash.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(hash, "^[a-f0-9]{64}$")) throw new Exception("Enter a complete 64-character SHA-256 digest");
+      return hash;
+    }
     public Dictionary<string, object> Add(object input, bool torrent = false) {
       if (Network.Vpn.Enabled && (torrent || new [] { "youtube" }.Contains(J.Str(input, "kind")) || MediaUrlSafe(J.Str(input, "url")))) throw new Exception("Only HTTP downloads are available while VPN interface binding is enabled");
       long? start = StartAt(input); string url = J.Str(input, torrent ? "uri" : "url").Trim();
@@ -81,9 +86,12 @@ namespace Baran {
       string name = J.Str(input, "fileName", J.Str(input, "name", ""));
       if (name.Length == 0) name = torrent ? "Torrent" : J.SafeName(Uri.UnescapeDataString(Path.GetFileName(new Uri(url).AbsolutePath)));
       name = J.SafeName(name); string id = Guid.NewGuid().ToString("N");
+      string expectedHash = ExpectedHash(input); long speedLimit = J.Num(input, "speedLimit");
+      if (speedLimit < 0 || speedLimit > 1099511627776L) throw new Exception("Invalid download speed limit");
+      if (kind != "http" && (expectedHash.Length > 0 || speedLimit > 0)) throw new Exception("Per-download speed limits and SHA-256 checks currently support direct downloads");
       var data = J.Obj("id", id, "kind", kind, "url", url, "name", J.Str(input, "title", name), "fileName", name, "dir", directory,
         "status", "queued", "size", 0, "downloaded", 0, "speed", 0, "eta", 0, "connections", 0, "createdAt", J.Now(), "updatedAt", J.Now(),
-        "category", Category(name), "headers", J.Get(input, "headers"), "maxConnections", J.Num(input, "connections", J.Num(Store.Settings, "connections")), "thumbnail", J.Get(input, "thumbnail"), "startAt", start);
+        "category", Category(name), "headers", J.Get(input, "headers"), "maxConnections", J.Num(input, "connections", J.Num(Store.Settings, "connections")), "thumbnail", J.Get(input, "thumbnail"), "startAt", start, "speedLimit", speedLimit, "expectedSha256", expectedHash);
       if (kind == "youtube") { var youtube = new Dictionary<string, object>(J.Map(J.Get(input, "youtube"))); youtube["formatId"] = J.Get(youtube, "selector"); youtube["embedThumbnail"] = J.Bool(youtube, "thumbnail"); data["youtube"] = youtube; }
       if (torrent) {
         var meta = J.Obj("infoHash", "", "peers", 0, "seeds", 0, "uploadSpeed", 0, "uploaded", 0, "ratio", 0, "files", new object[0], "sequential", J.Bool(input, "sequential", true), "seeding", false);
@@ -122,7 +130,7 @@ namespace Baran {
     async Task Execute(DownloadRecord row) {
       try {
         string kind = J.Str(row.Data, "kind");
-        if (kind == "http") await http.Start(row, row.Cancel.Token).ConfigureAwait(false);
+        if (kind == "http") { row.Limiter.Reset(J.Num(row.Data, "speedLimit")); await http.Start(row, row.Cancel.Token).ConfigureAwait(false); }
         else if (kind == "youtube") await Media.Download(row, row.Cancel.Token, Patch).ConfigureAwait(false);
         else await DownloadTorrent(row).ConfigureAwait(false);
       } catch (OperationCanceledException) { MarkPaused(row); }
@@ -266,6 +274,22 @@ namespace Baran {
           Store.Patch(patch); throttle.Set(J.Num(Store.Settings, "globalSpeedLimit")); await Torrent.Limits().ConfigureAwait(false); Emit(J.Obj("type", "settings", "settings", Store.Settings)); if (Ui != null) await Ui("applySettings", new object[0]).ConfigureAwait(false); Schedule(); return Store.Settings;
         }
         case "setSpeedLimit": return await Invoke("updateSettings", new object[] { J.Obj("globalSpeedLimit", Convert.ToInt64(arg(0))) }).ConfigureAwait(false);
+        case "setTaskSpeedLimit": {
+          var row = Find(str(0)); long limit = Convert.ToInt64(arg(1));
+          if (J.Str(row.Data, "kind") != "http") throw new Exception("Per-download speed limits currently support direct downloads");
+          if (limit < 0 || limit > 1099511627776L) throw new Exception("Invalid download speed limit");
+          row.Limiter.Set(limit); Patch(row, J.Obj("speedLimit", limit)); Save(); return null;
+        }
+        case "setTaskChecksum": {
+          var row = Find(str(0)); string hash = ExpectedHash(J.Obj("expectedSha256", str(1)));
+          lock (gate) {
+            if (J.Str(row.Data, "kind") != "http" || !new [] { "paused", "error" }.Contains(J.Str(row.Data, "status")) || (row.Work != null && !row.Work.IsCompleted)) throw new Exception("Pause the direct download before changing its expected checksum");
+            Patch(row, J.Obj("expectedSha256", hash, "checksum", null)); Save();
+          } return null;
+        }
+        case "setTaskCloseOnComplete": {
+          var row = Find(str(0)); Patch(row, J.Obj("closeProgressOnComplete", Convert.ToBoolean(arg(1)))); Save(); return null;
+        }
         case "linksList": return Inbox.List();
         case "linksImport": return Inbox.Import(str(0));
         case "linksRemove": Inbox.Remove(J.List(arg(0))); return null;
@@ -301,17 +325,26 @@ namespace Baran {
       return result;
     }
     public object MobileSnapshot() { lock (gate) return J.Obj("stats", J.Obj("downSpeed", J.Num(Stats(), "downSpeed"), "upSpeed", J.Num(Stats(), "upSpeed")), "tasks", records.Values.OrderByDescending(row => J.Num(row.Data, "createdAt")).Take(500).Select(row => J.Obj("id", J.Str(row.Data, "id"), "name", J.Str(row.Data, "name"), "status", J.Str(row.Data, "status"), "size", J.Num(row.Data, "size"), "downloaded", J.Num(row.Data, "downloaded"))).ToArray()); }
-    object ConnectedStatus() { return J.Obj("debridConfigured", debrid.Configured, "mobile", Mobile.Status(true), "interfaces", VpnBinding.Interfaces(), "vpnInterfaceId", J.Str(Store.Settings, "vpnInterfaceId"), "wakeEnabled", J.Bool(Store.Settings, "wakeToRun"), "wakeError", wakeError, "nextWake", NextWake()); }
+    object ConnectedStatus() { return J.Obj("debridConfigured", debrid.Configured, "providers", debrid.Status(), "mobile", Mobile.Status(true), "interfaces", VpnBinding.Interfaces(), "vpnInterfaceId", J.Str(Store.Settings, "vpnInterfaceId"), "wakeEnabled", J.Bool(Store.Settings, "wakeToRun"), "wakeError", wakeError, "nextWake", NextWake()); }
     async Task<object> Connected(string action, object input) {
       switch (action) {
         case "status": return ConnectedStatus();
-        case "debridSave": secrets.Write(J.Str(input, "token").Trim()); return ConnectedStatus();
-        case "debridAccount": return await debrid.Request("user", "").ConfigureAwait(false);
+        case "installTool": {
+          await ToolInstaller.Install(J.Str(input, "name"), Store, Network).ConfigureAwait(false);
+          Emit(J.Obj("type", "stats", "stats", Stats())); return J.Obj("ok", true);
+        }
+        case "openChromiumExtensionFolder": return await Ui("openChromiumExtensionFolder", new object[0]).ConfigureAwait(false);
+        case "debridSave": debrid.Save(J.Str(input, "provider", "real-debrid"), J.Str(input, "token").Trim()); return ConnectedStatus();
+        case "debridAccount": return await debrid.Account(J.Str(input, "provider", "real-debrid")).ConfigureAwait(false);
+        case "debridForget": debrid.Complete(J.Str(input, "provider", "real-debrid")); return ConnectedStatus();
         case "debridCollect": {
-          var link = await debrid.Request("unrestrict/link", J.Str(input, "url")).ConfigureAwait(false);
-          string url = J.Str(link, "url"); int count = Inbox.Add(new [] { url }, "Real-Debrid");
-          foreach (object item in Inbox.List()) if (J.Str(item, "url") == url) Inbox.Patch(J.Str(item, "id"), J.Obj("fileName", J.Str(link, "fileName"), "size", J.Num(link, "size")));
-          return J.Obj("added", count);
+          string provider = J.Str(input, "provider", "real-debrid");
+          var result = await debrid.Resolve(provider, J.Str(input, "url"), J.Bool(input, "checkPending")).ConfigureAwait(false);
+          object[] links = J.List(J.Get(result, "links"));
+          int count = Inbox.Add(links.Select(link => J.Str(link, "url")), provider);
+          foreach (object link in links) foreach (object item in Inbox.List()) if (J.Str(item, "url") == J.Str(link, "url")) Inbox.Patch(J.Str(item, "id"), J.Obj("fileName", J.Str(link, "fileName"), "size", J.Num(link, "size")));
+          if (!J.Bool(result, "pending")) debrid.Complete(provider);
+          return J.Obj("added", count, "pending", J.Bool(result, "pending"));
         }
         case "mobileStart": return Mobile.Start(J.Str(input, "address"), testing);
         case "mobileStop": Mobile.Dispose(); return Mobile.Status();

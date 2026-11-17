@@ -339,10 +339,14 @@ function TaskRow({
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onSelect()
+        if (e.key === 'Enter' && e.target === e.currentTarget) {
+          e.preventDefault(); onSelect()
+          if (window.pulse.openProgressWindow) void window.pulse.openProgressWindow(task.id).catch(error => onToast('error', error.message))
+        }
       }}
       onDoubleClick={() => {
-        if (completed) void window.pulse.openTask(task.id)
+        if (window.pulse.openProgressWindow) void window.pulse.openProgressWindow(task.id).catch(error => onToast('error', error.message))
+        else if (completed) void window.pulse.openTask(task.id)
       }}
       className={cn(
         'row-hover group relative cursor-pointer overflow-hidden rounded-xl2 border border-line/70 bg-panel/55 px-3.5 py-2.5',

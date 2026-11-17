@@ -21,6 +21,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: node scripts/release-notes.cjs --check
+      - run: node scripts/readme.cjs
       - run: node --test tests/release-notes.test.cjs
       - run: npm ci --ignore-scripts
       - run: npm test

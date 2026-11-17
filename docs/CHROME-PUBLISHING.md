@@ -6,7 +6,7 @@ The owner must register a Chrome Web Store developer account, accept its agreeme
 
 ## Prepared package
 
-Run `node scripts/prepare-chrome-store.cjs`; ZIP the **contents** of `dist/chrome-store-submission` with manifest.json at the root. The package contains no native host executable or Windows installer. Current extension version: 1.0.1. Do not change the already Mozilla-signed Firefox bytes.
+Run `node scripts/prepare-chrome-store.cjs`; ZIP the **contents** of `dist/chrome-store-submission` with manifest.json at the root. The package contains no native host executable or Windows installer. Current extension version: 1.0.2. Do not change the already Mozilla-signed Firefox bytes.
 
 Suggested name: Baran Download Manager — Browser Extension.
 

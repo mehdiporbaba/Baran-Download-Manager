@@ -70,6 +70,7 @@ export function AddDownloadModal(): React.JSX.Element {
   const [referer, setReferer] = useState('')
   const [ua, setUa] = useState('')
   const [cookie, setCookie] = useState('')
+  const [expectedSha256, setExpectedSha256] = useState('')
   const [subtitles, setSubtitles] = useState(false)
   const [embedThumb, setEmbedThumb] = useState(false)
   const [torrentPath, setTorrentPath] = useState<string | null>(null)
@@ -98,6 +99,7 @@ export function AddDownloadModal(): React.JSX.Element {
     setReferer('')
     setUa('')
     setCookie('')
+    setExpectedSha256('')
     setSubtitles(false)
     setEmbedThumb(false)
     setTorrentPath(null)
@@ -311,7 +313,8 @@ export function AddDownloadModal(): React.JSX.Element {
           fileName: fileName.trim() || undefined,
           dir,
           connections,
-          headers: Object.keys(headers).length ? headers : undefined
+          headers: Object.keys(headers).length ? headers : undefined,
+          expectedSha256: expectedSha256.trim() || undefined
         })
         finish(task.id)
       } else if (tab === 'video') {
@@ -573,6 +576,7 @@ export function AddDownloadModal(): React.JSX.Element {
                 <Labeled label={t.add.cookie} small>
                   <input value={cookie} onChange={(e) => setCookie(e.target.value)} className="field h-8 w-full px-2 text-[10.5px]" dir="ltr" />
                 </Labeled>
+                {window.pulse.setTaskChecksum && <div className="sm:col-span-3"><Labeled label={lang === 'fa' ? 'هش SHA-256 مورد انتظار (اختیاری)' : 'Expected SHA-256 (optional)'} small><input value={expectedSha256} onChange={e => setExpectedSha256(e.target.value)} maxLength={64} className="field h-8 w-full px-2 font-mono text-[10.5px]" dir="ltr" placeholder="64 hexadecimal characters" /></Labeled></div>}
               </div>
             ) : null}
           </div>

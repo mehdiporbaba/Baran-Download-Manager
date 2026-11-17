@@ -41,6 +41,12 @@ namespace Baran {
         return tunnel.Proxy;
       }
     }
+    public string MediaProxy(string url) {
+      if (!Vpn.Enabled) return store.Proxy(url);
+      var proxy = Proxy(url); var address = proxy.GetProxy(J.Url(url));
+      var credentials = proxy.Credentials.GetCredential(address, "Basic");
+      return new UriBuilder(address) { UserName = credentials.UserName, Password = credentials.Password }.Uri.AbsoluteUri;
+    }
     public void Configure(Action change) {
       lock (routing) {
         foreach (var entry in requests) { var request = entry.Target as HttpWebRequest; if (request != null) request.Abort(); }
@@ -154,9 +160,9 @@ namespace Baran {
         }
         HttpWebResponse response;
         try { response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false); }
-        catch (WebException error) { if (!(error.Response is HttpWebResponse)) throw new Exception("Real-Debrid connection failed"); response = (HttpWebResponse)error.Response; }
+        catch (WebException error) { if (!(error.Response is HttpWebResponse)) throw new Exception("Provider connection failed"); response = (HttpWebResponse)error.Response; }
         using (response) {
-          if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300) throw new Exception("Real-Debrid HTTP " + (int)response.StatusCode + ". Check your token, account and host availability.");
+          if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300) throw new Exception("Provider HTTP " + (int)response.StatusCode + ". Check your token, account and host availability.");
           return System.Text.Encoding.UTF8.GetString(await Read(response.GetResponseStream(), 1024 * 1024, timeout.Token).ConfigureAwait(false));
         }
       }

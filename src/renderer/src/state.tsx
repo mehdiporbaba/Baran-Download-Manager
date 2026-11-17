@@ -241,7 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
         setSystem(snap.system)
         setMaximized(Boolean(snap.system.maximized))
         setReady(true)
-        void window.pulse.browserReady?.().catch(() => {})
+        if (new URLSearchParams(location.search).get('mode') !== 'progress') void window.pulse.browserReady?.().catch(() => {})
       })
       .catch((err: Error) => {
         if (cancelled) return
@@ -269,6 +269,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      if (new URLSearchParams(location.search).get('mode') === 'progress') return
       const ctrl = e.ctrlKey || e.metaKey
       if (ctrl && e.key.toLowerCase() === 'n') {
         e.preventDefault()

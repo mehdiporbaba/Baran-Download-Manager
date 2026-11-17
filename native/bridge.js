@@ -15,7 +15,7 @@
     pending.set(id, { resolve, reject })
     window.chrome.webview.postMessage(JSON.stringify({ id, method, args }))
   })
-  const methods = ['browserReady','installFirefoxExtension','connected','registerBrowserHost','replaceUrl','instagramCollect','installGallery','linksList','linksImport','linksRemove','linksProbe','linksDownload','scheduleTask','scanStart','scanCancel','snapshot','probe','probeYoutube','addDownload','addTorrent','pauseTask','resumeTask','cancelTask','removeTask','retryTask','revealTask','openTask','clearCompleted','updateSettings','chooseDir','chooseTorrentFile','chooseCookiesFile','setSpeedLimit','installYtDlp','rescanTools','githubSearch','githubRepo','openExternal','revealDir','windowControl','readClipboard']
+  const methods = ['setTaskCloseOnComplete','openProgressWindow','setTaskSpeedLimit','setTaskChecksum','browserReady','installFirefoxExtension','connected','registerBrowserHost','replaceUrl','instagramCollect','installGallery','linksList','linksImport','linksRemove','linksProbe','linksDownload','scheduleTask','scanStart','scanCancel','snapshot','probe','probeYoutube','addDownload','addTorrent','pauseTask','resumeTask','cancelTask','removeTask','retryTask','revealTask','openTask','clearCompleted','updateSettings','chooseDir','chooseTorrentFile','chooseCookiesFile','setSpeedLimit','installYtDlp','rescanTools','githubSearch','githubRepo','openExternal','revealDir','windowControl','readClipboard']
   window.pulse = Object.fromEntries(methods.map(method => [method, (...args) => invoke(method, ...args)]))
   window.pulse.subscribe = listener => { listeners.add(listener); return () => listeners.delete(listener) }
   document.addEventListener('pointerdown', event => {

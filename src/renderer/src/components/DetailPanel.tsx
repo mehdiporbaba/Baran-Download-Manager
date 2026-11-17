@@ -9,6 +9,7 @@ import {
   HardDrive,
   Info,
   Link2,
+  Maximize2,
   Pause,
   Play,
   ShieldCheck,
@@ -75,6 +76,7 @@ export function DetailPanel(): React.JSX.Element {
         <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-faint">
           {t.detail.title}
         </div>
+        {window.pulse.openProgressWindow && <button type="button" className="icon-btn ms-auto" title={lang === 'fa' ? 'پنجرهٔ مستقل دانلود' : 'Open download window'} aria-label={lang === 'fa' ? 'پنجرهٔ مستقل دانلود' : 'Open download window'} onClick={() => void window.pulse.openProgressWindow!(task.id).catch(error => pushToast('error',error.message))}><Maximize2 size={15}/></button>}
         <button type="button" className="icon-btn" onClick={() => setSelectedId(null)}>
           <X size={15} />
         </button>

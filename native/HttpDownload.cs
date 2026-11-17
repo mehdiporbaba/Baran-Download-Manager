@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,15 +15,29 @@ namespace Baran {
     public Task Work;
     public bool Refreshing;
     public long LastEmit;
+    public readonly RateLimiter Limiter = new RateLimiter();
     public DownloadRecord(Dictionary<string, object> data) { Data = data; }
   }
   public sealed class RateLimiter {
-    readonly object gate = new object(); double available; long limit;
-    public void Set(long bytes) { lock (gate) { limit = bytes; available = J.Now(); } }
+    readonly object gate = new object(); double available, updated = Clock; long limit;
+    static double Clock { get { return 1000.0 * Stopwatch.GetTimestamp() / Stopwatch.Frequency; } }
+    public void Set(long bytes) { lock (gate) { if (limit == bytes) return; limit = bytes; available = 0; updated = Clock; } }
+    public void Reset(long bytes) { lock (gate) { limit = bytes; available = 0; updated = Clock; } }
     public async Task Consume(int bytes, CancellationToken token) {
-      double deadline;
-      lock (gate) { if (limit <= 0) return; available = Math.Max(available, J.Now()) + bytes * 1000.0 / limit; deadline = available; }
-      while (deadline > J.Now()) { token.ThrowIfCancellationRequested(); await Task.Delay((int)Math.Min(200, Math.Max(1, deadline - J.Now())), token).ConfigureAwait(false); }
+      // Spend accrued tokens, never reserve time in the future. A canceled
+      // worker therefore leaves no throttle debt for other tasks or resume.
+      while (bytes > 0) {
+        token.ThrowIfCancellationRequested(); int wait;
+        lock (gate) {
+          if (limit <= 0) return;
+          double now = Clock;
+          available = Math.Min(Math.Max(65536.0, limit / 5.0), available + Math.Max(0, now - updated) * limit / 1000.0); updated = now;
+          int chunk = Math.Min(65536, bytes);
+          if (available >= chunk) { available -= chunk; bytes -= chunk; continue; }
+          wait = (int)Math.Min(200, Math.Max(1, Math.Ceiling((chunk - available) * 1000.0 / limit)));
+        }
+        await Task.Delay(wait, token).ConfigureAwait(false);
+      }
     }
   }
   public sealed class HttpDownload {
@@ -41,6 +57,10 @@ namespace Baran {
       if (meta == null) {
         var probe = await network.Probe(J.Str(task.Data, "url"), J.Get(task.Data, "headers")).ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
+        string contentType = J.Str(probe, "contentType").Split(';')[0].Trim().ToLowerInvariant();
+        string requestedExtension = Path.GetExtension(J.Str(task.Data, "fileName")).ToLowerInvariant();
+        if ((contentType == "text/html" || contentType == "application/xhtml+xml") && requestedExtension.Length > 0 && !new [] { ".html", ".htm", ".xhtml", ".txt" }.Contains(requestedExtension))
+          throw new InvalidDataException("The link returned an HTML page instead of the requested file. Open its source page and obtain an authorized direct download link; a login or challenge page was not saved as your file.");
         string guessed = J.SafeName(Uri.UnescapeDataString(Path.GetFileName(new Uri(J.Str(task.Data, "url")).AbsolutePath)));
         if (J.Str(task.Data, "fileName") == guessed && J.Str(probe, "fileName").Length > 0) final = Path.Combine(J.Str(task.Data, "dir"), J.SafeName(J.Str(probe, "fileName")));
         lock (paths) {
@@ -67,7 +87,9 @@ namespace Baran {
       object gate = new object(); long lastSave = 0;
       Action<bool> save = force => { lock (gate) {
         meta["downloaded"] = Saved(meta); meta["savedAt"] = J.Now();
-        patch(task, J.Obj("downloaded", J.Num(meta, "downloaded"), "segments", J.List(J.Get(meta, "segments"))));
+        // UI snapshots must not retain dictionaries that workers mutate while
+        // another window serializes them on a different thread.
+        patch(task, J.Obj("downloaded", J.Num(meta, "downloaded"), "segments", J.List(J.Get(meta, "segments")).Select(segment => new Dictionary<string, object>(J.Map(segment))).ToArray()));
         if (force || J.Now() - lastSave > 1500) { J.Atomic(sidecar, meta); lastSave = J.Now(); }
       } };
       using (var transfer = CancellationTokenSource.CreateLinkedTokenSource(token)) {
@@ -96,6 +118,7 @@ namespace Baran {
                     int count = await input.ReadAsync(buffer, 0, buffer.Length, transfer.Token).ConfigureAwait(false);
                     if (count == 0) break;
                     if (J.Num(meta, "size") > 0 && J.Num(segment, "position") + count > end) throw new InvalidDataException("The server sent bytes outside the requested range");
+                    await task.Limiter.Consume(count, transfer.Token).ConfigureAwait(false);
                     await throttle.Consume(count, transfer.Token).ConfigureAwait(false);
                     await output.WriteAsync(buffer, 0, count, transfer.Token).ConfigureAwait(false);
                     lock (gate) segment["position"] = J.Num(segment, "position") + count;
@@ -120,6 +143,19 @@ namespace Baran {
       }
       token.ThrowIfCancellationRequested();
       if (new FileInfo(part).Length != J.Num(meta, "size") || Saved(meta) != J.Num(meta, "size")) throw new IOException("Downloaded file length does not match its source");
+      string expected = J.Str(task.Data, "expectedSha256");
+      if (expected.Length > 0) {
+        patch(task, J.Obj("status", "verifying", "speed", 0, "eta", 0, "connections", 0));
+        using (var sha = SHA256.Create()) using (var file = new FileStream(part, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true)) {
+          var bytes = new byte[65536]; int count;
+          while ((count = await file.ReadAsync(bytes, 0, bytes.Length, token).ConfigureAwait(false)) > 0) { token.ThrowIfCancellationRequested(); sha.TransformBlock(bytes, 0, count, bytes, 0); }
+          sha.TransformFinalBlock(new byte[0], 0, 0);
+          string actual = BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
+          patch(task, J.Obj("checksum", actual));
+          if (!String.Equals(actual, expected, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("SHA-256 mismatch. The partial file was preserved and was not published as a completed download.");
+        }
+      }
+      token.ThrowIfCancellationRequested();
       if (File.Exists(final)) throw new IOException("A file with this destination already exists; the partial download was preserved");
       File.Move(part, final); File.Delete(sidecar);
       patch(task, J.Obj("status", "completed", "downloaded", J.Num(meta, "size"), "size", J.Num(meta, "size"), "speed", 0, "eta", 0, "connections", 0, "completedAt", J.Now()));

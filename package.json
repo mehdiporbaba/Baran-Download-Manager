@@ -1,6 +1,6 @@
 {
   "name": "baran-download-manager",
-  "version": "2.1.0-beta.2",
+  "version": "2.1.0",
   "description": "Baran Download Manager — collect links, schedule downloads, and manage your connection.",
   "main": "./out/main/index.js",
   "author": "Mehdi Porbaba",
@@ -23,7 +23,9 @@
     "start:electron": "electron-vite preview",
     "dev:electron": "electron-vite dev",
     "dev:native": "npm run build:native && npm start",
-    "test:connected": "node tests/connected.integration.mjs"
+    "test:connected": "node tests/connected.integration.mjs",
+    "test:advanced": "node tests/advanced.integration.mjs",
+    "docs:check": "node scripts/readme.cjs && node scripts/release-notes.cjs --check"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

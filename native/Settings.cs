@@ -27,7 +27,7 @@ namespace Baran {
       string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
       return J.Obj("downloadDir", downloads, "maxConcurrent", 3, "connections", 8, "globalSpeedLimit", 0,
         "torrentDownloadLimit", 0, "torrentUploadLimit", 0, "proxyMode", "direct", "minimizeToTray", true,
-        "sidebarAlwaysOpen", false, "language", "en", "theme", "dark", "clipboardWatch", true,
+        "sidebarAlwaysOpen", false, "showProgressWindow", true, "language", "en", "theme", "dark", "clipboardWatch", true,
         "notifyOnComplete", true, "ytDlpPath", "", "ffmpegPath", "", "torrentPort", 51413,
         "seedAfterComplete", false, "proxy", "", "userAgent", "Baran Download Manager/2.0",
         "autoResume", true, "launchAtStartup", true, "cookiesBrowser", "", "cookiesFile", "", "githubToken", "", "vpnInterfaceId", "", "wakeToRun", false);

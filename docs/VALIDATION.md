@@ -1,5 +1,23 @@
 # Validation
 
+## Windows 2.1.0 release checks — 2026-11-17
+
+Local type checks, 23 unit tests, 6 documentation-policy tests, production renderer/native/Setup builds, native integration, connected integration, advanced integration and retained Electron network regressions passed. Setup measured 2,606,331 bytes before the final metadata rebuild; use the published asset for the exact release size. Advanced evidence and limits: [services](ADVANCED-SERVICES.md). GitHub CI and publication are verified separately in [memory](../MEMORY.md). No new visual/browser permission was used after denial.
+
+<div dir="rtl" lang="fa" align="right"><h2>بررسی انتشار ویندوز ۲٫۱٫۰ در ۲۰۲۶/۱۱/۱۷</h2><p>بررسی نوع‌ها، ۲۳ تست واحد، ۶ تست سیاست مستندات، ساخت رابط تولیدی/بومی/نصاب، یکپارچه‌سازی بومی، متصل و پیشرفته و رگرسیون شبکهٔ Electron نگه‌داری‌شده محلی پاس شدند. اندازهٔ نصاب پیش از بازسازی نهایی فراداده ۲٬۶۰۶٬۳۳۱ بایت بود؛ اندازهٔ دقیق انتشار را از فایل منتشرشده بخوانید. شواهد و محدودیت پیشرفته: <a href="ADVANCED-SERVICES.md">سرویس‌ها</a>. CI گیت‌هاب و انتشار جدا در <a href="../MEMORY.md">حافظه</a> تأیید می‌شوند. پس از رد دسترسی از مجوز جدید ظاهری/مرورگر استفاده نشد.</p></div>
+
+## Earlier beta.3 progress-window checks — 2026-11-17
+
+Prepared beta.3 now contains the independent native task window and selected MDM-derived failure-mode safeguards. Local verification passed: 23 unit tests, type checks, renderer/native compilation, native integration, connected fixtures and 5 release-policy tests. Native coverage includes explicit SHA-256 success/mismatch/recovery, independent live HTTP caps, lifting a cap without pause, canceled-throttle-debt regression under per-file AND global caps, fast pause during a stalled body, HTML-as-archive rejection, collision preservation, stderr media/postprocessing and missing-FFmpeg rejection. The segmented-resume delay was reproduced before its fix; exact final bytes pass after it. Window work-area bounds and scoped-command policy are tested independently of GUI rendering.
+
+On 2026-11-17 the user confirmed the Firefox popup connects to Baran beta.3 and clicking the supplied public GitHub ZIP link opens Baran's New download window. This accepts that direct-link handoff in the real profile; Chrome, cold-start with Baran fully quit and other request types remain unverified. No progress-window visual acceptance is claimed: permission to open the isolated local preview origin was declined and the service was stopped. At that stage development was local; the owner has since authorized final Windows 2.1.0 publication with explicit limitations. See [active work](WORK-ITEMS.md) and the [reference review](MDM-INTEGRATION-REVIEW.md).
+
+<div dir="rtl" lang="fa" align="right">
+<h2>کار محلی پنجرهٔ دانلود — ۲۰۲۶/۱۱/۱۷</h2>
+<p>بتا ۳ آماده، پنجرهٔ مستقل وظیفه و حفاظت‌های منتخب بر اساس حالت‌های خطای MDM را دارد. بررسی‌های محلی موفق‌اند: ۲۳ تست واحد، بررسی نوع‌ها، کامپایل رابط/بومی، یکپارچه‌سازی بومی، آزمون خدمات متصل و ۵ تست سیاست انتشار. پوشش بومی شامل موفقیت/شکست/اصلاح SHA-256، سقف زندهٔ مستقل HTTP، برداشتن سقف بدون توقف، رگرسیون نوبت سرعتِ لغوشده زیر سقف هر فایل و سراسری، توقف سریع خواندن گیرکرده، رد HTML به‌جای آرشیو، حفظ تداخل فایل، پیشرفت/پس‌پردازش رسانه از stderr و رد نیاز به FFmpeg در نبود آن است. تأخیر ادامهٔ چندبخشی پیش از اصلاح بازتولید شد و پس از آن بایت‌های نهایی دقیقاً برابرند. حدود جای پنجره و سیاست فرمان محدود به وظیفه، مستقل از رسم GUI آزموده شده‌اند.</p>
+<p>در ۲۰۲۶/۱۱/۱۷ کاربر تأیید کرد پنجرهٔ افزونهٔ فایرفاکس به بتا ۳ متصل است و کلیک روی لینک ZIP عمومی گیت‌هاب که ارائه شد، پنجرهٔ دانلود جدید باران را باز می‌کند. انتقال همین لینک مستقیم در پروفایل واقعی پذیرفته شد؛ کروم، شروع با بارانِ کاملاً بسته و انواع دیگر درخواست هنوز بررسی نشده‌اند. پذیرش ظاهری پنجرهٔ پیشرفت ادعا نمی‌شود: مجوز بازشدن مبدأ پیش‌نمایش محلیِ جدا رد و سرویس متوقف شد. در آن مرحله توسعه محلی بود؛ مالک سپس انتشار نهایی ویندوز ۲٫۱٫۰ را با محدودیت‌های روشن تأیید کرد. <a href="WORK-ITEMS.md">کارهای فعال</a> و <a href="MDM-INTEGRATION-REVIEW.md">بررسی مرجع</a> را ببینید.</p>
+</div>
+
 ## Current source verification — 2026-11-16
 
 Implementation commit `b09c85b95d6f5909a27b92510eb58594c50265ac` on `codex/firefox-and-upstream-fixes` is tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1). GitHub Native Windows build, Windows/Linux source validation and Gitleaks completed successfully. Local checks passed: 20 unit tests, typecheck, native integration, connected-services integration, retained Electron network regressions and 5 release-policy tests. [Project memory](../MEMORY.md) records the continuation state; [upstream review](UPSTREAM-REVIEW-v1.0.16.md) maps fixes and test limitations.

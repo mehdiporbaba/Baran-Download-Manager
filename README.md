@@ -1,221 +1,91 @@
+<img src="resources/banner.svg" alt="Baran Download Manager" width="100%" />
+
+<!-- Generated from docs/readme.json; edit paired translations there. -->
 <a id="en"></a>
 
-<div align="center">
+# Baran Download Manager
 
-<img src="resources/banner.svg" alt="Baran Download Manager — Your download workspace" width="100%" />
+[فارسی](#fa)
 
-[![Version](https://img.shields.io/badge/version-2.0.0-0284c7)](https://github.com/mehdiporbaba/Baran-Download-Manager/releases)
-[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
-[![Windows](https://img.shields.io/badge/Windows-x64-0284c7)](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest)
+**Collect links. Plan your queue. Control your connection.** A blue download workspace for Windows 10/11 x64, with Persian RTL and light/dark themes. Version **2.1.0** uses a native C# backend and shared WebView2; it bundles no Electron, Node.js, Chromium runtime or WebTorrent. The Windows installer is only a few megabytes; optional media tools and a missing shared runtime are separate downloads.
 
-**Collect links. Plan your queue. Control your connection.**
+[Download the latest release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [2.1.0 changes, checks and limitations](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.0.md) · [Setup guide](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md) · [Privacy](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md).
 
-[Download](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [Browser extension](browser-extension) · [Setup guide](docs/GUIDE.md) · [فارسی](#fa)
+## Your download workspace
 
-</div>
+- Segmented HTTP downloads, global and per-file speed limits, pause/resume, optional expected SHA-256 and verified replacement of expired URLs. Replacement checks the same resumable file before preserving offsets. A checksum mismatch keeps partial data and blocks completed-file publication.
 
-**Firefox installation fixed:** use the [Mozilla-signed Firefox 1.0.1 XPI](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1), then connect Firefox in Baran Settings → Browser integration. Do not use the old unsigned development XPI. [Signing details](docs/FIREFOX-SIGNING.md).
+- Independent download windows keep Baran’s own blue visuals: status, speed and completion/tools tabs, overall progress, file-range map and connection rows. Closing or hiding a window keeps its download running. Reopen the same task from the list or tray without another engine.
 
-**2.1.0-beta.2 prerelease:** Real-Debrid, authenticated private-LAN mobile control, Windows wake tasks and experimental HTTP-only IPv4 VPN binding. [Scope and limits](docs/RELEASE-2.1.0-beta.2.md). Latest stable desktop: **2.0.0**.
+- Persistent Link Grabber accepts pasted text and TXT imports, deduplicates URLs, checks availability, filters extensions and downloads selected files. The bounded recursive folder/page scanner previews linked files, supports depth/page limits and cancellation, and stays within the seed origin and containing folder. It cannot discover hidden files the server never exposes or recreate remote subfolders automatically.
 
-## A workspace built around your downloads
+- Saved per-file/batch schedules and optional Windows WakeToRun tasks launch Baran for the next queued time. Wake requires a signed-in session, supported hardware and permitted wake timers; it cannot power on a shut-down PC. Startup opens All downloads; the hamburger menu starts collapsed, closes after 15 seconds outside and can stay open by preference. Startup/tray, notifications and disk-space display are included.
 
-Baran Download Manager brings direct files, scheduled jobs, browser links, media and torrents into one desktop workspace. Version 2.0 uses a native C# backend and the shared Windows WebView2 Runtime: roughly 2.5 MB Setup / 3.2 MB Portable ZIP in local builds, with no bundled Electron, Node.js or Chromium runtime. It opens All downloads with a collapsible menu and keeps your review inbox on disk. [Architecture and measurements](docs/NATIVE.md).
+- yt-dlp handles video quality, audio, subtitles and playlists; gallery-dl collects Instagram posts, reels, carousels, photos and accessible stories. Settings → Tools installs/updates yt-dlp, FFmpeg/ffprobe, Deno and official gallery-dl nightly builds with required SHA-256 checks. Custom tool paths take priority. FFmpeg is required for separate-track merging and relevant postprocessing; postprocessing is shown separately from receiving data.
 
-This is an independently maintained GPL fork of [Pulse Download Manager](https://github.com/TheGreatAzizi/Pulse-Download-Manager), extended by **Mehdi Porbaba**. The original authors and licensing are credited below.
+- Connected services supports Real-Debrid, AllDebrid, Premiumize and TorBox HTTP links with independent Windows-account-encrypted tokens. Generated files enter Link Grabber for selection. AllDebrid delayed jobs and TorBox web-download jobs survive restart and can be checked without creating another job. Generation sends your URL to the selected provider and may consume its quota; account/host restrictions still apply. This is not cloud-torrent account management or every provider streaming-quality workflow.
 
-## What's inside
+- Optional authenticated mobile control on a trusted private LAN shows task names/status, pauses/resumes downloads and sends links into the review inbox. It uses unencrypted HTTP and a revocable pairing token, never opens firewall/port forwarding automatically and does not expose provider credentials or local paths in mobile snapshots.
 
-| Workspace | What you can do |
-| --- | --- |
-| **Link Grabber** | Paste text or import TXT, deduplicate links, check availability, filter file extensions, and download a selection. |
-| **Folder scanner** | Discover linked files in an HTML directory or page tree, with depth/page limits, cancellation and an explicit preview. |
-| **Scheduling** | Set a local start date/time when adding files or a batch. Scheduled jobs are saved with the download queue. |
-| **Browser extension** | Mozilla-signed Firefox XPI, Chrome/Edge development sources, optional acknowledged handoff and in-app Native Messaging registration. Public store listings remain pending. |
-| **Expired links** | Replace a paused/error HTTP URL after verifying size, a strong ETag and saved segment boundaries, then resume without resetting offsets. |
-| **YouTube & video** | Use yt-dlp to select quality, audio, subtitles and playlist items. Optional tools are managed in Settings. |
-| **Instagram** | Use gallery-dl to collect photos, video posts, reels, carousels and accessible stories into the review inbox. |
-| **Torrent controls** | Configure separate download and upload/seeding rate limits and select whether seeding continues after completion. |
-| **Proxy routing** | Direct, automatic system/PAC, or manual HTTP(S)/SOCKS routing for web downloads and media tools. |
-| **Desktop integration** | Installed Windows startup, minimize/close to system tray, notifications, Persian RTL and light/dark themes. |
+- Direct, system/PAC or manual HTTP(S)/SOCKS routing covers web downloads and media requests. Torrent download/upload limits and optional seeding are separate. Experimental selected-interface IPv4 binding includes HTTP DNS and proxy-routed media HTTP with no fallback; yt-dlp uses its native downloader and FFmpeg processes local files. Media processes stop on interface loss. Torrent peers/DHT are not proxied and torrents are blocked while interface binding is enabled. There is no system-wide kill switch or promised IPv6/VPN protection for arbitrary external tools.
 
-## Download & start
+## Install and connect
 
-Open the [latest release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest).
+Finish or pause active downloads and Quit Baran from its tray menu before upgrading. Run `Baran-Download-Manager-Native-Setup-2.1.0-x64.exe`, or extract `Baran-Download-Manager-Native-Portable-2.1.0-x64.zip` and run `Baran Download Manager.exe`. Setup refreshes browser-host paths and registers Firefox; Portable users use Repair connection after moving the folder. Existing tasks, inbox and partial files remain in your profile. Windows x64 needs .NET Framework 4.6.2 or later (4.8 recommended) and Microsoft WebView2 Evergreen.
 
-- **Setup**: `Baran-Download-Manager-Native-Setup-2.0.0-x64.exe` — compact Windows installer and shortcuts.
-- **Portable**: `Baran-Download-Manager-Native-Portable-2.0.0-x64.zip` — extract into a stable folder and run `Baran Download Manager.exe`.
-- **Extensions**: Chrome/Edge development ZIP; use the separate [Mozilla-signed Firefox release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1) instead of the historical unsigned XPI in desktop 2.0.0.
+Firefox: Settings → Browser integration → Install & connect Firefox opens the bundled Mozilla-signed `Baran-Firefox-Extension-1.0.2-signed.xpi`. Confirm Add in Firefox; no copied ID or PowerShell is needed. In the popup choose Check connection, then enable Use Baran for new downloads and accept the browser permissions. Old desktop beta.2 may report Unsupported browser command and clear the checkbox; upgrade the desktop. The user verified a real Firefox GitHub ZIP click opens New download with beta.3. [Signing evidence](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md).
 
-Windows 10/11 x64 needs .NET Framework and the shared Microsoft WebView2 Evergreen Runtime. WebView2 is already present on many PCs; a missing runtime requires a separate Microsoft download. The app is unsigned unless the release explicitly provides a verified trusted publisher signature. Self-signed certificates do not solve public SmartScreen trust. Optional `yt-dlp`, `gallery-dl` and `ffmpeg` are separate tools and can be much larger than Baran. No guarantee is made that every source-site challenge or protected account works.
+Chrome/Edge: store publication is pending because the owner has no developer account yet. The release includes a store-submission ZIP, not a store-approved installer. For development, open the prepared extension folder from Baran, use Load unpacked in `chrome://extensions` or `edge://extensions` with Developer mode enabled, copy its ID and Connect browser in Baran. Setup preserves registered IDs during upgrades. No fake store link, enterprise-policy bypass or automatic disabling of another extension is used. Firefox cannot grant exclusive priority to a download manager. Handoff cancels a browser download only after desktop acknowledgement and keeps/resumes it on failure.
 
-## Browser integration
+## Media sessions and limits
 
-1. In `chrome://extensions` or `edge://extensions`, turn on **Developer mode** and choose **Load unpacked**.
-2. Select the unpacked `browser-extension` directory and copy the extension ID.
-3. In Baran, open **Settings → Browser integration**, select the browser, paste that development extension ID and click **Connect browser**. No PowerShell command is required.
+Public media may work anonymously; an open browser tab does not automatically give Baran its session. Private posts, restricted stories, age checks and service bot checks may need your own authorized browser session or cookies file selected in Settings → Tools. The extension collects visible HTTP(S) URLs, not cookies, Authorization headers, passwords or POST bodies. It does not guarantee blob/POST/DRM downloads or every site. Expired CDN links may require re-extraction; manual replacement still verifies file identity.
 
-Firefox has a fixed add-on ID and needs no copied ID in Baran. Its **signed.xpi** is approved by Mozilla for self-distribution and ordinary Firefox installation. Chrome/Edge still need store publication for ordinary-user onboarding; a plain ZIP/CRX does not bypass store requirements. In the extension popup you can opt in to handling new HTTP(S) downloads; it resumes the browser if Baran cannot acknowledge receipt. [Guide](docs/GUIDE.md) · [Privacy](browser-extension/PRIVACY.md).
+This release targets native Windows x64. Native Linux/macOS packages, public trusted Windows code signing, browser-store listings, automatic recapture of expired links and full torrent VPN/proxy confinement remain outside this release. Unsigned Windows binaries may show SmartScreen warnings; self-signed certificates do not establish public publisher trust. No clean security audit is claimed. [Runtime inventory](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/native/runtime-components.json) · [Roadmap](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/ROADMAP.md).
 
-## Why do some media links need a login?
+## Build and verify
 
-Public content may work without logging in. A desktop downloader cannot automatically inherit the session from an open browser tab. Restricted stories, private posts, age checks and service-side bot checks may require cookies from your own authorized session.
+Clone this repository and use Windows, Node.js 24, npm and the .NET Framework C# compiler. Run `npm ci`, `npm test`, `npm run typecheck`, `npm run build:native`, `npm run test:native`, `npm run test:connected`, `npm run test:advanced` and `npm start`. Native SDK/engine archives are pinned and checksum-verified. `npm run build` builds the renderer; `npm run dist:win` builds native Windows artifacts. Retained Electron rollback/development commands are `dev:electron`, `start:electron`, `dist:electron:win` and `dist:electron:linux`; they are not the lightweight shipping runtime or native Linux acceptance.
 
-The extension can collect HTTP(S) media URLs already present in a page you can access. This is different from guaranteeing access to every video player: `blob:` objects, encrypted streams, expiring URLs and POST-based downloads may need a different integration. Baran does not bypass account permissions or DRM.
+Local checks cover unit/types, native downloads/resume, checksums, live caps, media fixtures, private local torrents, provider API contracts, mobile pairing, wake-task XML/registration, selected-interface sockets and tool archive verification. They do not establish live paid-provider success, real FFmpeg merging, every authenticated site, Chrome/cold-start capture, mixed-DPI visuals or screen-reader acceptance. [Validation](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/VALIDATION.md) · [Active work](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/WORK-ITEMS.md).
 
-## Scope & current limits
+Relevant inherited fixes are mapped in the [Pulse review](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/UPSTREAM-REVIEW-v1.0.16.md). The [MDM review](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/MDM-INTEGRATION-REVIEW.md) and [588-report catalogue](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/reviews/mdm-issues-2026-11-17.json) distinguish adapted behavior from unimplemented features; no MDM visuals or Rust engine were copied. [Project memory](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/MEMORY.md) and the [maintenance skill](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/.agents/skills/baran-maintenance/SKILL.md) record continuity. README and release descriptions are generated from full English/Persian block pairs with RTL checks.
 
-Upstream fixes are tracked in the bilingual [Pulse v1.0.16 review](docs/UPSTREAM-REVIEW-v1.0.16.md), with separate findings for the native and retained Electron engines and explicit test limits.
+## Credits and license
 
-Current maintenance state, verification and pending work are recorded in [project memory](MEMORY.md); the reusable [Baran maintenance skill](.agents/skills/baran-maintenance/SKILL.md) accompanies the source. Browser/Pulse fixes are tracked in [draft PR #1](https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1). Mozilla approved Firefox 1.0.2 on 2026-11-16; its [signed XPI](browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi) is preserved and selected for source builds. A new desktop/GitHub extension release and installed-browser acceptance are still pending.
-
-- A scanner can discover **linked files**, not hidden files that the server never lists. Traversal stays within the seed origin and containing directory. Remote subfolder recreation is not included in 1.0.
-- The native app persists the link review inbox, download tasks and scheduled times. Stable 2.0.0 requires Baran running. The 2.1 prereleases add optional Windows wake tasks, subject to OS/hardware/power-state support; they do not power on a shut-down computer.
-- Web proxy settings do not tunnel torrent peer or DHT traffic. Use an operating-system VPN when all torrent traffic must be routed. Authenticated proxy URLs are not supported in 1.0.
-- Instagram extraction depends on gallery-dl, Instagram availability and your access. Stories/private content may require an authorized session. CDN URLs can expire and need re-extraction.
-- Firefox 1.0.1 has a Mozilla-signed, self-distributed XPI. Chrome/Edge still use a development ZIP and await store publication. Native Messaging integration targets Windows; Linux source builds do not yet include that host.
-- The native package contains no WebTorrent/Node modules. Inherited npm findings remain in the legacy source/build environment; native dependencies have their own update needs. This is not a claim of a clean vulnerability audit. See [validation notes](docs/VALIDATION.md) and the [runtime inventory](native/runtime-components.json).
-
-## Build from source
-
-Use Windows, **Node.js 24**, npm and the Windows .NET Framework C# compiler. The build downloads pinned and checksum-verified native SDK/engine archives.
-
-```powershell
-git clone https://github.com/mehdiporbaba/Baran-Download-Manager.git
-cd Baran-Download-Manager
-npm ci
-npm test
-npm run typecheck
-npm run build:native
-npm run test:native
-npm start
-```
-
-```powershell
-npm run build
-npm run dist:win
-```
-
-The native target is Windows x64. The retained Electron implementation has explicit `dev:electron`, `start:electron`, `dist:electron:win` and `dist:electron:linux` commands for development/rollback. A retained Linux configuration is not a tested native Linux release. [Product roadmap](docs/ROADMAP.md).
+An independently maintained fork of [Pulse Download Manager](https://github.com/TheGreatAzizi/Pulse-Download-Manager). Original application copyright © 2026 TheGreatAzizi and Pulse contributors; Baran extensions, integration and identity © 2026 Mehdi Porbaba. Distributed under GNU GPL v3.0 or later; see [LICENSE](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/LICENSE). Source is in this repository. yt-dlp, gallery-dl, FFmpeg, Deno, aria2, WebView2, React, Electron, WebTorrent and other dependencies retain their respective licenses.
 
 <a id="fa"></a>
 
 <div dir="rtl" lang="fa" align="right">
-
-<h2>باران دانلود منیجر</h2>
-
-<p><strong>لینک‌ها را جمع‌آوری کنید. صف دانلودتان را برنامه‌ریزی کنید. اتصال را در اختیار بگیرید.</strong></p>
-
-<p>
-<a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest">دانلود</a> ·
-<a href="browser-extension">افزونهٔ مرورگر</a> ·
-<a href="docs/GUIDE.md">راهنمای راه‌اندازی</a> ·
-<a href="#en" dir="ltr">English</a>
-</p>
-
-<p>نسخهٔ پایدار: <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases"><span dir="ltr">2.0.0</span></a> · مجوز: <a href="LICENSE"><span dir="ltr">GPL-3.0-or-later</span></a> · سیستم‌عامل: ویندوز ۶۴ بیتی</p>
-
-<p><strong>مشکل نصب افزونهٔ فایرفاکس برطرف شد:</strong> از <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1">فایل <span dir="ltr">XPI</span> نسخهٔ <span dir="ltr">1.0.1</span> فایرفاکس با امضای موزیلا</a> استفاده کنید؛ سپس در باران، از بخش «تنظیمات ← اتصال مرورگرها» اتصال فایرفاکس را فعال کنید. از فایل قدیمی و بدون امضای مخصوص توسعه استفاده نکنید. <a href="docs/FIREFOX-SIGNING.md">جزئیات امضای افزونه</a>.</p>
-
-<p><strong>نسخهٔ پیش‌انتشار <span dir="ltr">2.1.0-beta.2</span>:</strong> پشتیبانی از <span dir="ltr">Real-Debrid</span>، کنترل موبایل با احراز هویت در شبکهٔ محلی خصوصی، تسک‌های بیدارکردن ویندوز و اتصال آزمایشی به اینترفیس <span dir="ltr">VPN</span> از طریق <span dir="ltr">IPv4</span> که فقط دانلودهای <span dir="ltr">HTTP</span> را پوشش می‌دهد. <a href="docs/RELEASE-2.1.0-beta.2.md">امکانات و محدودیت‌ها</a>. آخرین نسخهٔ پایدار دسکتاپ: <strong><span dir="ltr">2.0.0</span></strong>.</p>
-
-<h3>فضایی برای مدیریت همهٔ دانلودهای شما</h3>
-
-<p><span dir="ltr">Baran Download Manager</span> فایل‌های مستقیم، دانلودهای زمان‌بندی‌شده، لینک‌های مرورگر، رسانه‌ها و تورنت‌ها را در یک فضای کاری دسکتاپ کنار هم قرار می‌دهد. نسخهٔ ۲٫۰ از بخش پشتیِ بومی نوشته‌شده با <span dir="ltr">C#</span> و محیط اجرای مشترک <span dir="ltr">WebView2</span> ویندوز استفاده می‌کند: در ساخت‌های محلی، حجم نصب‌کننده حدود ۲٫۵ مگابایت و فایل فشردهٔ نسخهٔ قابل‌حمل حدود ۳٫۲ مگابایت است؛ بدون اینکه <span dir="ltr">Electron</span>، <span dir="ltr">Node.js</span> یا محیط اجرای <span dir="ltr">Chromium</span> همراه برنامه بسته‌بندی شود. برنامه با صفحهٔ «همهٔ دانلودها» و منوی جمع‌شونده باز می‌شود و صندوق لینک‌های آمادهٔ بررسی را روی دیسک نگه می‌دارد. <a href="docs/NATIVE.md">معماری و اندازه‌گیری‌ها</a>.</p>
-
-<p>این برنامه فورکی با نگه‌داری مستقل و مجوز <span dir="ltr">GPL</span> از <a href="https://github.com/TheGreatAzizi/Pulse-Download-Manager"><span dir="ltr">Pulse Download Manager</span></a> است که توسط <strong>مهدی پُربابا</strong> توسعه یافته است. نام پدیدآورندگان اصلی و اطلاعات مجوز در ادامه آمده است.</p>
-
-<h3>امکانات برنامه</h3>
-
-<table dir="rtl">
-<thead><tr><th align="right">بخش</th><th align="right">کارهایی که می‌توانید انجام دهید</th></tr></thead>
-<tbody>
-<tr><td align="right"><strong>لینک‌گیر</strong></td><td align="right">متن را جای‌گذاری یا فایل <span dir="ltr">TXT</span> را وارد کنید؛ لینک‌های تکراری را حذف، در دسترس بودن فایل‌ها را بررسی و پسوندها را فیلتر کنید؛ سپس موارد انتخاب‌شده را دانلود کنید.</td></tr>
-<tr><td align="right"><strong>اسکنر پوشه</strong></td><td align="right">فایل‌های لینک‌شده در فهرست پوشه‌های <span dir="ltr">HTML</span> یا ساختار درختی صفحات را پیدا کنید؛ با محدودیت عمق و تعداد صفحه، امکان لغو و پیش‌نمایش روشن نتایج.</td></tr>
-<tr><td align="right"><strong>زمان‌بندی</strong></td><td align="right">هنگام افزودن فایل یا مجموعه‌ای از فایل‌ها، تاریخ و ساعت محلی شروع را مشخص کنید. دانلودهای زمان‌بندی‌شده همراه صف دانلود ذخیره می‌شوند.</td></tr>
-<tr><td align="right"><strong>افزونهٔ مرورگر</strong></td><td align="right">فایل <span dir="ltr">XPI</span> فایرفاکس با امضای موزیلا، سورس نسخه‌های توسعهٔ <span dir="ltr">Chrome/Edge</span>، واگذاری اختیاری دانلود پس از تأیید دریافت و ثبت اتصال <span dir="ltr">Native Messaging</span> از داخل برنامه. انتشار عمومی در فروشگاه‌ها هنوز انجام نشده است.</td></tr>
-<tr><td align="right"><strong>لینک‌های منقضی‌شده</strong></td><td align="right">پس از بررسی اندازهٔ فایل، یک <span dir="ltr">ETag</span> قوی و مرز بخش‌های ذخیره‌شده، نشانی <span dir="ltr">HTTP</span> یک دانلود متوقف‌شده یا خطادار را جایگزین کنید؛ سپس بدون صفرشدن موقعیت دانلود، ادامه دهید.</td></tr>
-<tr><td align="right"><strong>یوتیوب و ویدیو</strong></td><td align="right">با <span dir="ltr">yt-dlp</span> کیفیت، صدا، زیرنویس و موارد دلخواه فهرست پخش را انتخاب کنید. ابزارهای اختیاری از بخش تنظیمات مدیریت می‌شوند.</td></tr>
-<tr><td align="right"><strong>اینستاگرام</strong></td><td align="right">با <span dir="ltr">gallery-dl</span> عکس‌ها، پست‌های ویدیویی، ریلز، پست‌های چنداسلایدی و استوری‌های در دسترس را در صندوق بررسی جمع‌آوری کنید.</td></tr>
-<tr><td align="right"><strong>کنترل تورنت</strong></td><td align="right">سقف سرعت دانلود و آپلود/سید را جداگانه تنظیم کنید و مشخص کنید که سیدکردن پس از تکمیل دانلود ادامه پیدا کند یا نه.</td></tr>
-<tr><td align="right"><strong>مسیریابی پراکسی</strong></td><td align="right">برای دانلودهای وب و ابزارهای رسانه، اتصال مستقیم، پراکسی خودکار سیستم/<span dir="ltr">PAC</span> یا پراکسی دستی <span dir="ltr">HTTP(S)/SOCKS</span> را انتخاب کنید.</td></tr>
-<tr><td align="right"><strong>یکپارچگی با دسکتاپ</strong></td><td align="right">اجرای خودکار نسخهٔ نصب‌شده با شروع ویندوز، کوچک‌شدن یا بسته‌شدن در ناحیهٔ اعلان سیستم، اعلان‌ها، فارسی راست‌به‌چپ و پوسته‌های روشن و تیره.</td></tr>
-</tbody>
-</table>
-
-<h3>دانلود و شروع کار</h3>
-
-<p><a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest">آخرین نسخهٔ منتشرشده</a> را باز کنید.</p>
-
+<h2 align="right">باران دانلود منیجر</h2>
+<p align="right"><a href="#en" dir="ltr">English</a></p>
+<p align="right"><strong>لینک‌ها را جمع‌آوری کنید. صف دانلودتان را برنامه‌ریزی کنید. اتصال را در اختیار بگیرید.</strong> فضای کاری آبی برای ویندوز ۱۰/۱۱ نسخهٔ ۶۴ بیتی، با فارسی راست‌چین و تم روشن/تاریک. نسخهٔ <strong>2.1.0</strong> از بخش پشتیِ بومی C# و WebView2 مشترک استفاده می‌کند؛ Electron، Node.js، محیط اجرای Chromium یا WebTorrent را در بسته ندارد. نصب‌کنندهٔ ویندوز فقط چند مگابایت است؛ ابزارهای اختیاری رسانه و محیط اجرای مشترک در صورت نبودن، جداگانه دانلود می‌شوند.</p>
+<p align="right"><a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest">دانلود آخرین انتشار</a> · <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.0.md">تغییرات، آزمون‌ها و محدودیت‌های 2.1.0</a> · <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md">راهنمای راه‌اندازی</a> · <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md">حریم خصوصی</a>.</p>
+<h3 align="right">فضای کاری دانلود شما</h3>
 <ul>
-<li><strong>نصب‌کننده:</strong> <span dir="ltr"><code>Baran-Download-Manager-Native-Setup-2.0.0-x64.exe</code></span> — نصب‌کنندهٔ کم‌حجم ویندوز همراه میان‌برها.</li>
-<li><strong>نسخهٔ قابل‌حمل:</strong> <span dir="ltr"><code>Baran-Download-Manager-Native-Portable-2.0.0-x64.zip</code></span> — فایل را در پوشه‌ای با محل ثابت استخراج و <span dir="ltr"><code>Baran Download Manager.exe</code></span> را اجرا کنید.</li>
-<li><strong>افزونه‌ها:</strong> فایل <span dir="ltr">ZIP</span> مخصوص توسعهٔ <span dir="ltr">Chrome/Edge</span>؛ برای فایرفاکس از <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/firefox-v1.0.1">نسخهٔ جداگانه با امضای موزیلا</a> استفاده کنید، نه فایل قدیمی و بدون امضای <span dir="ltr">XPI</span> که در نسخهٔ دسکتاپ ۲٫۰٫۰ قرار داشت.</li>
+<li align="right">دانلود HTTP چندبخشی، سقف سرعت سراسری و هر فایل، توقف/ادامه، SHA-256 مورد انتظار اختیاری و جایگزینی بررسی‌شدهٔ لینک منقضی. پیش از حفظ موقعیت بخش‌ها، یکسان‌بودن فایل و قابلیت ادامه بررسی می‌شود. شکست چک‌سام، دادهٔ ناقص را نگه می‌دارد و مانع تحویل فایل تکمیل‌شده می‌شود.</li>
+<li align="right">پنجره‌های مستقل دانلود، ظاهر آبی خود باران را حفظ می‌کنند: زبانه‌های وضعیت، سرعت و پایان/ابزارها، پیشرفت کلی، نقشهٔ بازه‌های فایل و ردیف اتصال‌ها. بستن یا پنهان‌کردن پنجره دانلود را ادامه می‌دهد. همان وظیفه را از فهرست یا Tray، بدون ساخت موتور دیگر باز کنید.</li>
+<li align="right">لینک‌گربر پایدار، متن چسبانده‌شده و فایل TXT را می‌پذیرد، لینک تکراری را حذف، دسترسی را بررسی، پسوندها را فیلتر و فایل‌های انتخابی را دانلود می‌کند. اسکنر محدود و بازگشتی پوشه/صفحه، فایل‌های لینک‌شده را پیش‌نمایش می‌دهد، سقف عمق/صفحه و لغو دارد و در مبدأ و پوشهٔ لینک آغازین می‌ماند. فایل پنهانی که سرور نمایش نمی‌دهد را پیدا نمی‌کند و زیرپوشه‌های راه‌دور را خودکار بازسازی نمی‌کند.</li>
+<li align="right">زمان‌بندی ذخیره‌شدهٔ فایل/گروه و تسک اختیاری WakeToRun ویندوز، باران را برای نزدیک‌ترین زمان صف اجرا می‌کنند. بیدارکردن نیازمند حساب واردشده، سخت‌افزار سازگار و مجازبودن Wake timer است؛ کامپیوتر خاموش را روشن نمی‌کند. برنامه با همهٔ دانلودها باز می‌شود؛ منوی سه‌خطی ابتدا بسته است، پس از ۱۵ ثانیه حضورنداشتن بسته می‌شود و با انتخاب کاربر همیشه باز می‌ماند. اجرای همراه ویندوز، Tray، اعلان و نمایش فضای دیسک نیز وجود دارند.</li>
+<li align="right">yt-dlp انتخاب کیفیت ویدیو، صدا، زیرنویس و فهرست پخش را انجام می‌دهد؛ gallery-dl پست، ریلز، کاروسل، عکس و استوری قابل‌دسترسی اینستاگرام را جمع می‌کند. تنظیمات ← ابزارها، yt-dlp، FFmpeg/ffprobe، Deno و ساخت شبانهٔ رسمی gallery-dl را با بررسی الزامی SHA-256 نصب/به‌روز می‌کند. مسیر سفارشی ابزار اولویت دارد. برای ادغام جریان‌های جدا و پس‌پردازش مربوط، FFmpeg لازم است؛ پس‌پردازش جدا از دریافت داده نمایش داده می‌شود.</li>
+<li align="right">بخش سرویس‌ها از لینک HTTP در Real-Debrid، AllDebrid، Premiumize و TorBox با توکن مستقل و رمزگذاری‌شده برای حساب ویندوز پشتیبانی می‌کند. فایل‌های تولیدشده برای انتخاب وارد لینک‌گربر می‌شوند. درخواست‌های تأخیردار AllDebrid و دانلود وب TorBox پس از بازکردن دوباره باقی می‌مانند و بدون ساخت درخواست دیگر بررسی می‌شوند. تولید لینک، نشانی شما را به سرویس انتخابی می‌فرستد و ممکن است سهمیه مصرف کند؛ محدودیت حساب/میزبان برقرار است. این قابلیت، مدیریت حساب تورنت ابری یا تمام گردش‌های انتخاب کیفیت استریم هر سرویس نیست.</li>
+<li align="right">کنترل اختیاری موبایل با احراز هویت روی شبکهٔ محلی خصوصیِ قابل اعتماد، نام/وضعیت وظیفه‌ها را نمایش می‌دهد، توقف/ادامه دارد و لینک را به صندوق بررسی می‌فرستد. از HTTP رمزگذاری‌نشده و کد اتصال قابل‌ابطال استفاده می‌کند، فایروال/Port forwarding را خودکار باز نمی‌کند و توکن سرویس‌ها یا مسیرهای محلی را در وضعیت موبایل نمایش نمی‌دهد.</li>
+<li align="right">مسیر مستقیم، سیستم/PAC یا HTTP(S)/SOCKS دستی، دانلود وب و درخواست رسانه را پوشش می‌دهد. سقف دانلود/آپلود تورنت و ارسال اختیاری جدا هستند. اتصال آزمایشی IPv4 به اینترفیس انتخابی، DNS دانلود HTTP و دریافت HTTP رسانه از پراکسی را بدون مسیر جایگزین پوشش می‌دهد؛ yt-dlp از دریافت‌کنندهٔ داخلی و FFmpeg از فایل محلی استفاده می‌کنند. با قطع اینترفیس، فرایند رسانه متوقف می‌شود. همتاها/DHT تورنت پراکسی نمی‌شوند و با اتصال اجباری به اینترفیس، تورنت مسدود است. Kill-switch کل سیستم یا حفاظت تضمینی IPv6/VPN برای ابزار خارجی دلخواه وجود ندارد.</li>
 </ul>
 
-<p>روی ویندوز ۱۰ یا ۱۱ نسخهٔ ۶۴ بیتی، نصب <span dir="ltr">.NET Framework</span> و محیط اجرای مشترک <span dir="ltr">Microsoft WebView2 Evergreen Runtime</span> لازم است. <span dir="ltr">WebView2</span> از قبل روی بسیاری از رایانه‌ها وجود دارد؛ در صورت نبود آن، باید جداگانه از مایکروسافت دانلود شود. خود برنامه بدون امضاست، مگر اینکه در اطلاعات انتشار صراحتاً امضای معتبر و تأییدشدهٔ ناشر ارائه شده باشد. گواهی خودامضا، مشکل اعتماد عمومی <span dir="ltr">SmartScreen</span> را برطرف نمی‌کند. ابزارهای اختیاری <span dir="ltr"><code>yt-dlp</code></span>، <span dir="ltr"><code>gallery-dl</code></span> و <span dir="ltr"><code>ffmpeg</code></span> جداگانه دریافت می‌شوند و ممکن است بسیار حجیم‌تر از خود باران باشند. کارکرد برنامه در برابر همهٔ چالش‌های سایت‌های مبدأ یا حساب‌های دارای محدودیت تضمین نمی‌شود.</p>
-
-<h3>اتصال مرورگرها</h3>
-
-<ol>
-<li>در <span dir="ltr"><code>chrome://extensions</code></span> یا <span dir="ltr"><code>edge://extensions</code></span>، گزینهٔ <span dir="ltr"><strong>Developer mode</strong></span> را روشن و <span dir="ltr"><strong>Load unpacked</strong></span> را انتخاب کنید.</li>
-<li>پوشهٔ استخراج‌شدهٔ <span dir="ltr"><code>browser-extension</code></span> را انتخاب کنید و شناسهٔ افزونه را کپی کنید.</li>
-<li>در باران، «تنظیمات ← اتصال مرورگرها» را باز کنید، مرورگر را انتخاب کنید، شناسهٔ نسخهٔ توسعهٔ افزونه را جای‌گذاری کنید و «فعال‌کردن اتصال» را بزنید. اجرای دستور <span dir="ltr">PowerShell</span> لازم نیست.</li>
-</ol>
-
-<p>افزونهٔ فایرفاکس شناسهٔ ثابتی دارد و نیازی به کپی‌کردن آن در باران نیست. فایل <span dir="ltr"><strong>signed.xpi</strong></span> آن برای توزیع مستقیم و نصب در فایرفاکس معمولی به تأیید موزیلا رسیده است. برای نصب آسان کاربران عادی، <span dir="ltr">Chrome/Edge</span> همچنان به انتشار در فروشگاه نیاز دارند؛ یک فایل سادهٔ <span dir="ltr">ZIP/CRX</span> الزامات فروشگاه را دور نمی‌زند. در پنجرهٔ افزونه می‌توانید واگذاری دانلودهای جدید <span dir="ltr">HTTP(S)</span> را فعال کنید؛ اگر باران نتواند دریافت لینک را تأیید کند، افزونه دانلود را در مرورگر ادامه می‌دهد. <a href="docs/GUIDE.md">راهنما</a> · <a href="browser-extension/PRIVACY.md">حریم خصوصی</a>.</p>
-
-<h3>چرا بعضی لینک‌های رسانه به ورود به حساب نیاز دارند؟</h3>
-
-<p>محتوای عمومی ممکن است بدون ورود قابل دریافت باشد. دانلودمنیجر دسکتاپ نمی‌تواند نشست ورود یک زبانهٔ باز مرورگر را خودکار به ارث ببرد. استوری‌های محدودشده، پست‌های خصوصی، بررسی سن و بررسی‌های ضدرباتِ سرویس ممکن است به کوکی‌های نشست مجاز خود شما نیاز داشته باشند.</p>
-
-<p>افزونه می‌تواند نشانی‌های رسانهٔ <span dir="ltr">HTTP(S)</span> را که از قبل در صفحهٔ قابل دسترس شما وجود دارند جمع‌آوری کند. این قابلیت به معنی تضمین دسترسی به همهٔ پخش‌کننده‌های ویدیو نیست: اشیای <span dir="ltr"><code>blob:</code></span>، جریان‌های رمزگذاری‌شده، نشانی‌های دارای انقضا و دانلودهای مبتنی بر درخواست <span dir="ltr">POST</span> ممکن است به نوع دیگری از اتصال نیاز داشته باشند. باران مجوزهای حساب یا حفاظت <span dir="ltr">DRM</span> را دور نمی‌زند.</p>
-
-<h3>دامنهٔ امکانات و محدودیت‌های فعلی</h3>
-
-<p>اصلاحات بالادستی در <a href="docs/UPSTREAM-REVIEW-v1.0.16.md">بررسی دوزبانهٔ Pulse نسخهٔ ۱.۰.۱۶</a> ثبت شده‌اند؛ یافته‌های موتور بومی و موتور باقی‌ماندهٔ <span dir="ltr">Electron</span> جدا مشخص شده و محدودیت آزمایش‌ها صریحاً آمده است.</p>
-
-<p>وضعیت فعلی نگه‌داری، بررسی‌ها و کارهای باقی‌مانده در <a href="MEMORY.md">حافظهٔ پروژه</a> ثبت شده‌اند؛ <a href=".agents/skills/baran-maintenance/SKILL.md">اسکیل قابل‌استفادهٔ مجدد نگه‌داری باران</a> نیز همراه سورس است. اصلاحات مرورگر و Pulse در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/pull/1">درخواست تغییر پیش‌نویس شمارهٔ ۱</a> دنبال می‌شوند. موزیلا فایرفاکس نسخهٔ <span dir="ltr">1.0.2</span> را در ۲۰۲۶/۱۱/۱۶ تأیید کرد؛ <a href="browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi">فایل XPI امضاشدهٔ آن</a> نگه‌داری و برای ساخت از سورس انتخاب شده است. انتشار جدید دسکتاپ/افزونه در گیت‌هاب و پذیرش عملی در مرورگر نصب‌شده همچنان باقی مانده‌اند.</p>
-
-<ul>
-<li>اسکنر می‌تواند <strong>فایل‌های لینک‌شده</strong> را پیدا کند؛ نه فایل‌های پنهانی که سرور هرگز فهرست نمی‌کند. پیمایش در همان مبدأ نشانی اولیه و پوشهٔ حاوی آن باقی می‌ماند. بازسازی زیرپوشه‌های مبدأ در نسخهٔ ۱٫۰ وجود ندارد.</li>
-<li>نسخهٔ بومی، صندوق لینک‌های آمادهٔ بررسی، وظایف دانلود و زمان‌های برنامه‌ریزی‌شده را ذخیره می‌کند. نسخهٔ پایدار <span dir="ltr">2.0.0</span> به درحال‌اجرا بودن باران نیاز دارد. پیش‌انتشارهای <span dir="ltr">2.1</span> وظیفهٔ اختیاری بیدارکردن ویندوز را اضافه می‌کنند که به پشتیبانی سیستم‌عامل، سخت‌افزار و وضعیت برق بستگی دارد؛ رایانهٔ خاموش را روشن نمی‌کنند.</li>
-<li>تنظیمات پراکسی وب، ترافیک همتایان تورنت یا <span dir="ltr">DHT</span> را از تونل عبور نمی‌دهد. اگر باید تمام ترافیک تورنت از مسیر مشخصی عبور کند، از <span dir="ltr">VPN</span> سیستم‌عامل استفاده کنید. نشانی‌های پراکسی دارای اطلاعات احراز هویت در نسخهٔ ۱٫۰ پشتیبانی نمی‌شوند.</li>
-<li>استخراج اینستاگرام به <span dir="ltr">gallery-dl</span>، در دسترس بودن اینستاگرام و سطح دسترسی شما بستگی دارد. استوری‌ها و محتوای خصوصی ممکن است به نشست مجاز نیاز داشته باشند. نشانی‌های <span dir="ltr">CDN</span> ممکن است منقضی شوند و نیاز به استخراج دوباره داشته باشند.</li>
-<li>فایرفاکس نسخهٔ <span dir="ltr">1.0.1</span> فایل <span dir="ltr">XPI</span> با امضای موزیلا و توزیع مستقیم دارد. افزونهٔ <span dir="ltr">Chrome/Edge</span> همچنان با فایل <span dir="ltr">ZIP</span> توسعه ارائه می‌شود و منتظر انتشار در فروشگاه است. اتصال <span dir="ltr">Native Messaging</span> برای ویندوز است؛ ساخت‌های سورس لینوکس هنوز این میزبان را ندارند.</li>
-<li>بستهٔ بومی شامل ماژول‌های <span dir="ltr">WebTorrent/Node</span> نیست. یافته‌های امنیتی به‌ارث‌رسیدهٔ <span dir="ltr">npm</span> همچنان در سورس و محیط ساخت نسخهٔ قدیمی وجود دارند؛ وابستگی‌های بومی نیز به‌روزرسانی‌های خاص خود را لازم دارند. این موضوع به معنی اعلام پاک‌بودن کامل ممیزی آسیب‌پذیری‌ها نیست. <a href="docs/VALIDATION.md">یادداشت‌های اعتبارسنجی</a> و <a href="native/runtime-components.json">فهرست اجزای محیط اجرا</a> را ببینید.</li>
-</ul>
-
-<h3>ساخت از روی سورس</h3>
-
-<p>از ویندوز، <span dir="ltr"><strong>Node.js 24</strong></span>، <span dir="ltr">npm</span> و کامپایلر <span dir="ltr">C#</span> مربوط به <span dir="ltr">.NET Framework</span> ویندوز استفاده کنید. فرایند ساخت، فایل‌های فشردهٔ ابزارهای توسعه و موتور بومی را با نسخهٔ ثابت و بررسی چک‌سام دانلود می‌کند.</p>
-
-<div dir="ltr" align="left">
-<pre dir="ltr"><code>git clone https://github.com/mehdiporbaba/Baran-Download-Manager.git
-cd Baran-Download-Manager
-npm ci
-npm test
-npm run typecheck
-npm run build:native
-npm run test:native
-npm start</code></pre>
-
-<pre dir="ltr"><code>npm run build
-npm run dist:win</code></pre>
-</div>
-
-<p>هدف ساخت بومی، ویندوز ۶۴ بیتی است. پیاده‌سازی قبلی <span dir="ltr">Electron</span> همچنان برای توسعه یا بازگشت به نسخهٔ قبلی نگه‌داری می‌شود و دستورهای مشخص <span dir="ltr"><code>dev:electron</code></span>، <span dir="ltr"><code>start:electron</code></span>، <span dir="ltr"><code>dist:electron:win</code></span> و <span dir="ltr"><code>dist:electron:linux</code></span> را دارد. وجود تنظیمات ساخت لینوکس به معنی ارائهٔ نسخهٔ بومیِ آزمایش‌شده برای لینوکس نیست. <a href="docs/ROADMAP.md">نقشهٔ راه محصول</a>.</p>
-
-<h3>پدیدآورندگان و مجوز</h3>
-
-<p>حق نشر برنامهٔ اصلی © ۲۰۲۶ متعلق به <span dir="ltr"><strong>TheGreatAzizi</strong></span> و مشارکت‌کنندگان اصلی <span dir="ltr">Pulse</span> است. حق نشر افزوده‌ها، یکپارچه‌سازی و هویت باران © ۲۰۲۶ متعلق به <strong>مهدی پُربابا</strong> است.</p>
-
-<p>برنامه با <strong>مجوز عمومی همگانی گنو، نسخهٔ ۳٫۰ یا بالاتر</strong> توزیع می‌شود. <a href="LICENSE">متن مجوز</a> را ببینید. سورس این نسخه در همین مخزن در دسترس است. <span dir="ltr">yt-dlp</span>، <span dir="ltr">gallery-dl</span>، <span dir="ltr">ffmpeg</span>، <span dir="ltr">Electron</span>، <span dir="ltr">WebTorrent</span> و سایر وابستگی‌ها مجوزهای مربوط به خود را حفظ می‌کنند.</p>
+<h3 align="right">نصب و اتصال</h3>
+<p align="right">پیش از ارتقا، دانلود فعال را تمام یا متوقف و از منوی Tray باران Quit را انتخاب کنید. فایل <span dir="ltr"><code>Baran-Download-Manager-Native-Setup-2.1.0-x64.exe</code></span> را اجرا کنید، یا <span dir="ltr"><code>Baran-Download-Manager-Native-Portable-2.1.0-x64.zip</code></span> را باز و <span dir="ltr"><code>Baran Download Manager.exe</code></span> را اجرا کنید. نصاب مسیر میزبان مرورگر را تازه و فایرفاکس را ثبت می‌کند؛ کاربران قابل‌حمل پس از جابه‌جایی پوشه از ترمیم اتصال استفاده کنند. وظیفه، صندوق لینک و فایل ناقص در پروفایل شما می‌مانند. ویندوز ۶۴ بیتی به .NET Framework نسخهٔ 4.6.2 یا بالاتر (4.8 پیشنهاد می‌شود) و Microsoft WebView2 Evergreen نیاز دارد.</p>
+<p align="right">فایرفاکس: تنظیمات ← اتصال مرورگرها ← نصب و اتصال Firefox، فایل همراه با امضای موزیلا یعنی <span dir="ltr"><code>Baran-Firefox-Extension-1.0.2-signed.xpi</code></span> را باز می‌کند. Add را در فایرفاکس تأیید کنید؛ کپی شناسه یا PowerShell لازم نیست. در افزونه ابتدا Check connection و سپس Use Baran for new downloads را فعال و دسترسی مرورگر را تأیید کنید. دسکتاپ قدیمی بتا ۲ ممکن است Unsupported browser command نشان دهد و تیک را بردارد؛ برنامه را ارتقا دهید. کاربر تأیید کرد کلیک واقعی ZIP گیت‌هاب در فایرفاکس با بتا ۳، دانلود جدید را باز می‌کند. <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md">شواهد امضا</a>.</p>
+<p align="right">کروم/اج: انتشار فروشگاهی باقی است چون مالک هنوز حساب توسعه‌دهنده ندارد. بستهٔ ارسال به استور در انتشار وجود دارد و نصب‌کنندهٔ تأییدشدهٔ استور نیست. برای توسعه، پوشهٔ آمادهٔ افزونه را از باران باز کنید، در <span dir="ltr"><code>chrome://extensions</code></span> یا <span dir="ltr"><code>edge://extensions</code></span> با Developer mode روشن، Load unpacked را بزنید، شناسه را کپی و در باران اتصال مرورگر را فعال کنید. نصاب شناسه‌های ثبت‌شده را هنگام ارتقا حفظ می‌کند. لینک جعلی استور، دورزدن سیاست سازمانی یا خاموش‌کردن خودکار افزونهٔ دیگر وجود ندارد. فایرفاکس به دانلودمنیجر اولویت انحصاری نمی‌دهد. دریافت مرورگر فقط پس از تأیید دسکتاپ لغو می‌شود و با شکست اتصال حفظ/ادامه داده می‌شود.</p>
+<h3 align="right">نشست رسانه و محدودیت‌ها</h3>
+<p align="right">رسانهٔ عمومی ممکن است بدون ورود کار کند؛ بازبودن تب مرورگر خودکار نشست آن را به باران نمی‌دهد. پست خصوصی، استوری محدود، بررسی سن و آزمون ربات ممکن است به نشست مجاز خودتان یا فایل کوکی انتخاب‌شده در تنظیمات ← ابزارها نیاز داشته باشد. افزونه نشانی HTTP(S) قابل مشاهده را جمع می‌کند، نه کوکی، هدر Authorization، رمز عبور یا بدنهٔ POST. دانلود blob/POST/DRM یا تمام سایت‌ها تضمین نمی‌شود. لینک CDN منقضی ممکن است استخراج دوباره بخواهد؛ جایگزینی دستی همچنان هویت فایل را بررسی می‌کند.</p>
+<p align="right">این انتشار برای ویندوز بومی ۶۴ بیتی است. بستهٔ بومی لینوکس/macOS، امضای معتبر عمومی ویندوز، عرضه در استور مرورگر، گرفتن خودکار لینک منقضی و محصورسازی کامل VPN/پراکسی تورنت در این انتشار نیستند. فایل بدون امضای ویندوز ممکن است SmartScreen نشان دهد؛ گواهی خودامضا اعتماد عمومی ناشر ایجاد نمی‌کند. ادعای ممیزی امنیتی بی‌نقص نداریم. <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/native/runtime-components.json">فهرست اجزای اجرا</a> · <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/ROADMAP.md">نقشهٔ راه</a>.</p>
+<h3 align="right">ساخت و بررسی</h3>
+<p align="right">این مخزن را دریافت کنید و از ویندوز، Node.js نسخهٔ ۲۴، npm و کامپایلر C# در .NET Framework استفاده کنید. دستورهای <span dir="ltr"><code>npm ci</code></span>، <span dir="ltr"><code>npm test</code></span>، <span dir="ltr"><code>npm run typecheck</code></span>، <span dir="ltr"><code>npm run build:native</code></span>، <span dir="ltr"><code>npm run test:native</code></span>، <span dir="ltr"><code>npm run test:connected</code></span>، <span dir="ltr"><code>npm run test:advanced</code></span> و <span dir="ltr"><code>npm start</code></span> را اجرا کنید. آرشیو SDK/موتور بومی با نسخه و هش ثابت بررسی می‌شود. <span dir="ltr"><code>npm run build</code></span> رابط و <span dir="ltr"><code>npm run dist:win</code></span> بستهٔ بومی ویندوز را می‌سازد. دستورهای نگه‌داری‌شدهٔ Electron برای توسعه/بازگشت عبارت‌اند از <span dir="ltr"><code>dev:electron</code></span>، <span dir="ltr"><code>start:electron</code></span>، <span dir="ltr"><code>dist:electron:win</code></span> و <span dir="ltr"><code>dist:electron:linux</code></span>؛ این‌ها محیط اجرای سبکِ عرضه‌شده یا پذیرش نسخهٔ بومی لینوکس نیستند.</p>
+<p align="right">بررسی محلی، واحد/نوع‌ها، دانلود و ادامهٔ بومی، چک‌سام، سقف زنده، ابزار آزمایشی رسانه، تورنت خصوصی محلی، قرارداد API سرویس، اتصال موبایل، XML/ثبت تسک بیدارکردن، سوکت اینترفیس انتخابی و آرشیو ابزار را پوشش می‌دهد. این آزمون‌ها موفقیت زندهٔ سرویس پولی، ادغام واقعی FFmpeg، تمام سایت‌های نیازمند ورود، دریافت کروم/شروع با برنامهٔ بسته، ظاهر در DPI متفاوت یا پذیرش صفحه‌خوان را اثبات نمی‌کنند. <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/VALIDATION.md">اعتبارسنجی</a> · <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/WORK-ITEMS.md">کارهای فعال</a>.</p>
+<p align="right">اصلاحات مرتبطِ به‌ارث‌رسیده در <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/UPSTREAM-REVIEW-v1.0.16.md">بررسی Pulse</a> نگاشت شده‌اند. <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/MDM-INTEGRATION-REVIEW.md">بررسی MDM</a> و <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/reviews/mdm-issues-2026-11-17.json">فهرست ۵۸۸ گزارش</a>، عملکرد تطبیق‌یافته را از امکانات پیاده‌نشده جدا می‌کنند؛ ظاهر یا موتور Rust برنامهٔ MDM کپی نشده است. <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/MEMORY.md">حافظهٔ پروژه</a> و <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/.agents/skills/baran-maintenance/SKILL.md">اسکیل نگهداری</a> تداوم کار را ثبت می‌کنند. README و توضیحات انتشار از جفت‌بخش‌های کامل انگلیسی/فارسی با بررسی RTL تولید می‌شوند.</p>
+<h3 align="right">پدیدآورندگان و مجوز</h3>
+<p align="right">فورکی با نگهداری مستقل از <a href="https://github.com/TheGreatAzizi/Pulse-Download-Manager">Pulse Download Manager</a> است. حق نشر برنامهٔ اصلی © ۲۰۲۶ متعلق به TheGreatAzizi و مشارکت‌کنندگان Pulse؛ افزوده‌ها، یکپارچه‌سازی و هویت باران © ۲۰۲۶ متعلق به مهدی پُربابا است. با مجوز عمومی همگانی گنو نسخهٔ ۳ یا بالاتر عرضه می‌شود؛ <a href="https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/LICENSE">LICENSE</a> را ببینید. سورس در همین مخزن است. yt-dlp، gallery-dl، FFmpeg، Deno، aria2، WebView2، React، Electron، WebTorrent و سایر وابستگی‌ها مجوز مربوط به خود را حفظ می‌کنند.</p>
 
 </div>
-
-## Credits & license
-
-Copyright © 2026 **TheGreatAzizi** and the original Pulse contributors for the upstream application. Baran extensions, integration and identity © 2026 **Mehdi Porbaba**.
-
-Distributed under **GNU GPL v3.0 or later**. See [LICENSE](LICENSE). Source for this release is available in this repository. yt-dlp, gallery-dl, ffmpeg, Electron, WebTorrent and other dependencies retain their respective licenses.

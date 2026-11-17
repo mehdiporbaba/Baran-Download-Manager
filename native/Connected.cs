@@ -14,12 +14,12 @@ namespace Baran {
   public sealed class UserSecrets {
     readonly string path;
     readonly object gate = new object();
-    public UserSecrets(string root) { path = Path.Combine(root, "connected-secrets.bin"); }
+    public UserSecrets(string root, string name = "connected-secrets") { if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^[a-z-]+$")) throw new ArgumentException("Invalid vault name"); path = Path.Combine(root, name + ".bin"); }
     public bool Exists { get { lock (gate) return File.Exists(path); } }
     public string Read() { lock (gate) { try { return File.Exists(path) ? Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(path), null, DataProtectionScope.CurrentUser)) : ""; } catch (CryptographicException) { throw new Exception("This token belongs to another Windows account or is damaged. Remove it and enter a new token."); } } }
     public void Write(string token) {
       lock (gate) {
-      if (token.Length > 4096 || token.Any(Char.IsWhiteSpace)) throw new Exception("Invalid Real-Debrid token");
+      if (token.Length > 4096 || token.Any(Char.IsWhiteSpace)) throw new Exception("Invalid provider token");
       if (token.Length == 0) { if (File.Exists(path)) File.Delete(path); return; }
       byte[] bytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(token), null, DataProtectionScope.CurrentUser);
       string temp = path + ".tmp"; File.WriteAllBytes(temp, bytes);
