@@ -1,5 +1,29 @@
 # Baran Download Manager — user guide
 
+## Current Windows 2.1.0 setup
+
+Download [2.1.0](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/v2.1.0). Finish/pause transfers and Quit Baran from Tray before upgrading. Setup refreshes browser-host paths; Portable users use Repair connection after moving their folder. Existing tasks, Inbox and partial files remain. Windows x64 needs .NET Framework 4.6.2+ (4.8 recommended) and shared WebView2. Unsigned Windows binaries may show SmartScreen warnings.
+
+Firefox: Settings → Browser integration → Install & connect Firefox opens the bundled **Mozilla-signed 1.0.2 XPI**. Confirm Add in Firefox, open the extension, choose Check connection, then enable **Use Baran for new downloads** and grant its requested permissions. No copied ID or PowerShell is needed. Desktop beta.2's Unsupported browser command requires a desktop upgrade. A real Firefox ZIP click opening New download was confirmed by the user on beta.3. Fully quit-app startup and real Chrome acceptance remain pending.
+
+Chrome/Edge: the owner has no store developer account yet. Open the prepared extension folder from Baran; use Load unpacked with Developer mode in `chrome://extensions` or `edge://extensions`, then copy its ID into Baran and Connect browser. The store-submission ZIP is for the publisher, not an ordinary-user installer. Firefox's self-distributed extension has no automatic update feed; keep signature protection enabled and avoid unsigned developer XPIs. Baran cannot disable another extension or claim exclusive browser priority.
+
+Double-click/Enter on a task opens its independent progress window; closing/hiding keeps downloading. Speed sets a per-file HTTP cap in KiB/s, with the global cap also applying; zero is unlimited. Completion/tools offers verified expired-link replacement and an expected SHA-256 while paused. A mismatch keeps partial data and blocks final completion. Optional media tools install/update from Settings → Tools with required digest checks; gallery-dl uses official nightly builds. Custom paths still take priority.
+
+The complete current English/Persian instructions, features, prerequisites and limitations are in the [README](../README.md). Provider accounts, durable pending jobs, mobile pairing, wake tasks and experimental HTTP/media VPN routing are explained in [advanced services](ADVANCED-SERVICES.md). Torrent proxy/VPN confinement and native Linux/macOS are deferred; torrents are blocked while interface binding is enabled. There is no system-wide kill switch or guarantee for every live account/site.
+
+<div dir="rtl" lang="fa" align="right">
+<h2>راه‌اندازی فعلی ویندوز ۲٫۱٫۰</h2>
+<p><a href="https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/v2.1.0">نسخهٔ ۲٫۱٫۰</a> را دریافت کنید. پیش از ارتقا دانلود را تمام/متوقف و از Tray باران Quit را انتخاب کنید. نصاب مسیر میزبان مرورگر را تازه می‌کند؛ کاربران قابل‌حمل پس از جابه‌جایی پوشه ترمیم اتصال بزنند. وظیفه، صندوق و فایل ناقص می‌مانند. ویندوز ۶۴ بیتی، .NET Framework نسخهٔ ۴٫۶٫۲ یا بالاتر (۴٫۸ پیشنهاد می‌شود) و WebView2 مشترک لازم دارد. فایل بدون امضای ویندوز ممکن است SmartScreen نشان دهد.</p>
+<p>فایرفاکس: تنظیمات ← اتصال مرورگرها ← نصب و اتصال Firefox، <strong>XPI همراه ۱٫۰٫۲ با امضای موزیلا</strong> را باز می‌کند. Add را در فایرفاکس تأیید، افزونه را باز و Check connection را بزنید؛ سپس <span dir="ltr">Use Baran for new downloads</span> و دسترسی‌های درخواستی را فعال کنید. کپی شناسه یا PowerShell لازم نیست. پیام Unsupported browser command در دسکتاپ بتا ۲، ارتقای برنامه را می‌خواهد. بازشدن دانلود جدید با کلیک واقعی ZIP در فایرفاکس بتا ۳ توسط کاربر تأیید شده است. شروع با برنامهٔ کاملاً بسته و کروم واقعی هنوز پذیرش می‌خواهند.</p>
+<p>کروم/اج: مالک هنوز حساب توسعه‌دهندهٔ استور ندارد. پوشهٔ آمادهٔ افزونه را از باران باز، در <span dir="ltr">chrome://extensions</span> یا <span dir="ltr">edge://extensions</span> با Developer mode روشن Load unpacked را بزنید، سپس شناسه را در باران وارد و اتصال مرورگر را فعال کنید. ZIP ارسال استور برای ناشر است، نه نصب‌کنندهٔ کاربر عادی. افزونهٔ شخصی فایرفاکس منبع به‌روزرسانی خودکار ندارد؛ حفاظت امضا را روشن نگه دارید و XPI توسعهٔ بدون امضا را نصب نکنید. باران نمی‌تواند افزونهٔ دیگر را خاموش یا اولویت انحصاری مرورگر را تصاحب کند.</p>
+<p>دوبارکلیک/Enter روی وظیفه، پنجرهٔ مستقل پیشرفت را باز می‌کند؛ بستن/پنهان‌کردن دانلود را ادامه می‌دهد. سرعت، سقف هر فایل HTTP را بر حسب KiB/s تعیین می‌کند و سقف سراسری نیز برقرار است؛ صفر یعنی نامحدود. پایان/ابزارها، جایگزینی بررسی‌شدهٔ لینک منقضی و SHA-256 مورد انتظار در حالت توقف را دارد. عدم تطابق، دادهٔ ناقص را نگه می‌دارد و مانع تکمیل نهایی می‌شود. ابزار اختیاری رسانه از تنظیمات ← ابزارها با بررسی الزامی هش نصب/به‌روز می‌شود؛ gallery-dl ساخت شبانهٔ رسمی است. مسیر سفارشی همچنان اولویت دارد.</p>
+<p>راهنمای کامل فعلی انگلیسی/فارسی، امکانات، پیش‌نیاز و محدودیت در <a href="../README.md">README</a> است. حساب سرویس، درخواست منتظر پایدار، اتصال موبایل، بیدارکردن و مسیر آزمایشی VPN برای HTTP/رسانه در <a href="ADVANCED-SERVICES.md">سرویس‌های پیشرفته</a> شرح داده شده‌اند. محصورسازی پراکسی/VPN تورنت و نسخهٔ بومی لینوکس/macOS موکول شده‌اند؛ با اتصال اجباری اینترفیس، تورنت مسدود است. Kill-switch کل سیستم یا تضمین تمام حساب‌ها/سایت‌های زنده وجود ندارد.</p>
+</div>
+
+<details>
+<summary>Archived earlier guide and source-only developer registration — superseded by the 2.1.0 instructions above / راهنمای قبلی و ثبت مخصوص توسعه؛ دستورهای ۲٫۱٫۰ بالا اولویت دارند</summary>
+
 ## Windows setup
 
 The native version opens **All downloads** at launch. The menu starts closed; use the three-line button in the title bar. When neither pointer nor keyboard focus is inside the open menu for 15 seconds, it closes. **Settings → General → Keep navigation menu open** keeps it visible across restarts. In Persian it opens on the right. Escape also closes an unpinned menu.
@@ -71,3 +95,5 @@ Repository: https://github.com/mehdiporbaba/Baran-Download-Manager
 Original upstream: https://github.com/TheGreatAzizi/Pulse-Download-Manager
 
 License: GPL-3.0-or-later. See LICENSE and docs/VALIDATION.md.
+
+</details>
