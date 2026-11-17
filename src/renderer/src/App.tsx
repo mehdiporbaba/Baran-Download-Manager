@@ -135,7 +135,7 @@ export function App(): React.JSX.Element {
             <GithubBrowser />
           ) : (
             <>
-              <StatsStrip />
+              {view !== 'all' && <StatsStrip />}
               <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                   {loadError ? (
@@ -154,6 +154,7 @@ export function App(): React.JSX.Element {
                 </div>
                 <DetailPanel />
               </div>
+              {view === 'all' && <StatsStrip />}
             </>
           )}
         </main>

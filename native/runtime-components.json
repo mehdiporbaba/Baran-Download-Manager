@@ -1,6 +1,6 @@
 {
   "application": "Baran Download Manager",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "platform": "Windows x64",
   "sharedPrerequisites": [
     "Microsoft .NET Framework 4.6.2 or later (4.8 recommended)",
