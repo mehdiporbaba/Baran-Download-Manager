@@ -10,6 +10,7 @@ import {
   Play,
   RotateCw,
   Link2,
+  MoreHorizontal,
   Search,
   Trash2,
   Trash,
@@ -48,7 +49,7 @@ function matchesView(task: DownloadTask, view: ViewId): boolean {
 }
 
 export function DownloadList(): React.JSX.Element {
-  const { t, tasks, view, query, sort, setSort, setSelectedId, selectedId, pushToast, openAdd, stats } =
+  const { t, lang, tasks, view, query, sort, setSort, setSelectedId, selectedId, pushToast, openAdd, stats } =
     useApp()
   const [removeTarget, setRemoveTarget] = useState<DownloadTask | null>(null)
   const [deleteFile, setDeleteFile] = useState(false)
@@ -151,7 +152,7 @@ export function DownloadList(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="scroll-y flex-1 px-5 pb-4">
+      <div className={cn('scroll-y min-h-0 flex-1', view === 'all' ? 'compact-downloads px-3 pb-2' : 'px-5 pb-4')}>
         {filtered.length === 0 ? (
           <EmptyState
             filtered={tasks.length > 0}
@@ -161,11 +162,13 @@ export function DownloadList(): React.JSX.Element {
             addLabel={t.empty.add}
           />
         ) : (
-          <div className="space-y-2 pb-2">
+          <div className={view === 'all' ? 'compact-download-table pb-2' : 'space-y-2 pb-2'} role={view === 'all' ? 'table' : undefined} aria-label={view === 'all' ? t.nav.all : undefined}>
+            {view === 'all' && <div className="compact-download-grid compact-download-header" role="row"><span role="columnheader">{lang === 'fa' ? 'نام فایل / مبدأ' : 'File / source'}</span><span role="columnheader">{lang === 'fa' ? 'دریافت‌شده / حجم / پیشرفت' : 'Received / size / progress'}</span><span role="columnheader" className="compact-status">{lang === 'fa' ? 'وضعیت' : 'Status'}</span><span role="columnheader" className="compact-transfer">{lang === 'fa' ? 'سرعت / زمان باقی‌مانده' : 'Speed / time left'}</span><span role="columnheader">{lang === 'fa' ? 'عملیات' : 'Actions'}</span></div>}
             {filtered.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
+                compact={view === 'all'}
                 selected={selectedId === task.id}
                 onSelect={() => setSelectedId(task.id)}
                 onSchedule={() => setScheduleTarget(task)}
@@ -179,7 +182,7 @@ export function DownloadList(): React.JSX.Element {
             ))}
           </div>
         )}
-        {stats && stats.activeCount > 0 ? (
+        {view !== 'all' && stats && stats.activeCount > 0 ? (
           <div className="pb-4 text-center text-[10px] text-faint">
             {stats.activeCount} {t.stats.active.toLowerCase()} · {formatSpeed(stats.downSpeed)}
           </div>
@@ -277,6 +280,7 @@ function ScheduleDialog({ task, onClose }: { task: DownloadTask; onClose: () => 
 
 function TaskRow({
   task,
+  compact = false,
   selected,
   onSelect,
   onRemove,
@@ -285,6 +289,7 @@ function TaskRow({
   onToast
 }: {
   task: DownloadTask
+  compact?: boolean
   selected: boolean
   onSelect: () => void
   onRemove: () => void
@@ -293,8 +298,10 @@ function TaskRow({
   onToast: (level: 'info' | 'success' | 'error', message: string) => void
 }): React.JSX.Element {
   const { t, lang } = useApp()
+  const [moreOpen, setMoreOpen] = useState(false)
   const percent = percentOf(task)
   const active = task.status === 'downloading'
+  const pausable = active || ['queued', 'connecting', 'verifying'].includes(task.status)
   const paused = task.status === 'paused' || task.status === 'error' || task.status === 'canceled'
   const completed = task.status === 'completed'
 
@@ -317,7 +324,7 @@ function TaskRow({
   const primaryAction = (): void => {
     if (completed) {
       void window.pulse.openTask(task.id)
-    } else if (active || task.status === 'queued' || task.status === 'connecting') {
+    } else if (pausable) {
       void window.pulse.pauseTask(task.id)
     } else if (paused) {
       void window.pulse.resumeTask(task.id)
@@ -331,6 +338,29 @@ function TaskRow({
     } catch {
       onToast('error', 'Clipboard unavailable')
     }
+  }
+
+  if (compact) {
+    const openProgress = (): void => { onSelect(); if (window.pulse.openProgressWindow) void window.pulse.openProgressWindow(task.id).catch(error => onToast('error', error.message)) }
+    const speed = active ? formatSpeed(task.speed) : '—'
+    const eta = active ? formatEta(task.eta, lang) : '—'
+    return <>
+      <div role="row" tabIndex={0} aria-selected={selected} className={cn('compact-download-grid compact-download-row row-hover', selected && 'row-selected')} onClick={onSelect} onDoubleClick={openProgress} onContextMenu={event => { event.preventDefault(); onSelect(); setMoreOpen(true) }} onKeyDown={event => { if (event.target === event.currentTarget && event.key === 'Enter') { event.preventDefault(); openProgress() } }}>
+        <div role="cell" className="flex min-w-0 items-center gap-2"><KindIcon task={task} size={30}/><div className="min-w-0"><div className="truncate text-[13px] font-semibold" dir="auto" title={task.name}>{task.name}</div><div className="truncate text-xs text-muted" dir="auto" title={metaParts.join(' · ')}><span className="compact-inline-status">{t.status[task.status]} · </span>{metaParts.join(' · ')}</div><div className="compact-inline-transfer text-xs tabular text-muted">{speed} · {t.row.eta} {eta}</div></div></div>
+        <div role="cell" className="min-w-0 space-y-1"><div className="flex items-center justify-between gap-2 text-xs tabular"><span className="truncate" dir="ltr">{formatBytes(task.downloaded)} / {task.size > 0 ? formatBytes(task.size) : '?'}</span><strong className="shrink-0 text-brand">{task.size > 0 ? `${percent.toFixed(0)}%` : '—'}</strong></div><ProgressBar task={task}/></div>
+        <div role="cell" className="compact-status"><StatusPill status={task.status} label={t.status[task.status]}/></div>
+        <div role="cell" className="compact-transfer min-w-0 text-xs tabular"><div className={active ? 'font-semibold text-brand2' : 'text-muted'}>{speed}</div><div className="truncate text-muted" title={`${t.row.eta} ${eta}`}>{t.row.eta} {eta}</div></div>
+        <div role="cell" className="flex items-center justify-end gap-1" onDoubleClick={event => event.stopPropagation()}><button type="button" className="icon-btn h-8 w-8" aria-label={completed ? t.row.open : pausable ? t.row.pause : t.row.resume} title={completed ? t.row.open : pausable ? t.row.pause : t.row.resume} onClick={event => { event.stopPropagation(); primaryAction() }}>{completed ? <ExternalLink size={15}/> : pausable ? <Pause size={15}/> : <Play size={15}/>}</button><button type="button" className="icon-btn h-8 w-8" aria-label={lang === 'fa' ? 'عملیات بیشتر' : 'More actions'} title={lang === 'fa' ? 'عملیات بیشتر' : 'More actions'} onClick={event => { event.stopPropagation(); onSelect(); setMoreOpen(true) }}><MoreHorizontal size={17}/></button></div>
+      </div>
+      <Modal open={moreOpen} onClose={() => setMoreOpen(false)} width={420}><div className="space-y-4 p-5"><h2 className="break-words pe-6 text-sm font-semibold" dir="auto">{task.name}</h2><div className="flex flex-wrap gap-2">
+        <button className="btn btn-primary" onClick={() => { setMoreOpen(false); openProgress() }}>{lang === 'fa' ? 'پنجرهٔ دانلود' : 'Download window'}</button>
+        <button className="btn btn-ghost" onClick={() => { setMoreOpen(false); void window.pulse.revealTask(task.id) }}><FolderOpen size={14}/>{t.row.folder}</button>
+        <button className="btn btn-ghost" onClick={() => { setMoreOpen(false); void copyLink() }}><Copy size={14}/>{t.row.copy}</button>
+        {!completed && !['connecting','downloading','verifying'].includes(task.status) && <button className="btn btn-ghost" onClick={() => { setMoreOpen(false); onSchedule() }}><CalendarClock size={14}/>{lang === 'fa' ? 'زمان‌بندی' : 'Schedule'}</button>}
+        {task.kind === 'http' && task.downloaded > 0 && ['paused','error'].includes(task.status) && <button className="btn btn-ghost" onClick={() => { setMoreOpen(false); onReplace() }}><Link2 size={14}/>{lang === 'fa' ? 'جایگزینی لینک' : 'Replace link'}</button>}
+        <button className="btn btn-ghost text-bad" onClick={() => { setMoreOpen(false); onRemove() }}><Trash2 size={14}/>{t.row.remove}</button>
+      </div>{task.error && <p className="break-words text-xs text-bad">{task.error}</p>}</div></Modal>
+    </>
   }
 
   return (
@@ -432,7 +462,7 @@ function TaskRow({
           >
             {completed ? (
               <ExternalLink size={14} />
-            ) : active || task.status === 'queued' || task.status === 'connecting' ? (
+            ) : pausable ? (
               <Pause size={14} />
             ) : task.status === 'error' ? (
               <RotateCw size={14} />

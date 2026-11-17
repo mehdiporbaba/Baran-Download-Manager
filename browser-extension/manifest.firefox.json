@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Baran Download Manager — Browser Extension",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Collect links and optionally hand browser downloads to the Baran inbox.",
   "permissions": [
     "contextMenus",

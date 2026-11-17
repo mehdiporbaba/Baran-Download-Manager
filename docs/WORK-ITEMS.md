@@ -1,5 +1,11 @@
 # Active Baran work
 
+## Prepared 2.1.2 fixes, not published
+
+ZIP/CDN capture without Content-Disposition is fixed in extension source 1.0.3, which is lint-clean and has a verified Mozilla-signed package. The installed signed 1.0.2 does not contain the fix. Desktop source adds a native theme-matched loading cover, pre-CSS theme bootstrap, native resize edges and saved normal/maximized window placement with monitor fitting. Unit, window and native/connected/advanced checks pass; visible first-paint, real corner dragging/restart and actual Firefox 1.0.3 remain acceptance items. GitHub connector access is restored; CLI has no credentials. Compact responsive All downloads rows, inline search and a short statistics strip are prepared; final build/publication is in progress. Stable v2.1.1 remains unchanged.
+
+<div dir="rtl" lang="fa" align="right"><h2>اصلاحات آمادهٔ ۲٫۱٫۲، منتشرنشده</h2><p>دریافت ZIP/CDN بدون Content-Disposition در سورس افزونهٔ ۱٫۰٫۳ اصلاح، lint موفق و بستهٔ امضاشدهٔ موزیلا بررسی شده است. نسخهٔ امضاشدهٔ ۱٫۰٫۲ نصب‌شده این اصلاح را ندارد. سورس دسکتاپ، پوشش بارگذاری بومیِ هم‌رنگ تم، اعمال تم پیش از CSS، لبهٔ تغییر اندازهٔ بومی و ذخیرهٔ اندازهٔ عادی/حداکثر با تطبیق مانیتور را دارد. آزمون واحد، پنجره و یکپارچه‌سازی بومی/متصل/پیشرفته پاس است؛ ظاهر اولین نمایش، کشیدن واقعی گوشه/اجرای دوباره و فایرفاکس ۱٫۰٫۳ هنوز پذیرش می‌خواهند. اتصال گیت‌هاب برگشته است؛ CLI احراز هویت ندارد. ردیف‌های فشرده و واکنش‌گرای All downloads، جست‌وجوی بالای صفحه و نوار کوتاه آمار آماده‌اند؛ ساخت نهایی/انتشار در حال انجام است. پایدار ۲٫۱٫۱ تغییر نکرده است.</p></div>
+
 Windows v2.1.1 is now published: the default All downloads list is above summary statistics. Build/publish, validation and Gitleaks passed; 2.1.0 assets remain unchanged.
 
 Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication with explicit limits. Release v2.1.0 is published as stable/latest after successful CI; prior release assets stay unchanged.

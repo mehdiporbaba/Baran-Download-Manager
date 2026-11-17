@@ -21,6 +21,15 @@ export function DownloadProgressWindow({ taskId }: { taskId: string }): React.JS
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  useEffect(() => {
+    if (!ready || !window.pulse.viewReady) return
+    let second = 0, sent = false
+    const announce = (): void => { if (!sent) { sent = true; void window.pulse.viewReady!().catch(() => {}) } }
+    // A native loading cover can suppress animation frames while occluded.
+    const fallback = window.setTimeout(announce, 150)
+    const first = requestAnimationFrame(() => { second = requestAnimationFrame(announce) })
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); clearTimeout(fallback) }
+  }, [ready])
   useEffect(() => { setLimit(String((task?.speedLimit || 0) / 1024)) }, [task?.speedLimit])
   useEffect(() => { setChecksum(task?.expectedSha256 || '') }, [task?.expectedSha256])
   const action = async (operation: () => Promise<unknown>, success = ''): Promise<void> => {

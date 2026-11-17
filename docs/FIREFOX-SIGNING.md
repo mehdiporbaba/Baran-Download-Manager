@@ -1,6 +1,12 @@
 # Firefox installation: actual Mozilla signing
 
-## Current signed release
+## Signed 1.0.3 — retrieved and verified
+
+The owner provided Mozilla's returned 1.0.3 package on 2026-11-17. Preserved file: browser-extension/signed/Baran-Firefox-Extension-1.0.3-signed.xpi, 38,615 bytes, SHA-256 4e237fb53fea0f73e5876827885e53d46cc91a39fe1f2d52c1ceff2df4b2ac6f. JavaScript/HTML/icon bytes match the prepared source, and manifest JSON matches semantically. SHA-256 JAR manifest hashes cover the archive payload; detached PKCS7 verifies against mozilla.sf. The signer is the fixed Baran extension ID with Mozilla production issuer. This is not independent Firefox trust-store acceptance or proof of live ZIP capture. Version-management context: [Mozilla 6723664](https://addons.mozilla.org/en-US/developers/addon/9981089fe8f345dfab31/versions/6723664). Native packaging/pins now select 1.0.3; old signed packages remain intact. Never edit signed bytes.
+
+<div dir="rtl" lang="fa" align="right"><h2>نسخهٔ امضاشدهٔ ۱٫۰٫۳؛ دریافت و بررسی شد</h2><p>مالک در ۲۰۲۶/۱۱/۱۷ فایل ۱٫۰٫۳ برگشتی موزیلا را ارائه کرد. فایل حفظ‌شده: <span dir="ltr">browser-extension/signed/Baran-Firefox-Extension-1.0.3-signed.xpi</span>، حجم ۳۸٬۶۱۵ بایت و SHA-256 برابر <span dir="ltr">4e237fb53fea0f73e5876827885e53d46cc91a39fe1f2d52c1ceff2df4b2ac6f</span>. بایت جاوااسکریپت/HTML/آیکون با سورس آماده برابر و JSON مانیفست از نظر محتوا یکسان است. هش SHA-256 مانیفست JAR محتوای آرشیو را پوشش می‌دهد و PKCS7 جداشده نسبت به mozilla.sf تأیید شد. امضاکننده، شناسهٔ ثابت باران با صادرکنندهٔ production موزیلا است. این، پذیرش مستقل مخزن اعتماد فایرفاکس یا اثبات دریافت زندهٔ ZIP نیست. زمینهٔ مدیریت نسخه: <a href="https://addons.mozilla.org/en-US/developers/addon/9981089fe8f345dfab31/versions/6723664">موزیلا 6723664</a>. بسته‌بندی/هش بومی اکنون ۱٫۰٫۳ را انتخاب می‌کند؛ فایل امضاشدهٔ قدیمی سالم می‌ماند. بایت امضاشده را ویرایش نکنید.</p></div>
+
+## Historical signed 1.0.2
 
 Mozilla approved **1.0.2** on **2026-11-16**, version ID **6715167**, file ID **5259252**, with **0 errors and 0 warnings**. The returned signed package is preserved at `browser-extension/signed/Baran-Firefox-Extension-1.0.2-signed.xpi` (38,311 bytes), SHA-256 `884b395779a9af2a90b12eb2ce81b54c275c45c664c4d5be7af18359bb897120`. JavaScript/HTML/icon bytes exactly match the prepared source; manifest JSON is semantically identical. Signature containers are present. Native source builds now bundle this pinned file. The existing beta.2 desktop and `firefox-v1.0.1` release remain unchanged; a 1.0.2 GitHub release and installed-browser acceptance are not implied. [Mozilla approval record](https://addons.mozilla.org/en-US/developers/addon/9981089fe8f345dfab31/versions/6715167).
 
@@ -31,7 +37,7 @@ For a public AMO listing select **On this site** instead and provide a complete 
 
 After the owner accepts Mozilla's developer agreement, create owner API credentials at <https://addons.mozilla.org/developers/addon/api/key/>. Put the issuer and secret into GitHub **Actions secrets** named `AMO_JWT_ISSUER` and `AMO_JWT_SECRET`; do not paste them into chat, source code, issues or build arguments. Run **Sign Firefox extension with Mozilla**. The workflow uses official `web-ext sign --channel unlisted`, downloads the returned signed XPI and stores it as an artifact. It fails if credentials are missing, review has not returned a signed package, or a signature container is absent. Container presence is a packaging check, not a substitute for acceptance testing by Firefox.
 
-The current source/signed package version is 1.0.2. After a version is submitted, use Mozilla's version management and increment both manifests for subsequent code changes; do not repeatedly submit changed bytes under the same version.
+The current source/signed package version is 1.0.3. After a version is submitted, use Mozilla's version management and increment both manifests for subsequent code changes; do not repeatedly submit changed bytes under the same version.
 
 Official references:
 - <https://support.mozilla.org/en-US/kb/add-on-signing-in-firefox>

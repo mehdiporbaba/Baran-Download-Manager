@@ -3,10 +3,17 @@ import { useApp } from '../state'
 import { Stat, Sparkline } from './primitives'
 import { cn, formatBytes, formatSpeed } from '../lib/format'
 
-export function StatsStrip(): React.JSX.Element {
+export function StatsStrip({ compact = false }: { compact?: boolean }): React.JSX.Element {
   const { t, stats, system, settings } = useApp()
   const history = (stats?.history || []).map((h) => h.down)
   const limited = settings.globalSpeedLimit > 0
+
+  if (compact) return <div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line px-4 py-2 text-xs text-muted" aria-label={settings.language === 'fa' ? 'خلاصهٔ دانلودها' : 'Download summary'}>
+    <span className="flex items-center gap-1.5"><Activity size={13} className="text-brand"/>{t.stats.active}: <strong className="tabular text-ink">{stats?.activeCount ?? 0}</strong><span className="text-faint">· {stats?.queuedCount ?? 0} {t.stats.queued}</span></span>
+    <span className="flex items-center gap-1.5"><ArrowDown size={13}/><span className="tabular" dir="ltr">{formatSpeed(stats?.downSpeed ?? 0)}</span><ArrowUp size={13}/><span className="tabular" dir="ltr">{formatSpeed(stats?.upSpeed ?? 0)}</span></span>
+    <span className="flex items-center gap-1.5"><CircleCheck size={13} className="text-ok"/>{t.stats.completed}: <strong className="tabular text-ink">{stats?.completedCount ?? 0}</strong></span>
+    <span className="ms-auto flex items-center gap-1.5"><HardDrive size={13}/>{t.stats.free}: <span className="tabular" dir="ltr">{formatBytes(system?.freeDisk ?? 0)}</span></span>
+  </div>
 
   return (
     <div className="grid shrink-0 grid-cols-2 gap-2.5 px-5 py-3 lg:grid-cols-4">

@@ -108,14 +108,21 @@ function registerCaptureListener() {
 registerCaptureListener()
 api.permissions.onAdded.addListener(registerCaptureListener)
 
-// Firefox can offer explicit attachment responses before the browser's download
-// event. This is opt-in and limited to GET navigations with an attachment header.
+// Firefox can offer binary downloads before the downloads event. CDN archives
+// frequently omit Content-Disposition and retain signed query strings.
 // Other extensions can still cancel the same request; this is not a priority lock.
+function isDownloadResponse(details) {
+  const header = name => (details.responseHeaders || []).find(value => value.name.toLowerCase() === name)?.value || ''
+  if (/^attachment(?:\s*;|\s*$)/i.test(header('content-disposition'))) return true
+  const type = header('content-type').split(';', 1)[0].trim().toLowerCase()
+  if (/^application\/(?:zip|x-zip-compressed|x-rar-compressed|vnd\.rar|x-7z-compressed|gzip|x-gzip|x-tar|x-bzip2|x-msdownload|x-msdos-program|vnd\.microsoft\.portable-executable|x-iso9660-image|x-bittorrent)$/.test(type)) return true
+  if (type && type !== 'application/octet-stream' && type !== 'binary/octet-stream') return false
+  try { return /\.(?:zip|rar|7z|gz|tgz|bz2|xz|tar|exe|msi|msix|iso|img|dmg|deb|rpm|torrent)$/i.test(new URL(details.url).pathname) } catch { return false }
+}
 async function captureAttachment(details) {
   if (details.incognito || details.tabId < 0 || details.method !== 'GET' || details.statusCode !== 200 || !['main_frame', 'sub_frame'].includes(details.type)) return {}
   if (/^(moz|chrome)-extension:/i.test(details.originUrl || details.initiator || '')) return {}
-  const disposition = (details.responseHeaders || []).find(header => header.name.toLowerCase() === 'content-disposition')?.value || ''
-  if (!/^attachment(?:\s*;|\s*$)/i.test(disposition)) return {}
+  if (!isDownloadResponse(details)) return {}
   const setting = await api.storage.local.get('captureDownloads')
   if (!setting.captureDownloads || !await api.permissions.contains({permissions: ['webRequest', 'webRequestBlocking'], origins: ['http://*/*', 'https://*/*']})) return {}
   try {

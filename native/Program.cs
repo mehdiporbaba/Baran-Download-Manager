@@ -61,33 +61,53 @@ namespace Baran {
     CoreWebView2Environment webEnvironment;
     readonly WebView2 web = new WebView2(); readonly string root; readonly bool testing;
     readonly Core core; readonly NotifyIcon tray = new NotifyIcon(); readonly System.Windows.Forms.Timer clipboardTimer = new System.Windows.Forms.Timer();
+    readonly WindowPlacement placement;
+    readonly System.Windows.Forms.Timer placementTimer = new System.Windows.Forms.Timer();
     BrowserPipe browserPipe; bool quitting, stopping; string lastClipboard = "";
     [DllImport("user32.dll")] static extern bool ReleaseCapture();
     [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
+    protected override CreateParams CreateParams {
+      get {
+        var value = base.CreateParams;
+        // Keep the custom title bar, but let Windows own resizing/sizing loops.
+        value.Style |= 0x00040000; // WS_THICKFRAME
+        return value;
+      }
+    }
     public Shell(string directory, string profile, bool test) {
       root = directory; testing = test;
+      placement = new WindowPlacement(profile);
       Text = "Baran Download Manager"; FormBorderStyle = FormBorderStyle.None; BackColor = Color.FromArgb(15, 23, 42);
-      var area = Screen.FromPoint(Cursor.Position).WorkingArea;
-      Width = Math.Min(1000, area.Width - 40); Height = Math.Min(680, area.Height - 40);
-      MinimumSize = new Size(Math.Min(720, Width), Math.Min(480, Height)); StartPosition = FormStartPosition.Manual;
-      Location = new Point(area.Left + (area.Width - Width) / 2, area.Top + (area.Height - Height) / 2);
+      var area = (placement.NormalBounds.IsEmpty ? Screen.FromPoint(Cursor.Position) : Screen.FromRectangle(placement.NormalBounds)).WorkingArea;
+      StartPosition = FormStartPosition.Manual; Bounds = WindowPlacement.Fit(placement.NormalBounds, area);
+      MinimumSize = new Size(Math.Min(720, Width), Math.Min(480, Height)); Padding = new Padding(WindowFrame.Edge);
       string icon = Path.Combine(root, "icon.ico"); if (File.Exists(icon)) Icon = new Icon(icon);
       web.Dock = DockStyle.Fill; Controls.Add(web);
       core = new Core(profile, root, Post, testing); core.Ui = Ui; core.RevealBrowserImport = () => { if (!IsDisposed) BeginInvoke(new Action(Reveal)); };
+      BackColor = ViewStartup.Background(core.Store.Settings); web.DefaultBackgroundColor = BackColor;
+      placementTimer.Interval = 500; placementTimer.Tick += (s, e) => { placementTimer.Stop(); SavePlacement(); };
+      LocationChanged += (s, e) => { if (IsHandleCreated && !stopping) { placementTimer.Stop(); placementTimer.Start(); } };
+      ResizeEnd += (s, e) => SavePlacement();
+      if (placement.Maximized) { WindowState = FormWindowState.Maximized; Padding = new Padding(0); }
       tray.Icon = Icon; tray.Text = "Baran Download Manager"; tray.Visible = true;
       var menu = new ContextMenuStrip(); menu.Items.Add("Open Baran", null, (s, e) => Reveal());
       menu.Items.Add("Downloads in progress", null, (s, e) => { foreach (string id in core.ActiveTaskIds()) { try { OpenProgress(id); } catch (Exception error) { core.Toast("error", "Download window could not open: " + error.Message); } } });
       menu.Items.Add("Quit", null, (s, e) => { quitting = true; Close(); }); tray.ContextMenuStrip = menu;
       tray.DoubleClick += (s, e) => Reveal();
       Shown += async (s, e) => { try { await Initialize(); } catch (Exception error) { MessageBox.Show(this, "WebView2 could not start. Install Microsoft's Evergreen WebView2 Runtime, then reopen Baran.\n\n" + error.Message, Text); quitting = true; Close(); } };
-      Resize += (s, e) => { if (WindowState == FormWindowState.Minimized && J.Bool(core.Store.Settings, "minimizeToTray")) Hide(); Post(J.Obj("type", "window:state", "maximized", WindowState == FormWindowState.Maximized)); };
+      Resize += (s, e) => {
+        Padding = new Padding(WindowState == FormWindowState.Maximized ? 0 : WindowFrame.Edge);
+        if (IsHandleCreated && !stopping) { placementTimer.Stop(); placementTimer.Start(); }
+        if (WindowState == FormWindowState.Minimized && J.Bool(core.Store.Settings, "minimizeToTray")) Hide(); Post(J.Obj("type", "window:state", "maximized", WindowState == FormWindowState.Maximized));
+      };
       FormClosing += async (s, e) => {
+        SavePlacement();
         if (!quitting && J.Bool(core.Store.Settings, "minimizeToTray")) { e.Cancel = true; Hide(); return; }
         if (!stopping) {
           e.Cancel = true; stopping = true; Hide(); clipboardTimer.Stop(); if (browserPipe != null) browserPipe.Dispose();
           foreach (var progress in progressWindows.Values.ToArray()) progress.Close();
           try { await core.Stop(); } catch (Exception error) { File.AppendAllText(Path.Combine(profile, "shutdown-error.log"), error.ToString()); }
-          tray.Visible = false; tray.Dispose(); web.Dispose(); BeginInvoke(new Action(Close));
+          placementTimer.Stop(); placementTimer.Dispose(); tray.Visible = false; tray.Dispose(); web.Dispose(); BeginInvoke(new Action(Close));
         }
       };
       clipboardTimer.Interval = 1200;
@@ -107,6 +127,7 @@ namespace Baran {
       web.CoreWebView2.Settings.IsStatusBarEnabled = false;
       web.CoreWebView2.Settings.AreHostObjectsAllowed = false;
       web.CoreWebView2.SetVirtualHostNameToFolderMapping("baran.local", Path.Combine(root, "ui"), CoreWebView2HostResourceAccessKind.DenyCors);
+      await web.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(ViewStartup.Script(core.Store.Settings));
       await web.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(File.ReadAllText(Path.Combine(root, "bridge.js")));
       web.CoreWebView2.WebMessageReceived += async (s, e) => {
         if (!e.Source.StartsWith("https://baran.local/", StringComparison.Ordinal)) return;
@@ -115,6 +136,7 @@ namespace Baran {
           string text = e.TryGetWebMessageAsString(); if (text.Length > 64 * 1024 * 1024) throw new Exception("IPC request exceeds 64 MB");
           var request = J.Decode(text); id = J.Get(request, "id");
           object result = await Task.Run(() => core.Invoke(J.Str(request, "method"), J.List(J.Get(request, "args"))));
+          if (J.Str(request, "method") == "snapshot") J.Map(J.Get(result, "system"))["maximized"] = WindowState == FormWindowState.Maximized;
           web.CoreWebView2.PostWebMessageAsJson(J.Encode(J.Obj("id", id, "result", result)));
         } catch (Exception error) { if (!web.IsDisposed) web.CoreWebView2.PostWebMessageAsJson(J.Encode(J.Obj("id", id, "error", error.Message))); }
       };
@@ -129,6 +151,7 @@ namespace Baran {
       if (IsDisposed || !IsHandleCreated) return; string json = J.Encode(J.Obj("event", value));
       BeginInvoke(new Action(() => {
         if (IsDisposed || stopping) return;
+        if (J.Str(value, "type") == "settings") { BackColor = ViewStartup.Background(J.Get(value, "settings")); web.DefaultBackgroundColor = BackColor; }
         foreach (var progress in progressWindows.Values.ToArray()) progress.Post(value);
         if (!testing && webEnvironment != null && J.Bool(core.Store.Settings, "showProgressWindow", true) && J.Str(value, "type") == "task:update") {
           var task = J.Get(value, "task"); string id = J.Str(task, "id");
@@ -200,12 +223,15 @@ namespace Baran {
       return result.Task;
     }
     void RegisterBrowser(string browser, string extension) { BrowserRegistration.Register(root, core.Store.Root, Application.ExecutablePath, browser, extension); }
+    void SavePlacement() {
+      if (WindowState == FormWindowState.Minimized || IsDisposed) return;
+      try { placement.Save(WindowState == FormWindowState.Normal ? Bounds : RestoreBounds, WindowState == FormWindowState.Maximized); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+    }
     protected override void WndProc(ref Message message) {
       const int HitTest = 0x84; base.WndProc(ref message);
       if (message.Msg != HitTest || WindowState == FormWindowState.Maximized) return;
       var point = PointToClient(new Point((short)((long)message.LParam & 0xffff), (short)(((long)message.LParam >> 16) & 0xffff)));
-      int edge = 6; bool left = point.X < edge, right = point.X >= Width - edge, top = point.Y < edge, bottom = point.Y >= Height - edge;
-      if (top && left) message.Result = new IntPtr(13); else if (top && right) message.Result = new IntPtr(14); else if (bottom && left) message.Result = new IntPtr(16); else if (bottom && right) message.Result = new IntPtr(17); else if (left) message.Result = new IntPtr(10); else if (right) message.Result = new IntPtr(11); else if (top) message.Result = new IntPtr(12); else if (bottom) message.Result = new IntPtr(15);
+      int hit = WindowFrame.HitTest(point, Size, false); if (hit != 1) message.Result = new IntPtr(hit);
     }
   }
 }

@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs'
 import { runInNewContext } from 'node:vm'
 import { test } from 'node:test'
 
-function extension(options: { enabled?: boolean; offline?: boolean; pauseFails?: boolean; allowed?: boolean; firefox?: boolean; oldDesktop?: boolean } = {}) {
+function extension(options: { enabled?: boolean; offline?: boolean; pauseFails?: boolean; allowed?: boolean; firefox?: boolean; oldDesktop?: boolean; url?: string } = {}) {
   const calls: string[] = []
   const event = { addListener() {} }
   const api = {
-    runtime: { onInstalled: event, onMessage: event, async sendNativeMessage(_host: string, input: unknown) { calls.push('send'); assert.deepEqual(JSON.parse(JSON.stringify(input)), { action: 'import', urls: ['https://example.com/file'], intent: 'download' }); if (options.offline) throw new Error('offline'); return { ok: true, count: 1, downloadPrompt: !options.oldDesktop } } },
+    runtime: { onInstalled: event, onMessage: event, async sendNativeMessage(_host: string, input: unknown) { calls.push('send'); assert.deepEqual(JSON.parse(JSON.stringify(input)), { action: 'import', urls: [options.url || 'https://example.com/file'], intent: 'download' }); if (options.offline) throw new Error('offline'); return { ok: true, count: 1, downloadPrompt: !options.oldDesktop } } },
     contextMenus: { onClicked: event },
     action: { async setBadgeText() {}, async setTitle() {} },
     storage: { local: { async get() { return { captureDownloads: options.enabled !== false } }, async set() {} } },
@@ -62,4 +62,26 @@ test('priority interception excludes private, background, POST, embedded and ext
   const ext = extension({ firefox: true })
   for (const patch of [{ incognito: true }, { tabId: -1 }, { method: 'POST' }, { type: 'xmlhttprequest' }, { type: 'image' }, { statusCode: 302 }, { responseHeaders: [] }, { originUrl: 'moz-extension://other/id' }]) await ext.attachment({ ...attachment, ...patch })
   assert.deepEqual(ext.calls, [])
+})
+
+test('Firefox captures CDN ZIP responses without attachment disposition and preserves the signed query', async () => {
+  const url = 'https://edge.example/soft/Google.Chrome.x64.zip?1794937077&signature=a%2Bb'
+  for (const type of ['application/zip', 'application/x-zip-compressed', 'application/octet-stream', '']) {
+    const ext = extension({ firefox: true, url })
+    const result = await ext.attachment({ ...attachment, url, responseHeaders: type ? [{ name: 'Content-Type', value: type }] : [] })
+    assert.equal((result as { cancel?: boolean }).cancel, true)
+    assert.deepEqual(ext.calls, ['send'])
+  }
+})
+
+test('a ZIP-looking HTML challenge or redirect is never canceled as a binary response', async () => {
+  const url = 'https://example.com/file.zip?token=123'
+  for (const patch of [{ responseHeaders: [{ name: 'Content-Type', value: 'text/html; charset=utf-8' }] }, { statusCode: 302 }, { method: 'POST' }, { type: 'xmlhttprequest' }]) {
+    const ext = extension({ firefox: true, url })
+    const result = await ext.attachment({ ...attachment, url, responseHeaders: [{ name: 'Content-Type', value: 'application/zip' }], ...patch })
+    assert.deepEqual(JSON.parse(JSON.stringify(result)), {})
+    assert.deepEqual(ext.calls, [])
+  }
+  const failed = extension({ firefox: true, offline: true, url })
+  assert.deepEqual(JSON.parse(JSON.stringify(await failed.attachment({ ...attachment, url, responseHeaders: [{ name: 'Content-Type', value: 'application/zip' }] }))), {})
 })

@@ -27,7 +27,7 @@ namespace Baran {
     bool dirty; long saved; int ticking; bool closed;
     public Func<string, object[], Task<object>> Ui;
     public Action RevealBrowserImport;
-    public string Runtime = "WebView2", Version = "2.1.1";
+    public string Runtime = "WebView2", Version = "2.1.2";
     public Core(string profile, string root, Action<object> notify, bool testing = false) {
       this.testing = testing;
       emit = notify; Store = new StateStore(profile); Network = new NativeNetwork(Store);

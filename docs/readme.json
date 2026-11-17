@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "tag": "v2.1.1",
+  "tag": "v2.1.2",
   "title": {
     "en": "Baran Download Manager",
     "fa": "باران دانلود منیجر"
@@ -9,20 +9,26 @@
     {
       "id": "intro",
       "type": "paragraph",
-      "en": "**Collect links. Plan your queue. Control your connection.** A blue download workspace for Windows 10/11 x64, with Persian RTL and light/dark themes. Version **2.1.1** uses a native C# backend and shared WebView2; it bundles no Electron, Node.js, Chromium runtime or WebTorrent. The Windows installer is only a few megabytes; optional media tools and a missing shared runtime are separate downloads.",
-      "fa": "**لینک‌ها را جمع‌آوری کنید. صف دانلودتان را برنامه‌ریزی کنید. اتصال را در اختیار بگیرید.** فضای کاری آبی برای ویندوز ۱۰/۱۱ نسخهٔ ۶۴ بیتی، با فارسی راست‌چین و تم روشن/تاریک. نسخهٔ **2.1.1** از بخش پشتیِ بومی C# و WebView2 مشترک استفاده می‌کند؛ Electron، Node.js، محیط اجرای Chromium یا WebTorrent را در بسته ندارد. نصب‌کنندهٔ ویندوز فقط چند مگابایت است؛ ابزارهای اختیاری رسانه و محیط اجرای مشترک در صورت نبودن، جداگانه دانلود می‌شوند."
+      "en": "**Collect links. Plan your queue. Control your connection.** A blue download workspace for Windows 10/11 x64, with Persian RTL and light/dark themes. Version **2.1.2** uses a native C# backend and shared WebView2; it bundles no Electron, Node.js, Chromium runtime or WebTorrent. The Windows installer is only a few megabytes; optional media tools and a missing shared runtime are separate downloads.",
+      "fa": "**لینک‌ها را جمع‌آوری کنید. صف دانلودتان را برنامه‌ریزی کنید. اتصال را در اختیار بگیرید.** فضای کاری آبی برای ویندوز ۱۰/۱۱ نسخهٔ ۶۴ بیتی، با فارسی راست‌چین و تم روشن/تاریک. نسخهٔ **2.1.2** از بخش پشتیِ بومی C# و WebView2 مشترک استفاده می‌کند؛ Electron، Node.js، محیط اجرای Chromium یا WebTorrent را در بسته ندارد. نصب‌کنندهٔ ویندوز فقط چند مگابایت است؛ ابزارهای اختیاری رسانه و محیط اجرای مشترک در صورت نبودن، جداگانه دانلود می‌شوند."
     },
     {
       "id": "links",
       "type": "paragraph",
-      "en": "[Download the latest release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [2.1.1 changes, checks and limitations](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.1.md) · [Setup guide](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md) · [Privacy](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md).",
-      "fa": "[دانلود آخرین انتشار](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [تغییرات، آزمون‌ها و محدودیت‌های 2.1.1](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.1.md) · [راهنمای راه‌اندازی](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md) · [حریم خصوصی](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md)."
+      "en": "[Download the latest release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [2.1.2 changes, checks and limitations](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.2.md) · [Setup guide](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md) · [Privacy](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md).",
+      "fa": "[دانلود آخرین انتشار](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/latest) · [تغییرات، آزمون‌ها و محدودیت‌های 2.1.2](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/RELEASE-2.1.2.md) · [راهنمای راه‌اندازی](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/GUIDE.md) · [حریم خصوصی](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/browser-extension/PRIVACY.md)."
+    },
+    {
+      "id": "window-browser-212",
+      "type": "paragraph",
+      "en": "2.1.2 bundles Mozilla-signed Firefox 1.0.3 for ZIP/CDN responses without attachment headers, shows a theme-matched loading cover while progress views initialize, and remembers resized/maximized main-window placement. Update the Firefox extension as well as the desktop app for the ZIP fix.",
+      "fa": "۲٫۱٫۲، فایرفاکس ۱٫۰٫۳ با امضای موزیلا را برای پاسخ ZIP/CDN بدون هدر پیوست همراه دارد، هنگام آماده‌شدن پنجرهٔ پیشرفت پوشش بارگذاری هم‌رنگ تم نشان می‌دهد و اندازهٔ تغییرکرده/حداکثر پنجرهٔ اصلی را ذخیره می‌کند. برای اصلاح ZIP، افزونهٔ فایرفاکس را هم در کنار برنامه ارتقا دهید."
     },
     {
       "id": "list-first",
       "type": "paragraph",
-      "en": "In 2.1.1, All downloads places the download list directly below the search/actions toolbar and summary statistics below the list, keeping downloads at the top of the default page.",
-      "fa": "در ۲٫۱٫۱، صفحهٔ همهٔ دانلودها لیست را مستقیماً زیر نوار جست‌وجو/عملیات و آمار خلاصه را زیر لیست قرار می‌دهد تا دانلودها بالای صفحهٔ پیش‌فرض باشند."
+      "en": "All downloads starts with a compact table of file/source, received/total, progress, status, speed and time left. A short statistics strip replaces large summary cards, and each row has quick controls plus a more-actions menu. Narrow content areas reflow essential fields.",
+      "fa": "همهٔ دانلودها با جدول فشردهٔ فایل/مبدأ، دریافت‌شده/کل، پیشرفت، وضعیت، سرعت و زمان باقی‌مانده آغاز می‌شود. نوار کوتاه آمار جای کارت بزرگ را می‌گیرد و هر ردیف کنترل سریع و منوی عملیات بیشتر دارد. اطلاعات اصلی در عرض کم بازچینی می‌شوند."
     },
     {
       "id": "features",
@@ -87,14 +93,14 @@
     {
       "id": "setup",
       "type": "paragraph",
-      "en": "Finish or pause active downloads and Quit Baran from its tray menu before upgrading. Run `Baran-Download-Manager-Native-Setup-2.1.1-x64.exe`, or extract `Baran-Download-Manager-Native-Portable-2.1.1-x64.zip` and run `Baran Download Manager.exe`. Setup refreshes browser-host paths and registers Firefox; Portable users use Repair connection after moving the folder. Existing tasks, inbox and partial files remain in your profile. Windows x64 needs .NET Framework 4.6.2 or later (4.8 recommended) and Microsoft WebView2 Evergreen.",
-      "fa": "پیش از ارتقا، دانلود فعال را تمام یا متوقف و از منوی Tray باران Quit را انتخاب کنید. فایل `Baran-Download-Manager-Native-Setup-2.1.1-x64.exe` را اجرا کنید، یا `Baran-Download-Manager-Native-Portable-2.1.1-x64.zip` را باز و `Baran Download Manager.exe` را اجرا کنید. نصاب مسیر میزبان مرورگر را تازه و فایرفاکس را ثبت می‌کند؛ کاربران قابل‌حمل پس از جابه‌جایی پوشه از ترمیم اتصال استفاده کنند. وظیفه، صندوق لینک و فایل ناقص در پروفایل شما می‌مانند. ویندوز ۶۴ بیتی به .NET Framework نسخهٔ 4.6.2 یا بالاتر (4.8 پیشنهاد می‌شود) و Microsoft WebView2 Evergreen نیاز دارد."
+      "en": "Finish or pause active downloads and Quit Baran from its tray menu before upgrading. Run `Baran-Download-Manager-Native-Setup-2.1.2-x64.exe`, or extract `Baran-Download-Manager-Native-Portable-2.1.2-x64.zip` and run `Baran Download Manager.exe`. Setup refreshes browser-host paths and registers Firefox; Portable users use Repair connection after moving the folder. Existing tasks, inbox and partial files remain in your profile. Windows x64 needs .NET Framework 4.6.2 or later (4.8 recommended) and Microsoft WebView2 Evergreen.",
+      "fa": "پیش از ارتقا، دانلود فعال را تمام یا متوقف و از منوی Tray باران Quit را انتخاب کنید. فایل `Baran-Download-Manager-Native-Setup-2.1.2-x64.exe` را اجرا کنید، یا `Baran-Download-Manager-Native-Portable-2.1.2-x64.zip` را باز و `Baran Download Manager.exe` را اجرا کنید. نصاب مسیر میزبان مرورگر را تازه و فایرفاکس را ثبت می‌کند؛ کاربران قابل‌حمل پس از جابه‌جایی پوشه از ترمیم اتصال استفاده کنند. وظیفه، صندوق لینک و فایل ناقص در پروفایل شما می‌مانند. ویندوز ۶۴ بیتی به .NET Framework نسخهٔ 4.6.2 یا بالاتر (4.8 پیشنهاد می‌شود) و Microsoft WebView2 Evergreen نیاز دارد."
     },
     {
       "id": "firefox",
       "type": "paragraph",
-      "en": "Firefox: Settings → Browser integration → Install & connect Firefox opens the bundled Mozilla-signed `Baran-Firefox-Extension-1.0.2-signed.xpi`. Confirm Add in Firefox; no copied ID or PowerShell is needed. In the popup choose Check connection, then enable Use Baran for new downloads and accept the browser permissions. Old desktop beta.2 may report Unsupported browser command and clear the checkbox; upgrade the desktop. The user verified a real Firefox GitHub ZIP click opens New download with beta.3. [Signing evidence](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md).",
-      "fa": "فایرفاکس: تنظیمات ← اتصال مرورگرها ← نصب و اتصال Firefox، فایل همراه با امضای موزیلا یعنی `Baran-Firefox-Extension-1.0.2-signed.xpi` را باز می‌کند. Add را در فایرفاکس تأیید کنید؛ کپی شناسه یا PowerShell لازم نیست. در افزونه ابتدا Check connection و سپس Use Baran for new downloads را فعال و دسترسی مرورگر را تأیید کنید. دسکتاپ قدیمی بتا ۲ ممکن است Unsupported browser command نشان دهد و تیک را بردارد؛ برنامه را ارتقا دهید. کاربر تأیید کرد کلیک واقعی ZIP گیت‌هاب در فایرفاکس با بتا ۳، دانلود جدید را باز می‌کند. [شواهد امضا](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md)."
+      "en": "Firefox: Settings → Browser integration → Install & connect Firefox opens the bundled Mozilla-signed `Baran-Firefox-Extension-1.0.3-signed.xpi`. Confirm Add in Firefox; no copied ID or PowerShell is needed. In the popup choose Check connection, then enable Use Baran for new downloads and accept the browser permissions. Old desktop beta.2 may report Unsupported browser command and clear the checkbox; upgrade the desktop. The user verified a real Firefox GitHub ZIP click opens New download with beta.3. [Signing evidence](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md).",
+      "fa": "فایرفاکس: تنظیمات ← اتصال مرورگرها ← نصب و اتصال Firefox، فایل همراه با امضای موزیلا یعنی `Baran-Firefox-Extension-1.0.3-signed.xpi` را باز می‌کند. Add را در فایرفاکس تأیید کنید؛ کپی شناسه یا PowerShell لازم نیست. در افزونه ابتدا Check connection و سپس Use Baran for new downloads را فعال و دسترسی مرورگر را تأیید کنید. دسکتاپ قدیمی بتا ۲ ممکن است Unsupported browser command نشان دهد و تیک را بردارد؛ برنامه را ارتقا دهید. کاربر تأیید کرد کلیک واقعی ZIP گیت‌هاب در فایرفاکس با بتا ۳، دانلود جدید را باز می‌کند. [شواهد امضا](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/docs/FIREFOX-SIGNING.md)."
     },
     {
       "id": "chrome",

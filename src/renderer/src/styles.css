@@ -1,5 +1,30 @@
 @import 'tailwindcss';
 
+/* Keep downloads readable without spending the laptop viewport on large cards. */
+.compact-downloads { container-type: inline-size; }
+.compact-download-grid { display: grid; grid-template-columns: minmax(180px, 1.5fr) minmax(165px, 1fr) 108px 132px 72px; gap: 12px; align-items: center; padding-inline: 12px; }
+.compact-download-header { position: sticky; top: 0; z-index: 5; min-height: 32px; padding-block: 6px; background: var(--c-app); color: var(--c-muted); font-size: 11px; border-bottom: 1px solid var(--c-line); }
+.compact-download-row { min-height: 60px; padding-block: 7px; border-bottom: 1px solid var(--c-line); border-radius: 6px; cursor: pointer; }
+.compact-download-row:focus-visible { outline: 2px solid var(--c-brand); outline-offset: -2px; }
+.compact-inline-status, .compact-inline-transfer { display: none; }
+@container (max-width: 760px) {
+  .compact-download-grid { grid-template-columns: minmax(150px, 1fr) 170px 124px 72px; gap: 10px; }
+  .compact-status { display: none; }
+  .compact-inline-status { display: inline; }
+}
+@container (max-width: 680px) {
+  .compact-download-grid { grid-template-columns: minmax(120px, 1fr) 155px 72px; gap: 8px; }
+  .compact-transfer { display: none; }
+  .compact-inline-transfer { display: block; }
+}
+@container (max-width: 420px) {
+  .compact-download-grid { grid-template-columns: minmax(0, 1fr) 72px; padding-inline: 6px; }
+  .compact-download-header > :nth-child(2) { display: none; }
+  .compact-download-row > :nth-child(1) { grid-column: 1; grid-row: 1; }
+  .compact-download-row > :nth-child(2) { grid-column: 1; grid-row: 2; }
+  .compact-download-row > :last-child { grid-column: 2; grid-row: 1 / span 2; }
+}
+
 @theme {
   --font-sans:
     'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui,

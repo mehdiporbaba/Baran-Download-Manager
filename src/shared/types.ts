@@ -338,6 +338,7 @@ export interface PulseAPI {
   setTaskChecksum?(id: string, sha256: string): Promise<void>
   setTaskCloseOnComplete?(id: string, enabled: boolean): Promise<void>
   browserReady?(): Promise<void>
+  viewReady?(): Promise<void>
   installFirefoxExtension?(): Promise<{ opened: boolean }>
   /** Native-only, explicitly scoped connected-service actions. */
   connected?(action: string, input?: unknown): Promise<unknown>

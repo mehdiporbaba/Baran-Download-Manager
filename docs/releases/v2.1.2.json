@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "tag": "v2.1.2",
+  "title": {
+    "en": "Baran Download Manager `2.1.2` — browser and window fixes",
+    "fa": "باران دانلود منیجر `2.1.2`؛ اصلاح مرورگر و پنجره"
+  },
+  "blocks": [
+    {
+      "id": "status",
+      "type": "paragraph",
+      "en": "Windows x64 maintenance release with Mozilla-signed Firefox 1.0.3: fixes binary ZIP/CDN interception, progress-window startup presentation and remembered main-window sizing. Previously published versions and assets remain unchanged.",
+      "fa": "انتشار اصلاحی ویندوز ۶۴ بیتی با فایرفاکس ۱٫۰٫۳ امضاشدهٔ موزیلا: دریافت ZIP/CDN باینری، نمایش آغازین پنجرهٔ پیشرفت و ذخیرهٔ اندازهٔ پنجرهٔ اصلی اصلاح شده‌اند. نسخه‌ها و فایل‌های منتشرشدهٔ قبلی تغییر نکرده‌اند."
+    },
+    {
+      "id": "dense-downloads",
+      "type": "bullet",
+      "en": "All downloads uses compact data rows with file/source, received/total bytes, percentage, status, speed and ETA. Summary cards become a short strip; search shares the top toolbar. Container-width layouts retain essential fields without horizontal overflow, and more actions remain available through each row’s menu. This improves information density on laptop-sized windows.",
+      "fa": "همهٔ دانلودها از ردیف فشرده با فایل/مبدأ، مقدار دریافت‌شده/کل، درصد، وضعیت، سرعت و زمان باقی‌مانده استفاده می‌کند. کارت آمار به نوار کوتاه تبدیل و جست‌وجو در نوار بالا قرار می‌گیرد. چیدمان وابسته به عرض محتوا، اطلاعات اصلی را بدون سرریز افقی حفظ می‌کند و عملیات بیشتر از منوی ردیف در دسترس است. این تغییر تراکم اطلاعات را در پنجرهٔ لپ‌تاپ بهتر می‌کند."
+    },
+    {
+      "id": "zip",
+      "type": "bullet",
+      "en": "Firefox source now recognizes archive/installer binary MIME responses, including application/zip without Content-Disposition, before its internal downloader begins. Signed query parameters are preserved through the transfer. HTML challenge pages, redirects, private/background/POST requests remain excluded and failure leaves the browser able to download.",
+      "fa": "سورس فایرفاکس اکنون پاسخ باینری آرشیو/نصاب، از جمله application/zip بدون Content-Disposition را پیش از آغاز دانلود داخلی تشخیص می‌دهد. پارامتر امضاشدهٔ URL هنگام انتقال حفظ می‌شود. صفحهٔ چالش HTML، تغییرمسیر و درخواست خصوصی/پس‌زمینه/POST همچنان کنار گذاشته می‌شوند و شکست اتصال مانع دانلود مرورگر نمی‌شود."
+    },
+    {
+      "id": "startup",
+      "type": "bullet",
+      "en": "Progress windows show a native theme-matched loading cover with the filename and progress while WebView2 initializes. Theme/language/direction are injected before page CSS. The cover is removed after React is ready, with a fallback for occluded paint frames. This removes the deliberate blank surface; it does not promise zero WebView2 startup time.",
+      "fa": "پنجرهٔ پیشرفت هنگام آماده‌شدن WebView2، پوشش بارگذاری بومیِ هم‌رنگ تم با نام فایل و پیشرفت نشان می‌دهد. تم/زبان/جهت پیش از CSS صفحه اعمال می‌شوند. پوشش پس از آماده‌شدن React و با مسیر جایگزین برای فریم پنهان برداشته می‌شود. سطح خالی اولیه حذف می‌شود، ولی زمان راه‌اندازی صفر WebView2 تضمین نمی‌شود."
+    },
+    {
+      "id": "size",
+      "type": "bullet",
+      "en": "The main window reserves native resize edges outside WebView2 so its corners can receive resize hit tests. Normal bounds and maximized state are saved separately from download settings and restored on the next launch. Changed/disconnected monitors are handled by fitting the saved rectangle into an available work area.",
+      "fa": "پنجرهٔ اصلی لبهٔ بومی تغییر اندازه را بیرون WebView2 نگه می‌دارد تا گوشه‌ها فرمان کشیدن را دریافت کنند. اندازه/مکان عادی و وضعیت حداکثر جدا از تنظیمات دانلود ذخیره و در اجرای بعد بازگردانی می‌شوند. با تغییر/قطع مانیتور، مستطیل ذخیره‌شده در محدودهٔ کاریِ در دسترس جا داده می‌شود."
+    },
+    {
+      "id": "installation",
+      "type": "heading",
+      "en": "Build and installation status",
+      "fa": "وضعیت ساخت و نصب"
+    },
+    {
+      "id": "artifacts",
+      "type": "paragraph",
+      "en": "Install `Baran-Download-Manager-Native-Setup-2.1.2-x64.exe`, or extract the matching Portable ZIP. Finish/pause transfers and Quit the old app from Tray first. Settings, Inbox and partial files remain. Firefox users must update to the bundled `Baran-Firefox-Extension-1.0.3-signed.xpi`, then check connection and enable capture. Its SHA-256 is `4e237fb53fea0f73e5876827885e53d46cc91a39fe1f2d52c1ceff2df4b2ac6f`. Chrome development source is version 1.0.3; store publication is still pending.",
+      "fa": "فایل `Baran-Download-Manager-Native-Setup-2.1.2-x64.exe` را نصب یا ZIP قابل‌حمل همین نسخه را باز کنید. ابتدا دانلود را تمام/متوقف و از Tray برنامهٔ قبلی Quit را انتخاب کنید. تنظیمات، صندوق و فایل ناقص می‌مانند. کاربران فایرفاکس باید به `Baran-Firefox-Extension-1.0.3-signed.xpi` همراه بسته ارتقا دهند و اتصال/دریافت را بررسی و فعال کنند. هش SHA-256 آن `4e237fb53fea0f73e5876827885e53d46cc91a39fe1f2d52c1ceff2df4b2ac6f` است. سورس توسعهٔ کروم نسخهٔ ۱٫۰٫۳ است؛ انتشار استور همچنان باقی است."
+    },
+    {
+      "id": "checks",
+      "type": "paragraph",
+      "en": "Local checks cover the CDN ZIP MIME case and signed URL, HTML/redirect exclusions, failed handoff, window-placement round trips, changed/negative/small work areas, all resize edges and light/dark bootstrap with immediate or delayed document creation. Firefox lint reports zero errors/warnings. Actual Firefox 1.0.3 capture, visible first-paint behavior and manual corner drag/restart still need installed-app acceptance.",
+      "fa": "بررسی محلی شامل MIME فایل ZIP در CDN و URL امضاشده، کنارگذاشتن HTML/تغییرمسیر، شکست تحویل، ذخیره/خواندن اندازه، نمایشگر تغییرکرده/منفی/کوچک، تمام لبه‌ها و آغاز تم روشن/تاریک با ایجاد فوری یا تأخیردار سند است. lint فایرفاکس صفر خطا/هشدار دارد. دریافت واقعی فایرفاکس ۱٫۰٫۳، ظاهر اولین نمایش و کشیدن دستی گوشه/اجرای دوباره هنوز پذیرش در برنامهٔ نصب‌شده می‌خواهند."
+    },
+    {
+      "id": "limits",
+      "type": "paragraph",
+      "en": "Windows x64 requires .NET Framework and shared WebView2. Optional media tools remain separate; Windows signing, Chrome store publication, native Linux/macOS and full torrent VPN/proxy confinement remain pending. [Guide](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/README.md) and [previous release](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/v2.1.1) describe unchanged 2.1 capabilities and limits.",
+      "fa": "ویندوز ۶۴ بیتی به .NET Framework و WebView2 مشترک نیاز دارد. ابزار رسانه جداست؛ امضای ویندوز، استور کروم، نسخهٔ بومی لینوکس/macOS و محصورسازی کامل VPN/پراکسی تورنت باقی‌اند. [راهنما](https://github.com/mehdiporbaba/Baran-Download-Manager/blob/main/README.md) و [انتشار قبلی](https://github.com/mehdiporbaba/Baran-Download-Manager/releases/tag/v2.1.1)، امکانات و محدودیت‌های بدون تغییر ۲٫۱ را شرح می‌دهند."
+    },
+    {
+      "id": "license",
+      "type": "paragraph",
+      "en": "GNU GPL v3.0 or later. Original Pulse authors and Mehdi Porbaba retain their credits; third-party components retain their licenses.",
+      "fa": "مجوز عمومی همگانی گنو نسخهٔ ۳ یا بالاتر. اعتبار پدیدآورندگان اصلی Pulse و مهدی پُربابا و مجوز اجزای شخص ثالث حفظ می‌شود."
+    }
+  ]
+}

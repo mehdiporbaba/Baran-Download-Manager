@@ -66,17 +66,17 @@ export function TopBar(): React.JSX.Element {
     `${Math.round(currentLimit / (1024 * 1024))} MB/s`
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-line/60 px-4 py-3">
+    <div className={cn('flex shrink-0 flex-wrap items-center gap-3 border-b border-line/60 px-4', view === 'all' ? 'py-2' : 'py-3')}>
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-[17px] font-bold tracking-tight">{titles[view]}</h1>
-        <p className="truncate text-[10.5px] text-muted">
+        <p className={cn('truncate text-[10.5px] text-muted', view === 'all' && 'hidden')}>
           {view === 'github' ? t.github.subtitle : `${tasks.length} ${t.stats.tasks}`}
         </p>
       </div>
 
       <div className="ms-auto flex max-w-full flex-wrap items-center justify-end gap-2">
         {view !== 'github' && view !== 'home' ? (
-          <div className="relative hidden 2xl:block">
+          <div className={cn('relative', view === 'all' ? 'block' : 'hidden 2xl:block')}>
             <Search
               size={14}
               className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint"
@@ -85,7 +85,8 @@ export function TopBar(): React.JSX.Element {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.toolbar.search}
-              className="field h-9 w-[230px] ps-8 pe-8 text-[12px] lg:w-[270px]"
+              className={cn('field h-9 ps-8 pe-8 text-[12px]', view === 'all' ? 'w-[150px] lg:w-[210px]' : 'w-[230px] lg:w-[270px]')}
+              aria-label={t.toolbar.search}
             />
             {query ? (
               <button
@@ -178,7 +179,7 @@ export function TopBar(): React.JSX.Element {
           </kbd>
         </button>
       </div>
-      {view !== 'home' && view !== 'github' && <div className="relative w-full 2xl:hidden"><Search size={14} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint" /><input aria-label={t.toolbar.search} className="field h-9 w-full ps-9 pe-3" value={query} onChange={event => setQuery(event.target.value)} placeholder={t.toolbar.search} /></div>}
+      {view !== 'home' && view !== 'github' && view !== 'all' && <div className="relative w-full 2xl:hidden"><Search size={14} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-faint" /><input aria-label={t.toolbar.search} className="field h-9 w-full ps-9 pe-3" value={query} onChange={event => setQuery(event.target.value)} placeholder={t.toolbar.search} /></div>}
     </div>
   )
 }

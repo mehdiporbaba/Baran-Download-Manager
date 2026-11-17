@@ -154,7 +154,7 @@ export function App(): React.JSX.Element {
                 </div>
                 <DetailPanel />
               </div>
-              {view === 'all' && <StatsStrip />}
+              {view === 'all' && <StatsStrip compact />}
             </>
           )}
         </main>

@@ -1,11 +1,11 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "extensionId": "baran-download-manager@mehdiporbaba",
-  "file": "Baran-Firefox-Extension-1.0.2-signed.xpi",
-  "sha256": "884b395779a9af2a90b12eb2ce81b54c275c45c664c4d5be7af18359bb897120",
-  "mozillaVersionId": 6715167,
-  "mozillaFileId": 5259252,
-  "status": "approved",
+  "file": "Baran-Firefox-Extension-1.0.3-signed.xpi",
+  "sha256": "4e237fb53fea0f73e5876827885e53d46cc91a39fe1f2d52c1ceff2df4b2ac6f",
+  "mozillaVersionId": 6723664,
+  "status": "signed-package-verified",
   "distribution": "unlisted",
-  "approvedDate": "2026-11-16"
+  "verifiedDate": "2026-11-17",
+  "verification": "Exact source assets, semantic manifest match, SHA-256 JAR manifest chain and detached PKCS7 signature; not independent Firefox trust-store acceptance"
 }
