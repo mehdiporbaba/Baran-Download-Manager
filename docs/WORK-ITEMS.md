@@ -1,5 +1,7 @@
 # Active Baran work
 
+Windows v2.1.1 is now published: the default All downloads list is above summary statistics. Build/publish, validation and Gitleaks passed; 2.1.0 assets remain unchanged.
+
 Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication with explicit limits. Release v2.1.0 is published as stable/latest after successful CI; prior release assets stay unchanged.
 
 - **P0 — Finish browser capture acceptance; Firefox direct-link handoff now passes.** User removed the other download manager, granted Firefox permissions and configured both Firefox and Chrome extensions. The user subsequently confirmed that a public GitHub ZIP click opens Baran’s New download on installed beta.3; preserve this accepted case. Verify matched desktop/extension versions, native registration, stored capture flag, requested grants, running process and direct-link handoff in BOTH browsers. Acceptance: a real click opens Baran's New download; failure leaves the browser able to download. Do not close from mock tests or blame an uninstalled competitor.
@@ -12,6 +14,7 @@ Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication wit
 
 <div dir="rtl" lang="fa" align="right">
 <h1>کارهای فعال باران</h1>
+<p>ویندوز v2.1.1 منتشر شد: لیست پیش‌فرض همهٔ دانلودها بالای آمار خلاصه است. ساخت/انتشار، اعتبارسنجی و Gitleaks موفق‌اند؛ فایل‌های ۲٫۱٫۰ تغییر نکرده‌اند.</p>
 <p>به‌روز در ۲۰۲۶/۱۱/۱۷. مالک اکنون انتشار نهایی ویندوز ۲٫۱٫۰ را با محدودیت‌های روشن تأیید کرده است. انتشار v2.1.0 پس از CI موفق به‌عنوان پایدار/آخرین منتشر شد؛ فایل انتشارهای قبلی تغییر نمی‌کند.</p>
 <ul>
 <li><strong>سورس پیشرفتهٔ پیاده‌شده:</strong> چهار سرویس Debrid با DPAPI و درخواست منتظر پایدار، نصب بررسی‌شدهٔ ابزار اختیاری، دریافت HTTP رسانه از پراکسی روی IPv4 اینترفیس انتخابی و تازه‌سازی میزبان مرورگر در نصاب. <a href="ADVANCED-SERVICES.md">سرویس‌های پیشرفته</a> را ببینید. محصورسازی کامل تورنت، نسخهٔ بومی لینوکس/macOS و انتشار استور کروم با اطلاع مالک موکول شده‌اند.</li>
