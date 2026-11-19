@@ -1,12 +1,16 @@
 # Baran project memory
 
-Last reviewed: 2026-11-17 (Asia/Tehran). Recheck GitHub and the working tree before acting. No credentials, cookies or private account data belong here.
+Last reviewed: 2026-11-19 (Asia/Tehran). Recheck GitHub and the working tree before acting. No credentials, cookies or private account data belong here.
 
 ## Authorization and identity
 
 - Product/repository: **Baran Download Manager**, https://github.com/mehdiporbaba/Baran-Download-Manager . Owner mehdiporbaba supersedes warchiefmad. GPL-3.0-or-later fork of TheGreatAzizi/Pulse-Download-Manager; retain attribution.
 - Earlier local-only preference is superseded: the user explicitly requested advanced work, easier distribution, a final build and GitHub publication. They then chose **final Windows release with explicit limitations**, deferring full torrent VPN/proxy confinement and native Linux/macOS ports. They have no Chrome developer account; no payment/account creation/store submission is authorized by inference.
 - Read AGENTS.md and .agents/skills/baran-maintenance/SKILL.md. Do not spawn subagents without explicit authorization. Current computer/browser denials are not permission to switch surfaces.
+
+## Cold-start fix in progress — 2026-11-19
+
+User reports browser cold start briefly opens Baran then completely terminates it. NativeHost used an ordinary Process.Start child inheriting browser job membership. A kill-on-close Windows job fixture reproduces old-child termination and verifies explicit CREATE_BREAKAWAY_FROM_JOB + detached/new-group launch survives host cleanup. No inherited handles; explicit application path/working directory; launch refusal keeps normal browser fallback, never retries an attached child. No live installed-browser cold-start acceptance claimed. Firefox signed 1.0.3 bytes/source unchanged. Preparing desktop 2.1.3 and paired release notes; not yet published. Main was verified b7bb651cf44b3254f5d916956a80cfabca715935. Tests: tests/browser-startup.integration.mjs and framed native-host regression pass. New CI job exercises process lifetime. Next: build, publish via codex/release-v2.1.3, then record actual release evidence.
 
 ## Published release and source
 

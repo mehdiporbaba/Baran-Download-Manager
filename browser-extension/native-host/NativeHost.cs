@@ -4,9 +4,28 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 // Chrome starts this small process. It forwards one bounded JSON message to the app.
 public static class NativeHost {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct StartupInfo { public int cb; public string reserved, desktop, title; public int x, y, width, height, charsX, charsY, fill, flags; public short show, reservedSize; public IntPtr reservedBytes, input, output, error; }
+    [StructLayout(LayoutKind.Sequential)]
+    struct ProcessInfo { public IntPtr process, thread; public int processId, threadId; }
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern bool CreateProcess(string app, StringBuilder command, IntPtr processSecurity, IntPtr threadSecurity, bool inherit, uint flags, IntPtr environment, string directory, ref StartupInfo startup, out ProcessInfo process);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
+    // A browser owns its native host's job. Ordinary child processes die when
+    // the one-shot host exits. Never launch the download manager in that job.
+    public static int StartDetached(string application, string arguments) {
+        var startup = new StartupInfo(); startup.cb = Marshal.SizeOf(startup);
+        ProcessInfo process;
+        if (!CreateProcess(application, new StringBuilder("\"" + application + "\" " + arguments), IntPtr.Zero, IntPtr.Zero, false,
+            0x01000000 | 0x00000200 | 0x00000008, IntPtr.Zero, Path.GetDirectoryName(application), ref startup, out process))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        try { return process.processId; } finally { CloseHandle(process.thread); CloseHandle(process.process); }
+    }
     const int MaxMessage = 256 * 1024;
     static byte[] ReadExact(Stream stream, int count) {
         byte[] data = new byte[count];
@@ -46,7 +65,7 @@ public static class NativeHost {
                     if (!File.Exists(configuration) || new FileInfo(configuration).Length > 8192) throw;
                     string application = File.ReadAllText(configuration, Encoding.UTF8).Trim();
                     if (!Path.IsPathRooted(application) || !Path.GetFileName(application).Equals("Baran Download Manager.exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(application)) throw new IOException("Re-register Baran from Browser integration settings.");
-                    Process.Start(new ProcessStartInfo(application, "--browser-import") { UseShellExecute = false, CreateNoWindow = true });
+                    StartDetached(application, "--browser-import");
                     pipe.Connect(7000);
                     #else
                     throw;
