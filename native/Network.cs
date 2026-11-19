@@ -103,6 +103,7 @@ namespace Baran {
       using (var response = await Open(url, Headers(headers), cancel.Token, 0, 0).ConfigureAwait(false)) {
         int status = (int)response.StatusCode;
         if (status != 200 && status != 206) throw new Exception("HTTP " + status + " " + response.StatusDescription);
+        BrowserSessionPolicy.ValidateResponse(response.ResponseUri, response.ContentType);
         long size = response.ContentLength;
         string range = response.Headers["Content-Range"] ?? "";
         if (range.Contains("/")) Int64.TryParse(range.Split('/').Last(), out size);

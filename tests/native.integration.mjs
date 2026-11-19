@@ -24,6 +24,10 @@ const requests = []
 let remoteTorrentMetadata
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost'); requests.push({ path: url.pathname, range: req.headers.range, ifRange: req.headers['if-range'] })
+  if (url.pathname === '/opaque-verification-download') {
+    const text = 'google-site-verification: google-fixture.html';
+    res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Disposition': 'attachment; filename="google-fixture.html"', 'Content-Length': Buffer.byteLength(text) }); res.end(text); return;
+  }
   if (url.pathname==='/html-disguised.zip' || url.pathname==='/allowed.html') { const html='<html><body>Authorized page fixture</body></html>';res.writeHead(200,{'Content-Type':'text/html','Content-Length':Buffer.byteLength(html)});res.end(html);return }
   if (url.pathname === '/stall-body') {
     const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '')
@@ -144,6 +148,12 @@ try {
   return JSON.parse(reply.subarray(4).toString())
   }
   const ping = await sendBrowser({ action: 'ping' }); assert.equal(ping.ok, true); assert.equal(ping.downloadPrompt, true)
+  const verificationUrl = 'https://search.google.com/u/2/search-console/verification-download?resource_id=https%3A%2F%2Fexample.com%2F';
+  const beforeVerification = (await invoke('linksList')).length;
+  const verificationReply = await sendBrowser({ action: 'import', intent: 'download', urls: [verificationUrl] });
+  assert.equal(verificationReply.ok, false);
+  assert.match(verificationReply.error, /browser session/);
+  assert.equal((await invoke('linksList')).length, beforeVerification, 'session-bound file must not enter Inbox or acknowledge capture');
   assert.equal(ping.version, JSON.parse(await readFile('package.json', 'utf8')).version, 'browser handshake must identify the packaged desktop version')
   assert.deepEqual(await sendBrowser({ action: 'import', urls: ['https://example.com/native-host-test.zip'] }), { ok: true, count: 1 })
   assert.equal(browserPrompts.length, 0, 'collecting links must not open a download prompt')
@@ -190,6 +200,13 @@ try {
   const plain = await invoke('addDownload', { url: `${origin}/no-range`, kind: 'http', fileName: 'plain.bin' })
   const plainDone = await waitTask(plain.id); assert.deepEqual(await readFile(plainDone.filePath), payload)
   console.log('PASS native: servers without Range complete via a single stream')
+  const verificationProbe = await invoke('probe', `${origin}/opaque-verification-download`);
+  assert.equal(verificationProbe.fileName, 'google-fixture.html');
+  const verification = await invoke('addDownload', { url: `${origin}/opaque-verification-download`, kind: 'http', fileName: 'opaque-verification-download', dir: downloads });
+  const verificationDone = await waitTask(verification.id);
+  assert.equal(verificationDone.fileName, 'google-fixture.html');
+  assert.equal(await readFile(verificationDone.filePath, 'utf8'), 'google-site-verification: google-fixture.html');
+  console.log('PASS verification download: server attachment filename and exact HTML payload are preserved');
   const pageAsFile=await invoke('addDownload',{url:`${origin}/html-disguised.zip`,kind:'http',fileName:'archive.zip'})
   assert.match((await waitTask(pageAsFile.id,'error')).error,/HTML page/)
   const page=await invoke('addDownload',{url:`${origin}/allowed.html`,kind:'http',fileName:'page.html'})

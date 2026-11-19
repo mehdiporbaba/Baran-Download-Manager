@@ -32,3 +32,10 @@ Updated 2026-11-17. The owner now authorizes final Windows 2.1.0 publication wit
 <li><strong>اولویت یک — نسخهٔ سازگار.</strong> تکمیل شد: v2.1.0 پایدار/آخرین است؛ هر شش فایل بارگذاری، CI سورس موفق و متن دوزبانه با منبع برابر است. main شامل انتشار و راهنمای فعلی راه‌اندازی است؛ فایل بتا ۲ تغییر نکرده است.</li>
 </ul>
 </div>
+
+
+## Google verification download — source correction
+
+The owner supplied a Google sign-in HTML payload saved as identifier, distinct from Firefox's real verification file. Native source now refuses Search Console verification handoff before capture acknowledgement and rejects known Google sign-in HTML at probe time. Existing signed Firefox 1.0.3 can continue the browser download after refusal. Policy and native regressions cover this boundary; installed-browser acceptance and a newly versioned desktop release remain pending. General browser filename/session metadata support is separate work.
+
+<div dir="rtl" lang="fa" align="right"><h2>دانلود فایل تأیید گوگل؛ اصلاح سورس</h2><p>فایل identifier ارائه‌شده صفحهٔ ورود گوگل است و با فایل واقعی تأیید دانلودشده در فایرفاکس فرق دارد. سورس بومی اکنون تحویل دانلود تأیید Search Console را پیش از تأیید دریافت رد می‌کند و هنگام بررسی لینک، HTML شناخته‌شدهٔ ورود گوگل را نمی‌پذیرد. افزونهٔ امضاشدهٔ فعلی فایرفاکس ۱٫۰٫۳ پس از رد می‌تواند دانلود مرورگر را ادامه دهد. آزمون سیاست و رگرسیون بومی این مرز را پوشش می‌دهند؛ پذیرش مرورگر نصب‌شده و انتشار دسکتاپ با شمارهٔ تازه باقی‌اند. پشتیبانی عمومی از نام فایل و اطلاعات نشست مرورگر کار جداگانه‌ای است.</p></div>

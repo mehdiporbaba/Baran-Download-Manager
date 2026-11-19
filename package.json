@@ -1,6 +1,6 @@
 {
   "name": "baran-download-manager",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Baran Download Manager — collect links, schedule downloads, and manage your connection.",
   "main": "./out/main/index.js",
   "author": "Mehdi Porbaba",

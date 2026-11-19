@@ -42,7 +42,10 @@ namespace Baran {
                   foreach (object value in values) if (!(value is string)) throw new Exception("Invalid URL list");
                   bool download = J.Str(request, "intent") == "download";
                   if (download && values.Length != 1) throw new Exception("A download request must contain exactly one URL");
-                  if (download) J.Url(Convert.ToString(values[0]));
+                  if (download) {
+                    J.Url(Convert.ToString(values[0]));
+                    if (BrowserSessionPolicy.RequiresBrowser(Convert.ToString(values[0]))) throw new Exception("This Google verification file needs your browser session. Continue in the browser. / فایل تأیید گوگل باید در مرورگر واردشده دانلود شود.");
+                  }
                   int count = core.Inbox.Add(Array.ConvertAll(values, Convert.ToString), "browser");
                   result = J.Obj("ok", true, "count", count);
                   if (download) { result = J.Obj("ok", true, "count", count, "downloadPrompt", true); core.BrowserDownloadRequested(Convert.ToString(values[0])); }
