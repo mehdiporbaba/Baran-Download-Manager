@@ -1,5 +1,12 @@
 # Validation
 
+## 2.1.3 browser cold start — 2026-11-19
+
+A Windows kill-on-close job fixture reproduces the old launch dying with the host; explicit breakaway survives. Framed handoff passes. Native build/publish (44471174427), cross-platform source validation (44471174189) and Gitleaks (44471174142) passed. Stable release has six verified assets and exact bilingual body. Real installed-browser cold start remains owner acceptance; no user process was killed for this test. Firefox signed 1.0.3 is unchanged.
+
+<div dir="rtl" lang="fa" align="right"><h2>شروع باران از مرورگر در ۲٫۱٫۳ — ۲۰۲۶/۱۱/۱۹</h2><p>آزمون job ویندوز با خاتمه هنگام بسته‌شدن، مرگ فرزند روش قدیمی همراه واسط را بازتولید کرد؛ اجرای مستقل زنده می‌ماند. تحویل پیام قاب‌بندی‌شده موفق است. ساخت/انتشار بومی (44471174427)، اعتبارسنجی چندسکویی سورس (44471174189) و Gitleaks (44471174142) موفق‌اند. نسخهٔ پایدار شش فایل بررسی‌شده و متن دقیقاً برابر با منبع دوزبانه دارد. شروع واقعی از مرورگر نصب‌شده هنوز به پذیرش مالک نیاز دارد؛ هیچ فرایند کاربر برای آزمون بسته نشد. افزونهٔ امضاشدهٔ فایرفاکس ۱٫۰٫۳ تغییر نکرده است.</p></div>
+
+
 ## Released 2.1.2 window/browser and compact-list corrections
 
 25 unit tests and 6 documentation-policy tests pass, including binary ZIP responses without attachment disposition, preserved signed queries, HTML/redirect exclusions and offline browser continuation. The new window fixture passes saved normal/maximized bounds, negative/small/removed monitor fitting, all corner/edge hit codes and immediate/deferred document-root light/dark/RTL bootstrap. Renderer TypeScript/production and native Setup builds pass; native, connected and advanced integration pass. Firefox source 1.0.3 lint: zero errors/notices/warnings. The Soft98 sample was checked using HEAD only: two redirects, then application/zip with byte ranges and no Content-Disposition; the archive was not downloaded. These checks do not prove installed 1.0.3 capture, actual mouse resizing/restart or first-paint appearance. Mozilla-signed 1.0.3 source/JAR/PKCS7 verification passes; GitHub access is restored. Compact responsive All downloads rows, inline search and a short statistics strip are included. GitHub native build/publish 44155087262, cross-platform validation 44155087178 and Gitleaks 44155087165 passed. v2.1.2 is stable/latest with six uploaded assets and exact paired release body. Tag/source and package digests are recorded in MEMORY.md. Owner laptop layout acceptance remains pending.
